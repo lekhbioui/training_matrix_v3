@@ -1,0 +1,966 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Requalification Chefs d'équipe — RH</title>
+    <link rel="icon" type="image/png" href="{% static 'images/logo.png' %}">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+          rel="stylesheet">
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+
+        :root {
+            --primary:       #1e40af;
+            --primary-dark:  #1e3a8a;
+            --primary-bg:    #eff6ff;
+            --success:       #16a34a;
+            --success-bg:    #f0fdf4;
+            --success-border:#bbf7d0;
+            --danger:        #dc2626;
+            --danger-bg:     #fef2f2;
+            --warning:       #d97706;
+            --warning-bg:    #fffbeb;
+            --warning-border:#fde68a;
+            --border:        #e2e8f0;
+            --text:          #1e293b;
+            --muted:         #64748b;
+            --bg:            #f8fafc;
+        }
+
+        body { background: var(--bg); color: var(--text); }
+
+        .field-input {
+            width: 100%;
+            padding: .5rem .75rem;
+            border: 1px solid var(--border);
+            border-radius: .375rem;
+            font-size: .875rem;
+            transition: border .15s, box-shadow .15s;
+            background: white;
+            color: var(--text);
+        }
+        .field-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(30,64,175,.1);
+        }
+        .field-input:disabled {
+            background: #f1f5f9;
+            color: var(--muted);
+            cursor: not-allowed;
+        }
+        .field-input.has-error {
+            border-color: var(--danger);
+            background: var(--danger-bg);
+        }
+        .field-label {
+            display: block;
+            font-size: .8125rem;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: .375rem;
+        }
+        .required-star { color: var(--danger); margin-left: 2px; }
+        .field-help {
+            font-size: .75rem;
+            color: var(--muted);
+            margin-top: .3rem;
+            display: flex;
+            align-items: center;
+            gap: .3rem;
+        }
+        .section-title {
+            font-size: .7rem;
+            font-weight: 700;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            color: var(--muted);
+            padding-bottom: .5rem;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: .5rem;
+            padding: .55rem 1.25rem;
+            font-size: .875rem;
+            font-weight: 500;
+            border-radius: .375rem;
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: all .15s;
+            text-decoration: none;
+        }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,.12);
+        }
+        .btn-warning { background: #f59e0b; color: white; }
+        .btn-warning:hover {
+            background: #d97706;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,.12);
+        }
+        .btn-ghost {
+            background: white;
+            color: var(--muted);
+            border-color: var(--border);
+        }
+        .btn-ghost:hover {
+            background: var(--bg);
+            border-color: var(--muted);
+            color: var(--text);
+        }
+        .btn-sm { padding: .3rem .7rem; font-size: .78rem; }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: .25rem;
+            padding: .2rem .6rem;
+            border-radius: 9999px;
+            font-size: .7rem;
+            font-weight: 600;
+        }
+        .badge-danger  { background: #fee2e2; color: #991b1b; }
+        .badge-warning { background: #fef3c7; color: #92400e; }
+        .badge-info    { background: #dbeafe; color: #1e40af; }
+        .badge-success { background: #dcfce7; color: #166534; }
+        .badge-gray    { background: #f1f5f9; color: #475569; }
+        .badge-dark    { background: #1e293b; color: white; }
+
+        .urgency-critical { background: #fef2f2; border-left: 3px solid #dc2626; }
+        .urgency-warning  { background: #fffbeb; border-left: 3px solid #f59e0b; }
+        .urgency-info     { background: #eff6ff; border-left: 3px solid #3b82f6; }
+
+        .toast {
+            position: fixed;
+            bottom: 1.25rem;
+            right: 1.25rem;
+            z-index: 9999;
+            padding: .625rem 1rem;
+            border-radius: .5rem;
+            font-size: .8125rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+            box-shadow: 0 8px 16px rgba(0,0,0,.12);
+            animation: toastIn .2s ease;
+        }
+        .toast-ok  {
+            background: var(--success-bg);
+            border: 1px solid var(--success-border);
+            color: #14532d;
+        }
+        .toast-err {
+            background: var(--danger-bg);
+            border: 1px solid #fecaca;
+            color: #991b1b;
+        }
+        @keyframes toastIn  { from { opacity:0; transform:translateY(8px); } }
+        @keyframes toastOut { to   { opacity:0; transform:translateY(8px); } }
+
+        /* Accordéon */
+        .tasks-panel { display: none; }
+        .tasks-panel.open { display: block; }
+        .chevron { transition: transform .2s; }
+        .chevron.rotated { transform: rotate(180deg); }
+
+        /* Ligne cliquable */
+        .row-clickable { cursor: pointer; transition: background .1s; }
+        .row-clickable:hover { filter: brightness(.97); }
+        .row-selected { outline: 2px solid #1e40af; outline-offset: -1px; }
+    </style>
+</head>
+
+<body>
+
+<!-- ══ NAVBAR ══ -->
+<nav class="bg-white border-b border-gray-200 sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <span class="font-semibold text-gray-800">Training Matrix</span>
+            <span class="hidden sm:inline-flex items-center gap-1 text-xs font-medium
+                         px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full">
+                <i class="fas fa-shield-halved text-xs"></i> RH
+            </span>
+        </div>
+        <span class="text-sm text-gray-500">
+            <i class="fas fa-user-circle mr-1"></i>
+            {{ request.user.get_full_name|default:request.user.username }}
+        </span>
+    </div>
+</nav>
+
+<!-- ══ CONTENU ══ -->
+<div class="min-h-screen py-8 px-4">
+<div class="max-w-7xl mx-auto">
+
+    <!-- Breadcrumb -->
+    <nav class="flex items-center gap-2 text-sm text-gray-500 mb-6">
+        <a href="{% url 'rh_dashboard' %}" class="hover:text-gray-700">
+            <i class="fas fa-home"></i>
+        </a>
+        <i class="fas fa-chevron-right text-xs text-gray-400"></i>
+        <a href="{% url 'employee_list_rh' %}" class="hover:text-gray-700">
+            Requalification
+        </a>
+        <i class="fas fa-chevron-right text-xs text-gray-400"></i>
+        <span class="text-gray-800 font-medium">Chefs d'équipe</span>
+    </nav>
+
+    <!-- En-tête -->
+    <div class="flex items-start justify-between mb-6">
+        <div class="flex items-center gap-4">
+            <div class="w-12 h-12 rounded-xl bg-amber-100 flex items-center
+                        justify-center flex-shrink-0">
+                <i class="fas fa-crown text-amber-600 text-xl"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold text-gray-900">
+                    Requalification — Chefs d'équipe
+                </h1>
+                <p class="text-sm text-gray-500 mt-0.5">
+                    Formations dépassant <strong>{{ threshold_days }} jours</strong>
+                    — Requalification globale par ligne
+                </p>
+            </div>
+        </div>
+        <a href="{% url 'employee_list_rh' %}" class="btn btn-ghost">
+            <i class="fas fa-arrow-left"></i> Retour
+        </a>
+    </div>
+
+    <!-- ══ Statistiques ══ -->
+    <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
+        <div class="bg-white rounded-lg border border-gray-200 p-4
+                    text-center shadow-sm">
+            <p class="text-2xl font-bold text-gray-800">
+                {{ stats.total_leaders }}
+            </p>
+            <p class="text-xs text-gray-500 mt-0.5">Chefs</p>
+        </div>
+        <div class="bg-white rounded-lg border border-gray-200 p-4
+                    text-center shadow-sm">
+            <p class="text-2xl font-bold text-gray-600">
+                {{ stats.total_lines }}
+            </p>
+            <p class="text-xs text-gray-500 mt-0.5">Lignes à traiter</p>
+        </div>
+        <div class="bg-red-50 rounded-lg border border-red-200 p-4
+                    text-center shadow-sm">
+            <p class="text-2xl font-bold text-red-600">
+                {{ stats.critical }}
+            </p>
+            <p class="text-xs text-red-500 mt-0.5">Critique &gt;250j</p>
+        </div>
+        <div class="bg-amber-50 rounded-lg border border-amber-200 p-4
+                    text-center shadow-sm">
+            <p class="text-2xl font-bold text-amber-600">
+                {{ stats.warning }}
+            </p>
+            <p class="text-xs text-amber-500 mt-0.5">Attention &gt;200j</p>
+        </div>
+        <div class="bg-blue-50 rounded-lg border border-blue-200 p-4
+                    text-center shadow-sm">
+            <p class="text-2xl font-bold text-blue-600">
+                {{ stats.info }}
+            </p>
+            <p class="text-xs text-blue-500 mt-0.5">À requalifier</p>
+        </div>
+    </div>
+
+    {% if not leaders_data %}
+    <!-- ══ Aucun chef ══ -->
+    <div class="bg-green-50 border border-green-200 rounded-xl p-12 text-center">
+        <div class="w-16 h-16 bg-green-100 rounded-full flex items-center
+                    justify-center mx-auto mb-4">
+            <i class="fas fa-check-circle text-green-500 text-3xl"></i>
+        </div>
+        <h2 class="text-lg font-semibold text-green-800 mb-2">
+            Tous les chefs d'équipe sont à jour !
+        </h2>
+        <p class="text-sm text-green-600">
+            Aucune requalification nécessaire dans les {{ threshold_days }} jours.
+        </p>
+    </div>
+
+    {% else %}
+
+    <!-- ══ Layout principal ══ -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        <!-- ══════════════════════
+             FORMULAIRE (gauche)
+        ══════════════════════ -->
+        <div class="lg:col-span-1">
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200
+                        sticky top-20">
+
+                <!-- En-tête formulaire -->
+                <div class="px-5 py-4 border-b border-gray-200">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-lg bg-amber-100
+                                    flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-pen text-amber-600 text-sm"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-sm font-semibold text-gray-900">
+                                Nouvelle requalification
+                            </h2>
+                            <p class="text-xs text-gray-400">
+                                Globale — toutes les tâches de la ligne
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Alerte info -->
+                <div class="mx-5 mt-4">
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg
+                                p-3 flex gap-2">
+                        <i class="fas fa-info-circle text-blue-500 mt-0.5
+                                  flex-shrink-0 text-sm"></i>
+                        <p class="text-xs text-blue-700 leading-relaxed">
+                            Enregistrement <strong>direct RH</strong>,
+                            sans circuit d'approbation.
+                            Toutes les tâches de la ligne seront requalifiées.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Formulaire -->
+                <form method="post"
+                      action="{% url 'rh_requalify_team_leader' %}"
+                      id="requalif-form"
+                      class="px-5 py-4 space-y-4">
+                    {% csrf_token %}
+
+                    <!-- Chef -->
+                    <div>
+                        <label class="field-label" for="select-leader">
+                            Chef d'équipe
+                            <span class="required-star">*</span>
+                        </label>
+                        <select id="select-leader" name="employee_id"
+                                class="field-input" required>
+                            <option value="">-- Sélectionner --</option>
+                            {% for item in leaders_data %}
+                            <option value="{{ item.employee.id }}">
+                                {% if item.global_urgency == 'critical' %}🔴
+                                {% elif item.global_urgency == 'warning' %}🟡
+                                {% else %}🔵{% endif %}
+                                {{ item.employee.first_name }}
+                                {{ item.employee.last_name }}
+                                ({{ item.total_lines }}
+                                ligne{{ item.total_lines|pluralize }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Ligne -->
+                    <div>
+                        <label class="field-label" for="select-line">
+                            Ligne à requalifier
+                            <span class="required-star">*</span>
+                        </label>
+                        <select id="select-line" name="line_id"
+                                class="field-input" required disabled>
+                            <option value="">-- Sélectionner un chef --</option>
+                        </select>
+                        <div id="line-info" class="field-help hidden">
+                            <i class="fas fa-clock"></i>
+                            <span id="line-info-text"></span>
+                        </div>
+                    </div>
+
+                    <!-- Séparateur -->
+                    <div class="section-title mt-2">
+                        <i class="fas fa-clipboard-check"></i> Résultat
+                    </div>
+
+                    <!-- Résultat -->
+                    <div>
+                        <label class="field-label" for="select-result">
+                            Résultat <span class="required-star">*</span>
+                        </label>
+                        <select id="select-result" name="result"
+                                class="field-input" required>
+                            <option value="">-- Sélectionner --</option>
+                            {% for value, label in result_choices %}
+                            <option value="{{ value }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Séparateur -->
+                    <div class="section-title mt-2">
+                        <i class="fas fa-user-check"></i> Informations
+                    </div>
+
+                    <!-- Date -->
+                    <div>
+                        <label class="field-label" for="input-date">
+                            Date de requalification
+                        </label>
+                        <input type="date"
+                               id="input-date"
+                               name="requalification_date"
+                               class="field-input"
+                               value="{{ today|date:'Y-m-d' }}">
+                    </div>
+
+                    <!-- Notes -->
+                    <div>
+                        <label class="field-label" for="input-notes">
+                            Notes
+                        </label>
+                        <textarea id="input-notes" name="notes"
+                                  class="field-input" rows="2"
+                                  placeholder="Observations..."></textarea>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="flex items-center justify-between
+                                pt-4 border-t border-gray-200">
+                        <a href="{% url 'employee_list_rh' %}"
+                           class="btn btn-ghost">
+                            <i class="fas fa-arrow-left"></i> Annuler
+                        </a>
+                        <button type="submit" id="btn-submit"
+                                class="btn btn-warning">
+                            <i class="fas fa-check-circle"></i>
+                            Requalifier
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- ══════════════════════
+             LISTE + HISTORIQUE (droite)
+        ══════════════════════ -->
+        <div class="lg:col-span-2 space-y-5">
+
+            <!-- ── Liste des chefs ── -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+
+    <div class="px-5 py-4 border-b border-gray-200
+                flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-lg bg-gray-100
+                        flex items-center justify-center">
+                <i class="fas fa-crown text-gray-600 text-sm"></i>
+            </div>
+            <div>
+                <h2 class="text-sm font-semibold text-gray-900">
+                    Chefs à requalifier
+                </h2>
+                <p class="text-xs text-gray-400">
+                    Cliquer sur une ligne pour la sélectionner dans le formulaire
+                </p>
+            </div>
+        </div>
+        <div class="flex items-center gap-2">
+            <span class="badge badge-warning">
+                {{ stats.total_leaders }}
+                chef{{ stats.total_leaders|pluralize }}
+            </span>
+            <span class="badge badge-gray">
+                {{ stats.total_lines }}
+                ligne{{ stats.total_lines|pluralize }} à traiter
+            </span>
+        </div>
+    </div>
+
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="border-b border-gray-100 bg-gray-50">
+                    <th class="text-left px-4 py-3 text-xs font-semibold
+                               text-gray-500 uppercase tracking-wide">
+                        Chef d'équipe
+                    </th>
+                    <th class="text-left px-4 py-3 text-xs font-semibold
+                               text-gray-500 uppercase tracking-wide">
+                        Ligne
+                    </th>
+                    <th class="text-center px-4 py-3 text-xs font-semibold
+                               text-gray-500 uppercase tracking-wide">
+                        Dernière formation
+                    </th>
+                    <th class="text-center px-4 py-3 text-xs font-semibold
+                               text-gray-500 uppercase tracking-wide">
+                        Jours écoulés
+                    </th>
+                    <th class="text-center px-4 py-3 text-xs font-semibold
+                               text-gray-500 uppercase tracking-wide">
+                        Retard
+                    </th>
+                    <th class="text-center px-4 py-3 text-xs font-semibold
+                               text-gray-500 uppercase tracking-wide">
+                        Urgence
+                    </th>
+                    <th class="text-center px-4 py-3 text-xs font-semibold
+                               text-gray-500 uppercase tracking-wide">
+                        Action
+                    </th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-50">
+
+                {% for item in leaders_data %}
+                    {% for line_data in item.lines_to_requalify %}
+                    <tr class="row-clickable
+                               {% if line_data.urgency == 'critical' %}urgency-critical
+                               {% elif line_data.urgency == 'warning' %}urgency-warning
+                               {% else %}urgency-info{% endif %}"
+                        onclick="selectLeaderLine(
+                            '{{ item.employee.id }}',
+                            '{{ line_data.line.id }}'
+                        )">
+
+                        <!-- Chef d'équipe -->
+                        <td class="px-4 py-3">
+                            {% if forloop.first %}
+                            <div class="flex items-center gap-2">
+                                <div class="w-8 h-8 rounded-full bg-amber-100
+                                            flex items-center justify-center
+                                            flex-shrink-0">
+                                    <i class="fas fa-crown text-amber-600 text-xs"></i>
+                                </div>
+                                <div>
+                                    <p class="font-semibold text-gray-900 text-sm">
+                                        {{ item.employee.first_name }}
+                                        {{ item.employee.last_name }}
+                                    </p>
+                                    <p class="text-xs text-gray-400">
+                                        {{ item.employee.matricule }}
+                                    </p>
+                                </div>
+                            </div>
+                            {% else %}
+                            <div class="pl-10">
+                                <span class="text-xs text-gray-300 italic">
+                                    ↳ idem
+                                </span>
+                            </div>
+                            {% endif %}
+                        </td>
+
+                        <!-- Ligne -->
+                        <td class="px-4 py-3">
+                            <div class="flex items-center gap-2">
+                                <span class="badge badge-gray">
+                                    {{ line_data.line.code }}
+                                </span>
+                                <span class="text-xs text-gray-600">
+                                    {{ line_data.line.name }}
+                                </span>
+                            </div>
+                        </td>
+
+                        <!-- Dernière formation -->
+                        <td class="px-4 py-3 text-center">
+                            {% if line_data.last_date %}
+                            <span class="text-sm text-gray-700">
+                                {{ line_data.last_date|date:"d/m/Y" }}
+                            </span>
+                            {% else %}
+                            <span class="badge badge-danger">
+                                <i class="fas fa-ban"></i>
+                                Jamais formé
+                            </span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Jours écoulés -->
+                        <td class="px-4 py-3 text-center">
+                            {% if line_data.last_date %}
+                            <span class="font-bold text-gray-800">
+                                {{ line_data.tasks_overdue.0.days_since }}j
+                            </span>
+                            {% else %}
+                            <span class="text-gray-300">—</span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Retard -->
+                        <td class="px-4 py-3 text-center">
+                            {% if line_data.tasks_overdue.0.days_overdue %}
+                            <span class="font-semibold text-red-600 text-sm">
+                                +{{ line_data.tasks_overdue.0.days_overdue }}j
+                            </span>
+                            {% else %}
+                            <span class="text-gray-300">—</span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Urgence -->
+                        <td class="px-4 py-3 text-center">
+                            {% if line_data.urgency == 'critical' %}
+                            <span class="badge badge-danger">🔴 Critique</span>
+                            {% elif line_data.urgency == 'warning' %}
+                            <span class="badge badge-warning">🟡 Attention</span>
+                            {% else %}
+                            <span class="badge badge-info">🔵 Info</span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Action -->
+                        <td class="px-4 py-3 text-center"
+                            onclick="event.stopPropagation()">
+                            <button type="button"
+                                    class="btn btn-warning btn-sm"
+                                    onclick="selectLeaderLine(
+                                        '{{ item.employee.id }}',
+                                        '{{ line_data.line.id }}'
+                                    )">
+                                <i class="fas fa-pen"></i>
+                                Requalifier
+                            </button>
+                        </td>
+
+                    </tr>
+                    {% endfor %}
+                {% endfor %}
+
+            </tbody>
+        </table>
+    </div>
+
+</div>
+            <!-- /liste chefs -->
+
+            <!-- ── Historique ── -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+
+                <div class="px-5 py-4 border-b border-gray-200
+                            flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-gray-100
+                                flex items-center justify-center">
+                        <i class="fas fa-history text-gray-600 text-sm"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-sm font-semibold text-gray-900">
+                            Dernières requalifications
+                        </h2>
+                        <p class="text-xs text-gray-400">15 dernières entrées</p>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="border-b border-gray-100 bg-gray-50">
+                                <th class="text-left px-4 py-3 text-xs font-semibold
+                                           text-gray-500 uppercase tracking-wide">
+                                    Chef d'équipe
+                                </th>
+                                <th class="text-left px-4 py-3 text-xs font-semibold
+                                           text-gray-500 uppercase tracking-wide">
+                                    Ligne
+                                </th>
+                                <th class="text-center px-4 py-3 text-xs font-semibold
+                                           text-gray-500 uppercase tracking-wide">
+                                    Type
+                                </th>
+                                <th class="text-center px-4 py-3 text-xs font-semibold
+                                           text-gray-500 uppercase tracking-wide">
+                                    Résultat
+                                </th>
+                                <th class="text-center px-4 py-3 text-xs font-semibold
+                                           text-gray-500 uppercase tracking-wide">
+                                    Niveau
+                                </th>
+                                <th class="text-left px-4 py-3 text-xs font-semibold
+                                           text-gray-500 uppercase tracking-wide">
+                                    Date
+                                </th>
+                                <th class="text-left px-4 py-3 text-xs font-semibold
+                                           text-gray-500 uppercase tracking-wide">
+                                    Évaluateur
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-50">
+                        {% for rec in recent_requalifications %}
+                        <tr class="hover:bg-gray-50 transition-colors">
+                            <td class="px-4 py-3">
+                                <p class="font-medium text-gray-800 text-sm">
+                                    {{ rec.employee.first_name }}
+                                    {{ rec.employee.last_name }}
+                                </p>
+                                <p class="text-xs text-gray-400">
+                                    {{ rec.employee.matricule }}
+                                </p>
+                            </td>
+                            <td class="px-4 py-3">
+                                {% if rec.line %}
+                                <span class="badge badge-gray">
+                                    {{ rec.line.code }}
+                                </span>
+                                {% else %}
+                                <span class="text-gray-300">—</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-4 py-3 text-center">
+                                {% if rec.task %}
+                                <span class="badge badge-gray">
+                                    {{ rec.task }}
+                                </span>
+                                {% else %}
+                                <span class="badge badge-dark">
+                                    <i class="fas fa-layer-group"></i>
+                                    GLOBALE
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td class="px-4 py-3 text-center">
+                                {% if rec.result == 'PASS' %}
+                                <span class="badge badge-success">✅ Maintien</span>
+                                {% elif rec.result == 'UPGRADE' %}
+                                <span class="badge badge-info">⬆️ Montée</span>
+                                {% elif rec.result == 'DOWNGRADE' %}
+                                <span class="badge badge-warning">⬇️ Descente</span>
+                                {% else %}
+                                <span class="badge badge-danger">🔄 Reformer</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-4 py-3 text-center">
+                                <span class="badge badge-gray font-bold">
+                                    {{ rec.get_new_level_display }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-3">
+                                <span class="text-sm text-gray-700">
+                                    {{ rec.requalification_date|date:"d/m/Y" }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-3">
+                                <span class="text-xs text-gray-500">
+                                    {{ rec.get_requalifier_display }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7"
+                                class="px-4 py-8 text-center text-gray-400">
+                                <i class="fas fa-inbox text-2xl mb-2 block"></i>
+                                Aucune requalification enregistrée.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <!-- /historique -->
+
+        </div>
+        <!-- /colonne droite -->
+
+    </div>
+    <!-- /grid -->
+
+    {% endif %}
+
+</div>
+</div>
+
+<!-- ══ JAVASCRIPT ══ -->
+<script>
+(function () {
+
+const leadersLinesData = {{ leaders_lines_json|safe }};
+
+const selectLeader = document.getElementById('select-leader');
+const selectLine   = document.getElementById('select-line');
+const lineInfoDiv  = document.getElementById('line-info');
+const lineInfoText = document.getElementById('line-info-text');
+const btnSubmit    = document.getElementById('btn-submit');
+const form         = document.getElementById('requalif-form');
+
+// ── Accordéon chef ──────────────────────────────────────────────
+window.toggleLeader = function (panelId, chevronId) {
+    const panel   = document.getElementById(panelId);
+    const chevron = document.getElementById(chevronId);
+    if (!panel) return;
+    panel.classList.toggle('open');
+    chevron.classList.toggle('rotated');
+};
+
+// ── Sélection depuis le tableau ─────────────────────────────────
+window.selectLeaderLine = function (empId, lineId) {
+    // 1) Sélectionner le chef
+    selectLeader.value = empId;
+    selectLeader.dispatchEvent(new Event('change'));
+
+    // 2) Sélectionner la ligne après remplissage du select
+    setTimeout(() => {
+        selectLine.value = lineId;
+        selectLine.dispatchEvent(new Event('change'));
+
+        // Highlight
+        document.querySelectorAll('.row-clickable').forEach(r =>
+            r.classList.remove('row-selected')
+        );
+        document.querySelectorAll(
+            `tr[onclick*="${empId}"][onclick*="${lineId}"]`
+        ).forEach(r => r.classList.add('row-selected'));
+
+    }, 50);
+
+    // 3) Scroll vers le formulaire
+    document.getElementById('requalif-form')
+        .closest('.bg-white')
+        .scrollIntoView({ behavior: 'smooth', block: 'start' });
+};
+
+// ── Changement du chef ──────────────────────────────────────────
+selectLeader.addEventListener('change', function () {
+    const empId = this.value;
+
+    selectLine.innerHTML =
+        '<option value="">-- Sélectionner une ligne --</option>';
+    selectLine.disabled = true;
+    lineInfoDiv.classList.add('hidden');
+
+    if (!empId) return;
+
+    const leaderInfo = leadersLinesData.find(
+        l => String(l.employee_id) === String(empId)
+    );
+
+    if (!leaderInfo || leaderInfo.lines_detail.length === 0) {
+        selectLine.innerHTML =
+            '<option value="">Aucune ligne à requalifier</option>';
+        return;
+    }
+
+    leaderInfo.lines_detail.forEach(line => {
+        const opt = document.createElement('option');
+        opt.value = line.id;
+        opt.dataset.lastDate     = line.last_date    || '';
+        opt.dataset.taskCount    = line.task_count;
+        opt.dataset.overdueCount = line.overdue_count;
+
+        const icon = line.urgency === 'critical' ? '🔴'
+                   : line.urgency === 'warning'  ? '🟡' : '🔵';
+
+        opt.textContent =
+            `${icon} ${line.code} — ${line.name} ` +
+            `(${line.overdue_count}/${line.task_count} ` +
+            `tâche${line.task_count > 1 ? 's' : ''} en retard)`;
+
+        selectLine.appendChild(opt);
+    });
+
+    selectLine.disabled = false;
+
+    // Auto-sélection si une seule ligne
+    if (leaderInfo.lines_detail.length === 1) {
+        selectLine.value = leaderInfo.lines_detail[0].id;
+        selectLine.dispatchEvent(new Event('change'));
+    }
+});
+
+// ── Changement de la ligne ──────────────────────────────────────
+selectLine.addEventListener('change', function () {
+    const opt = this.options[this.selectedIndex];
+    lineInfoDiv.classList.add('hidden');
+
+    if (!opt || !opt.value) return;
+
+    const lastDate  = opt.dataset.lastDate;
+    const taskCount = opt.dataset.taskCount;
+    const overdue   = opt.dataset.overdueCount;
+
+    lineInfoText.textContent =
+        `${overdue} tâche(s) en retard sur ${taskCount}` +
+        (lastDate ? ` — Dernière formation : ${lastDate}` : '');
+    lineInfoDiv.classList.remove('hidden');
+});
+
+// ── Validation formulaire ───────────────────────────────────────
+if (form) {
+    form.addEventListener('submit', function (e) {
+        const empId  = selectLeader.value;
+        const lineId = selectLine.value;
+        const result = document.getElementById('select-result').value;
+
+        let hasError = false;
+
+        [
+            [!empId,  selectLeader],
+            [!lineId, selectLine],
+            [!result, document.getElementById('select-result')],
+        ].forEach(([cond, el]) => {
+            if (cond) { el.classList.add('has-error'); hasError = true; }
+        });
+
+        if (hasError) {
+            e.preventDefault();
+            toast(
+                '<i class="fas fa-triangle-exclamation mr-1"></i>' +
+                'Veuillez remplir tous les champs obligatoires.',
+                'err'
+            );
+            return;
+        }
+
+        if (btnSubmit) {
+            btnSubmit.disabled = true;
+            btnSubmit.innerHTML =
+                '<i class="fas fa-spinner fa-spin"></i> Enregistrement...';
+        }
+    });
+
+    form.querySelectorAll('.field-input').forEach(input => {
+        input.addEventListener('focus', function () {
+            this.classList.remove('has-error');
+        });
+    });
+}
+
+// ── Toast ────────────────────────────────────────────────────────
+function toast(msg, type) {
+    const t = document.createElement('div');
+    t.className = 'toast toast-' + (type || 'ok');
+    t.innerHTML = msg;
+    document.body.appendChild(t);
+    setTimeout(() => {
+        t.style.animation = 'toastOut .2s ease forwards';
+        setTimeout(() => t.remove(), 220);
+    }, 3500);
+}
+
+{% if messages %}
+{% for message in messages %}
+window.addEventListener('load', () => {
+    toast(
+        '{{ message|escapejs }}',
+        '{% if message.tags == "error" %}err{% else %}ok{% endif %}'
+    );
+});
+{% endfor %}
+{% endif %}
+
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,1698 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historique des Requalifications | HR Management</title>
+    <link rel="icon" type="image/png" href="{% static 'images/logo.png' %}">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-color: #0F172A;
+            --secondary-color: #1E40AF;
+            --accent-color: #3B82F6;
+            --success-color: #059669;
+            --warning-color: #D97706;
+            --danger-color: #DC2626;
+            --gray-50: #F8FAFC;
+            --gray-100: #F1F5F9;
+            --gray-200: #E2E8F0;
+            --gray-300: #CBD5E1;
+            --gray-400: #94A3B8;
+            --gray-500: #64748B;
+            --gray-600: #475569;
+            --gray-700: #334155;
+            --gray-800: #1E293B;
+            --gray-900: #0F172A;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background-attachment: fixed;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .main-container {
+            background: var(--gray-50);
+            min-height: 100vh;
+        }
+
+        /* SIDEBAR */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: 280px;
+            background: linear-gradient(180deg, #0F172A 0%, #1E293B 100%);
+            color: white;
+            z-index: 1000;
+            box-shadow: 4px 0 24px rgba(0, 0, 0, 0.12);
+            overflow-y: auto;
+        }
+
+        .sidebar-header {
+            padding: 28px 24px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar-logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 0;
+        }
+
+        .company-logo {
+            max-width: 140px;
+            height: auto;
+        }
+
+        .menu-section-title {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: rgba(255, 255, 255, 0.5);
+            padding: 0 24px 12px;
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 24px;
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            transition: all 0.2s ease;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .menu-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+        }
+
+        .menu-item.active {
+            background: rgba(59, 130, 246, 0.15);
+            color: white;
+            border-left: 3px solid #3B82F6;
+        }
+
+        .menu-item i {
+            width: 20px;
+            text-align: center;
+        }
+
+        /* MAIN CONTENT */
+        .main-content {
+            margin-left: 280px;
+            min-height: 100vh;
+        }
+
+        /* HEADER */
+        .top-header {
+            background: white;
+            border-bottom: 1px solid var(--gray-200);
+            padding: 20px 40px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+        }
+
+        .page-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--gray-900);
+            letter-spacing: -0.02em;
+            margin-bottom: 4px;
+        }
+
+        .breadcrumb {
+            display: flex;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--gray-500);
+            align-items: center;
+        }
+
+        .breadcrumb a {
+            color: var(--accent-color);
+            text-decoration: none;
+        }
+
+        /* CARDS */
+        .card {
+            background: white;
+            border-radius: 12px;
+            border: 1px solid var(--gray-200);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--gray-200);
+            background: var(--gray-50);
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--gray-900);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-title i {
+            font-size: 20px;
+        }
+
+        .card-body {
+            padding: 24px;
+        }
+
+        /* STATS CARDS */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid var(--gray-200);
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+        }
+
+        .stat-card.total { border-left: 4px solid var(--gray-600); }
+        .stat-card.pass { border-left: 4px solid var(--success-color); }
+        .stat-card.upgrade { border-left: 4px solid var(--accent-color); }
+        .stat-card.downgrade { border-left: 4px solid var(--danger-color); }
+        .stat-card.retrain { border-left: 4px solid var(--warning-color); }
+
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .stat-content h3 {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--gray-600);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .stat-content p {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--gray-900);
+            margin-top: 2px;
+        }
+
+        /* FILTERS */
+        .filters-section {
+            background: white;
+            border-radius: 12px;
+            border: 1px solid var(--gray-200);
+            padding: 20px 24px;
+            margin-bottom: 24px;
+        }
+
+        .filters-grid {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            align-items: flex-end;
+        }
+
+        .filter-group {
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .filter-label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--gray-700);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+        }
+
+        .filter-select,
+        .filter-input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid var(--gray-300);
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            background: white;
+        }
+
+        .filter-select:focus,
+        .filter-input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        /* BUTTONS */
+        .btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 4px 16px rgba(59, 130, 246, 0.4);
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: var(--gray-700);
+            border: 1px solid var(--gray-300);
+        }
+
+        .btn-secondary:hover {
+            background: var(--gray-50);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #059669 0%, #10B981 100%);
+            color: white;
+        }
+
+        /* RESULT FILTER TABS */
+        .result-tabs {
+            display: flex;
+            gap: 8px;
+            padding: 4px;
+            background: var(--gray-100);
+            border-radius: 10px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+
+        .result-tab {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: var(--gray-600);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+
+        .result-tab:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        .result-tab.active {
+            background: white;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .result-tab.active.all { color: var(--gray-700); }
+        .result-tab.active.pass { color: var(--success-color); }
+        .result-tab.active.upgrade { color: var(--accent-color); }
+        .result-tab.active.downgrade { color: var(--danger-color); }
+        .result-tab.active.retrain { color: var(--warning-color); }
+
+        .result-count {
+            background: var(--gray-200);
+            color: var(--gray-700);
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+
+        .result-tab.active .result-count {
+            background: currentColor;
+            color: white;
+        }
+
+        /* TABLES */
+        .data-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        .data-table thead th {
+            background: var(--gray-50);
+            color: var(--gray-700);
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 14px 16px;
+            text-align: left;
+            border-bottom: 2px solid var(--gray-200);
+            white-space: nowrap;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .data-table tbody td {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--gray-100);
+            font-size: 14px;
+            color: var(--gray-800);
+            vertical-align: middle;
+        }
+
+        .data-table tbody tr {
+            transition: all 0.2s ease;
+        }
+
+        .data-table tbody tr:hover {
+            background: var(--gray-50);
+        }
+
+        /* BADGES */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            gap: 5px;
+        }
+
+        .badge-success {
+            background: rgba(5, 150, 105, 0.1);
+            color: var(--success-color);
+            border: 1px solid rgba(5, 150, 105, 0.2);
+        }
+
+        .badge-primary {
+            background: rgba(59, 130, 246, 0.1);
+            color: var(--accent-color);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+        }
+
+        .badge-danger {
+            background: rgba(220, 38, 38, 0.1);
+            color: var(--danger-color);
+            border: 1px solid rgba(220, 38, 38, 0.2);
+        }
+
+        .badge-warning {
+            background: rgba(217, 119, 6, 0.1);
+            color: var(--warning-color);
+            border: 1px solid rgba(217, 119, 6, 0.2);
+        }
+
+        .badge-gray {
+            background: var(--gray-100);
+            color: var(--gray-700);
+        }
+
+        /* LEVEL BADGES */
+        .level-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .level-I { background: rgba(239, 68, 68, 0.1); color: #DC2626; }
+        .level-L { background: rgba(59, 130, 246, 0.1); color: #2563EB; }
+        .level-U { background: rgba(5, 150, 105, 0.1); color: #059669; }
+
+        /* AVATAR */
+        .avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 12px;
+            color: white;
+            background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+        }
+
+        /* EMPLOYEE INFO */
+        .employee-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .employee-details h4 {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--gray-900);
+            margin-bottom: 2px;
+        }
+
+        .employee-details span {
+            font-size: 11px;
+            color: var(--gray-500);
+        }
+
+        /* LEVEL TRANSITION */
+        .level-transition {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* EMPTY STATE */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .empty-state i {
+            font-size: 56px;
+            color: var(--gray-300);
+            margin-bottom: 20px;
+        }
+
+        .empty-state h3 {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--gray-700);
+            margin-bottom: 8px;
+        }
+
+        .empty-state p {
+            font-size: 14px;
+            color: var(--gray-500);
+        }
+
+        /* PAGINATION */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            padding: 20px;
+        }
+
+        .pagination-btn {
+            padding: 8px 14px;
+            border: 1px solid var(--gray-300);
+            border-radius: 6px;
+            background: white;
+            color: var(--gray-700);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .pagination-btn:hover {
+            background: var(--gray-50);
+            border-color: var(--accent-color);
+        }
+
+        .pagination-btn.active {
+            background: var(--accent-color);
+            color: white;
+            border-color: var(--accent-color);
+        }
+
+        .pagination-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* EXPORT DROPDOWN */
+        .export-dropdown {
+            position: relative;
+        }
+
+        .export-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: 8px;
+            background: white;
+            border: 1px solid var(--gray-200);
+            border-radius: 8px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            min-width: 180px;
+            z-index: 100;
+            display: none;
+        }
+
+        .export-menu.active {
+            display: block;
+        }
+
+        .export-menu a {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 16px;
+            color: var(--gray-700);
+            text-decoration: none;
+            font-size: 13px;
+            transition: all 0.2s ease;
+        }
+
+        .export-menu a:hover {
+            background: var(--gray-50);
+        }
+
+        .export-menu a i {
+            width: 18px;
+            text-align: center;
+        }
+
+        /* ANIMATIONS */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 1024px) {
+            .sidebar { transform: translateX(-100%); }
+            .main-content { margin-left: 0; }
+        }
+
+        /* SCROLLBAR */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--gray-100); }
+        ::-webkit-scrollbar-thumb { background: var(--gray-300); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--gray-400); }
+
+        /* NOTES TOOLTIP */
+        .notes-cell {
+            max-width: 200px;
+        }
+
+        .notes-text {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-size: 12px;
+            color: var(--gray-600);
+        }
+
+        .notes-text:hover {
+            white-space: normal;
+            background: var(--gray-50);
+            padding: 8px;
+            border-radius: 6px;
+            position: absolute;
+            z-index: 10;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            max-width: 300px;
+        }
+
+        /* DATE RANGE */
+        .date-range {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .date-range span {
+            color: var(--gray-500);
+            font-size: 13px;
+        }
+        .sidebar-footer-compact {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.logout-item {
+  color: #FCA5A5 !important;
+  background: rgba(220, 38, 38, 0.1);
+}
+
+.logout-item:hover {
+  background: rgba(220, 38, 38, 0.2) !important;
+  color: #FEE2E2 !important;
+}
+    </style>
+</head>
+<body>
+
+<div class="main-container">
+    
+    <!-- SIDEBAR -->
+<aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+                <img src="{% static 'images/logo.png' %}" alt="Logo de l'entreprise" class="company-logo">
+            </div>
+        </div>
+
+        <nav style="padding: 16px 0;">
+            <div style="margin-bottom: 24px;">
+                <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255, 255, 255, 0.5); padding: 0 24px 12px;">Principal</div>
+                <a href="{% url 'rh_dashboard' %}" class="menu-item">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Tableau de bord</span>
+                </a>
+                <a href="{% url 'employee_list_rh' %}" class="menu-item">
+                    <i class="fas fa-users"></i>
+                    <span>Employés</span>
+                </a>
+                <a href="{% url 'rh_manage_tasks_lines' %}" class="menu-item">
+                    <i class="fas fa-tasks"></i>
+                    <span>Tâches & Lignes</span>
+                </a>
+            </div>
+
+            <div style="margin-bottom: 24px;">
+                <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255, 255, 255, 0.5); padding: 0 24px 12px;">Gestion</div>
+                <a href="{% url 'rh_training_approvals' %}" class="menu-item">
+                    <i class="fas fa-graduation-cap"></i>
+                    <span>Demandes Formations</span>
+                </a>
+                <a href="{% url 'rh_requalification_approvals' %}" class="menu-item">
+                    <i class="fas fa-clipboard-check"></i>
+                    <span>Demandes Requalifications</span>
+                </a>
+                <a href="{% url 'rh_employees_to_requalify' %}" class="menu-item active">
+                    <i class="fas fa-history"></i>
+                    <span>Historique requalifications</span>
+                </a>
+                <a href="{% url 'transfer_employee' %}" class="menu-item">
+                    <i class="fas fa-exchange-alt"></i>
+                    <span>Transferts</span>
+                </a>
+                <a href="{% url 'rh_transfer_approvals' %}" class="menu-item">
+                    <i class="fas fa-user-check"></i>
+                    <span>Valider Transferts</span>
+                    {% if pending.count > 0 %}
+                    <span style="background: var(--warning-color); color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px; margin-left: auto;">{{ pending.count }}</span>
+                    {% endif %}
+                </a>
+            </div>
+        </nav>
+              <!-- Version compacte -->
+<div class="sidebar-footer-compact">
+  <a href="{% url 'login' %}" class="menu-item logout-item">
+    <i class="fas fa-sign-out-alt"></i>
+    <span>Déconnexion</span>
+    <span style="margin-left: auto; font-size: 11px; opacity: 0.7;">
+      {{ request.user.username }}
+    </span>
+  </a>
+</div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-content">
+        
+        <!-- HEADER -->
+        <header class="top-header">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+                <div>
+                    <h1 class="page-title">
+                        <i class="fas fa-history" style="color: var(--accent-color); margin-right: 12px;"></i>
+                        Historique des Requalifications
+                    </h1>
+                    <div class="breadcrumb">
+                        {% if is_rh %}
+                        
+                        {% else %}
+                        <a href="">
+                            <i class="fas fa-home"></i> Accueil
+                        </a>
+                        {% endif %}
+                        <span>/</span>
+                        <span>Historique</span>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 12px; align-items: center;">
+                    <!-- Export Dropdown -->
+                    <div class="export-dropdown">
+                        <button class="btn btn-secondary" onclick="toggleExportMenu()">
+                            <i class="fas fa-download"></i>
+                            Exporter
+                            <i class="fas fa-chevron-down" style="font-size: 10px; margin-left: 4px;"></i>
+                        </button>
+                        <div class="export-menu" id="exportMenu">
+                            <a href="#" onclick="exportTable('excel')">
+                                <i class="fas fa-file-excel" style="color: #059669;"></i>
+                                Excel (.xlsx)
+                            </a>
+                            <a href="#" onclick="exportTable('csv')">
+                                <i class="fas fa-file-csv" style="color: #3B82F6;"></i>
+                                CSV
+                            </a>
+                            <a href="#" onclick="window.print()">
+                                <i class="fas fa-print" style="color: var(--gray-600);"></i>
+                                Imprimer
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- CONTENT -->
+        <div style="padding: 32px 40px; max-width: 1800px;">
+
+            <!-- STATS CARDS -->
+            <div class="stats-grid fade-in">
+                <div class="stat-card total">
+                    <div class="stat-icon" style="background: rgba(100, 116, 139, 0.1); color: var(--gray-600);">
+                        <i class="fas fa-clipboard-list"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>Total</h3>
+                        <p>{{ stats.total }}</p>
+                    </div>
+                </div>
+
+                <div class="stat-card pass">
+                    <div class="stat-icon" style="background: rgba(5, 150, 105, 0.1); color: var(--success-color);">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>Maintien</h3>
+                        <p>{{ stats.pass }}</p>
+                    </div>
+                </div>
+
+                <div class="stat-card upgrade">
+                    <div class="stat-icon" style="background: rgba(59, 130, 246, 0.1); color: var(--accent-color);">
+                        <i class="fas fa-arrow-up"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>Montée</h3>
+                        <p>{{ stats.upgrade }}</p>
+                    </div>
+                </div>
+
+                <div class="stat-card downgrade">
+                    <div class="stat-icon" style="background: rgba(220, 38, 38, 0.1); color: var(--danger-color);">
+                        <i class="fas fa-arrow-down"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>Descente</h3>
+                        <p>{{ stats.downgrade }}</p>
+                    </div>
+                </div>
+
+                <div class="stat-card retrain">
+                    <div class="stat-icon" style="background: rgba(217, 119, 6, 0.1); color: var(--warning-color);">
+                        <i class="fas fa-redo"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>À reformer</h3>
+                        <p>{{ stats.retrain }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FILTERS -->
+            <!-- <div class="filters-section fade-in">
+                <form method="get" id="filterForm">
+                    <div class="filters-grid">
+                        <div class="filter-group">
+                            <label class="filter-label">
+                                <i class="fas fa-industry"></i> Ligne
+                            </label>
+                            <select name="line_id" class="filter-select" onchange="this.form.submit()">
+                                <option value="">Toutes les lignes</option>
+                                {% for line in lines %}
+                                <option value="{{ line.id }}" {% if selected_line_id == line.id %}selected{% endif %}>
+                                    {{ line.code }} - {{ line.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label class="filter-label">
+                                <i class="fas fa-calendar"></i> Date début
+                            </label>
+                            <input type="date" name="date_from" class="filter-input" 
+                                   value="{{ date_from|default:'' }}">
+                        </div>
+
+                        <div class="filter-group">
+                            <label class="filter-label">
+                                <i class="fas fa-calendar"></i> Date fin
+                            </label>
+                            <input type="date" name="date_to" class="filter-input" 
+                                   value="{{ date_to|default:'' }}">
+                        </div>
+                        
+                        <div class="filter-group" style="flex: 0; min-width: auto;">
+                            <label class="filter-label">&nbsp;</label>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-filter"></i> Filtrer
+                            </button>
+                        </div>
+                        
+                        {% if selected_line_id or selected_result or date_from or date_to %}
+                        <div class="filter-group" style="flex: 0; min-width: auto;">
+                            <label class="filter-label">&nbsp;</label>
+                            <a href="{% url 'requalification_history' %}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Réinitialiser
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                </form>
+            </div> -->
+
+
+<!-- TABS NAVIGATION -->
+<div class="tabs-container fade-in" style="margin-top: 32px;">
+    <button class="tab-btn active" onclick="showTab('tab-pending-requests')">
+        <i class="fas fa-hourglass-half"></i>
+        Demandes en attente
+        <span class="tab-count" style="background: #7C3AED; color: white;">{{ pending_requests|length }}</span>
+    </button>
+    <button class="tab-btn" onclick="showTab('tab-approved-requests')">
+        <i class="fas fa-check-circle"></i>
+        Approuvées
+        <span class="tab-count">{{ approved_requests|length }}</span>
+    </button>
+    <button class="tab-btn" onclick="showTab('tab-rejected-requests')">
+        <i class="fas fa-times-circle"></i>
+        Refusées
+        <span class="tab-count">{{ rejected_requests|length }}</span>
+    </button>
+    <button class="tab-btn" onclick="showTab('tab-rh-history')">
+        <i class="fas fa-history"></i>
+        Historique RH
+        <span class="tab-count">{{ recent_requalifications|length }}</span>
+    </button>
+</div>
+
+<!-- TAB: DEMANDES EN ATTENTE -->
+<div id="tab-pending-requests" class="tab-content active">
+    <div class="card fade-in">
+        <div class="card-header">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h2 class="card-title">
+                    <i class="fas fa-hourglass-half" style="color: #7C3AED;"></i>
+                    Demandes en attente des chefs d'équipe
+                    <span class="badge" style="background: rgba(124, 58, 237, 0.1); color: #7C3AED; margin-left: 8px;">
+                        {{ pending_requests|length }}
+                    </span>
+                </h2>
+                {% if pending_requests %}
+                <a href="{% url 'rh_requalification_approvals' %}" class="btn btn-primary">
+                    <i class="fas fa-clipboard-check"></i> Traiter les demandes
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="card-body" style="padding: 0;">
+            {% if pending_requests %}
+            <div style="overflow-x: auto;">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th><i class="far fa-calendar"></i> Date demande</th>
+                            <th><i class="fas fa-user"></i> Employé</th>
+                            <th><i class="fas fa-industry"></i> Ligne</th>
+                            <th><i class="fas fa-clipboard-check"></i> Résultat demandé</th>
+                            <th><i class="fas fa-user-tie"></i> Chef d'équipe</th>
+                            <th><i class="fas fa-comment"></i> Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for req in pending_requests %}
+                        <tr>
+                            <td>
+                                <div style="font-size: 13px; font-weight: 500;">{{ req.date_requested|date:"d/m/Y" }}</div>
+                                <div style="font-size: 11px; color: var(--gray-500);">{{ req.date_requested|date:"H:i" }}</div>
+                            </td>
+                            <td>
+                                <div class="employee-info">
+                                    <div class="avatar" style="width: 32px; height: 32px; font-size: 11px;">
+                                        {{ req.employee.first_name|first }}{{ req.employee.last_name|first }}
+                                    </div>
+                                    <div>
+                                        <div style="font-size: 13px; font-weight: 600;">{{ req.employee.first_name }} {{ req.employee.last_name }}</div>
+                                        <div style="font-size: 11px; color: var(--gray-500);">{{ req.employee.matricule|default:"N/A" }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                {% if req.line %}
+                                <span class="badge badge-gray" style="font-size: 11px;">{{ req.line.code }}</span>
+                                {% else %}—{% endif %}
+                            </td>
+                            <td>
+                                {% if req.requested_result == 'PASS' %}
+                                <span class="badge badge-success"><i class="fas fa-check"></i> Maintien</span>
+                                {% elif req.requested_result == 'UPGRADE' %}
+                                <span class="badge badge-primary"><i class="fas fa-arrow-up"></i> Montée</span>
+                                {% elif req.requested_result == 'DOWNGRADE' %}
+                                <span class="badge badge-danger"><i class="fas fa-arrow-down"></i> Descente</span>
+                                {% elif req.requested_result == 'RETRAIN' %}
+                                <span class="badge badge-warning"><i class="fas fa-redo"></i> À reformer</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div style="display: flex; align-items: center; gap: 6px;">
+                                    <i class="fas fa-user-shield" style="color: var(--accent-color); font-size: 11px;"></i>
+                                    <span style="font-size: 12px;">{{ req.requested_by.get_full_name|default:req.requested_by.username }}</span>
+                                </div>
+                            </td>
+                            <td>
+                                {% if req.notes %}
+                                <span style="font-size: 11px; color: var(--gray-600);" title="{{ req.notes }}">
+                                    {{ req.notes|truncatechars:25 }}
+                                </span>
+                                {% else %}
+                                <span style="color: var(--gray-400);">—</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <i class="fas fa-inbox" style="color: var(--success-color);"></i>
+                <h3>Aucune demande en attente</h3>
+                <p>Toutes les demandes des chefs d'équipe ont été traitées.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- TAB: DEMANDES APPROUVÉES -->
+<div id="tab-approved-requests" class="tab-content">
+    <div class="card fade-in">
+        <div class="card-header">
+            <h2 class="card-title">
+                <i class="fas fa-check-circle" style="color: var(--success-color);"></i>
+                Demandes approuvées
+                <span class="badge badge-success" style="margin-left: 8px;">{{ approved_requests|length }}</span>
+            </h2>
+        </div>
+        
+        <div class="card-body" style="padding: 0;">
+            {% if approved_requests %}
+            <div style="overflow-x: auto;">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th><i class="far fa-calendar"></i> Demande</th>
+                            <th><i class="fas fa-user"></i> Employé</th>
+                            <th><i class="fas fa-clipboard-check"></i> Résultat</th>
+                            <th><i class="fas fa-user-tie"></i> Demandé par</th>
+                            <th><i class="far fa-calendar-check"></i> Date décision</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for req in approved_requests %}
+                        <tr>
+                            <td>
+                                <div style="font-size: 13px;">{{ req.date_requested|date:"d/m/Y H:i" }}</div>
+                            </td>
+                            <td>
+                                <div class="employee-info">
+                                    <div class="avatar" style="width: 32px; height: 32px; font-size: 11px; background: linear-gradient(135deg, #059669 0%, #10B981 100%);">
+                                        {{ req.employee.first_name|first }}{{ req.employee.last_name|first }}
+                                    </div>
+                                    <div>
+                                        <div style="font-size: 13px; font-weight: 600;">{{ req.employee.first_name }} {{ req.employee.last_name }}</div>
+                                        <div style="font-size: 11px; color: var(--gray-500);">{{ req.employee.matricule|default:"N/A" }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                {% if req.requested_result == 'PASS' %}
+                                <span class="badge badge-success" style="font-size: 11px;">Maintien</span>
+                                {% elif req.requested_result == 'UPGRADE' %}
+                                <span class="badge badge-primary" style="font-size: 11px;">Montée</span>
+                                {% elif req.requested_result == 'DOWNGRADE' %}
+                                <span class="badge badge-danger" style="font-size: 11px;">Descente</span>
+                                {% elif req.requested_result == 'RETRAIN' %}
+                                <span class="badge badge-warning" style="font-size: 11px;">À reformer</span>
+                                {% endif %}
+                            </td>
+                            <td style="font-size: 12px;">{{ req.requested_by.get_full_name|default:req.requested_by.username }}</td>
+                            
+                            <td style="font-size: 13px;">{{ req.decision_date|date:"d/m/Y H:i"|default:"—" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <i class="fas fa-clipboard-check"></i>
+                <h3>Aucune demande approuvée</h3>
+                <p>Les demandes approuvées apparaîtront ici.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- TAB: DEMANDES REFUSÉES -->
+<div id="tab-rejected-requests" class="tab-content">
+    <div class="card fade-in">
+        <div class="card-header">
+            <h2 class="card-title">
+                <i class="fas fa-times-circle" style="color: var(--danger-color);"></i>
+                Demandes refusées
+                <span class="badge badge-danger" style="margin-left: 8px;">{{ rejected_requests|length }}</span>
+            </h2>
+        </div>
+        
+        <div class="card-body" style="padding: 0;">
+            {% if rejected_requests %}
+            <div style="overflow-x: auto;">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th><i class="far fa-calendar"></i> Demande</th>
+                            <th><i class="fas fa-user"></i> Employé</th>
+                            <th><i class="fas fa-clipboard-check"></i> Résultat demandé</th>
+                            <th><i class="fas fa-user-tie"></i> Demandé par</th>
+                            <th><i class="far fa-calendar-times"></i> Date refus</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for req in rejected_requests %}
+                        <tr>
+                            <td style="font-size: 13px;">{{ req.date_requested|date:"d/m/Y H:i" }}</td>
+                            <td>
+                                <div class="employee-info">
+                                    <div class="avatar" style="width: 32px; height: 32px; font-size: 11px; background: linear-gradient(135deg, #DC2626 0%, #EF4444 100%);">
+                                        {{ req.employee.first_name|first }}{{ req.employee.last_name|first }}
+                                    </div>
+                                    <div>
+                                        <div style="font-size: 13px; font-weight: 600;">{{ req.employee.first_name }} {{ req.employee.last_name }}</div>
+                                        <div style="font-size: 11px; color: var(--gray-500);">{{ req.employee.matricule|default:"N/A" }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                {% if req.requested_result == 'PASS' %}
+                                <span class="badge badge-success" style="font-size: 11px;">Maintien</span>
+                                {% elif req.requested_result == 'UPGRADE' %}
+                                <span class="badge badge-primary" style="font-size: 11px;">Montée</span>
+                                {% elif req.requested_result == 'DOWNGRADE' %}
+                                <span class="badge badge-danger" style="font-size: 11px;">Descente</span>
+                                {% elif req.requested_result == 'RETRAIN' %}
+                                <span class="badge badge-warning" style="font-size: 11px;">À reformer</span>
+                                {% endif %}
+                            </td>
+                            <td style="font-size: 12px;">{{ req.requested_by.get_full_name|default:req.requested_by.username }}</td>
+                            <td style="font-size: 13px;">{{ req.decision_date|date:"d/m/Y H:i"|default:"—" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <i class="fas fa-times-circle"></i>
+                <h3>Aucune demande refusée</h3>
+                <p>Les demandes refusées apparaîtront ici.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- TAB: HISTORIQUE RH (Requalifications validées) -->
+<div id="tab-rh-history" class="tab-content">
+    <div class="card fade-in">
+        <div class="card-header">
+            <h2 class="card-title">
+                <i class="fas fa-history" style="color: var(--accent-color);"></i>
+                Requalifications enregistrées par RH
+                <span class="badge badge-gray" style="margin-left: 8px;" id="countBadge">{{ recent_requalifications|length }}</span>
+            </h2>
+        </div>
+        
+        <!-- ✅ BARRE DE RECHERCHE ET FILTRES -->
+        <div style="padding: 16px 20px; background: var(--gray-50); border-bottom: 1px solid var(--gray-200);">
+            <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
+                
+                <!-- Recherche employé -->
+                <div style="flex: 1; min-width: 200px; position: relative;">
+                    <i class="fas fa-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--gray-400);"></i>
+                    <input type="text" 
+                           id="searchEmployee" 
+                           placeholder="Rechercher un employé (nom, prénom, matricule)..." 
+                           style="width: 100%; padding: 10px 12px 10px 38px; border: 1px solid var(--gray-300); border-radius: 8px; font-size: 13px; transition: all 0.2s;"
+                           onkeyup="filterRequalifications()">
+                </div>
+                
+                <!-- Filtre par ligne -->
+                <div style="min-width: 150px;">
+                    <select id="filterLine" 
+                            onchange="filterRequalifications()"
+                            style="width: 100%; padding: 10px 12px; border: 1px solid var(--gray-300); border-radius: 8px; font-size: 13px; background: white; cursor: pointer;">
+                        <option value="">Toutes les lignes</option>
+                        {% for line in lines %}
+                        <option value="{{ line.code }}">{{ line.code }} - {{ line.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <!-- Filtre par résultat -->
+                <div style="min-width: 150px;">
+                    <select id="filterResult" 
+                            onchange="filterRequalifications()"
+                            style="width: 100%; padding: 10px 12px; border: 1px solid var(--gray-300); border-radius: 8px; font-size: 13px; background: white; cursor: pointer;">
+                        <option value="">Tous les résultats</option>
+                        <option value="PASS">✅ Maintien</option>
+                        <option value="UPGRADE">⬆️ Montée</option>
+                        <option value="DOWNGRADE">⬇️ Descente</option>
+                        <option value="RETRAIN">🔄 À reformer</option>
+                    </select>
+                </div>
+                
+                <!-- Filtre par date -->
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <label style="font-size: 12px; color: var(--gray-600); white-space: nowrap;">Du:</label>
+                        <input type="date" 
+                               id="filterDateFrom" 
+                               onchange="filterRequalifications()"
+                               style="padding: 8px 10px; border: 1px solid var(--gray-300); border-radius: 8px; font-size: 12px;">
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <label style="font-size: 12px; color: var(--gray-600); white-space: nowrap;">Au:</label>
+                        <input type="date" 
+                               id="filterDateTo" 
+                               onchange="filterRequalifications()"
+                               style="padding: 8px 10px; border: 1px solid var(--gray-300); border-radius: 8px; font-size: 12px;">
+                    </div>
+                </div>
+                
+                <!-- Bouton reset -->
+                <button onclick="resetFilters()" 
+                        style="padding: 10px 16px; background: var(--gray-200); border: none; border-radius: 8px; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s;"
+                        onmouseover="this.style.background='var(--gray-300)'"
+                        onmouseout="this.style.background='var(--gray-200)'">
+                    <i class="fas fa-undo"></i> Réinitialiser
+                </button>
+            </div>
+            
+            <!-- Compteur de résultats -->
+            <div style="margin-top: 12px; font-size: 12px; color: var(--gray-600);">
+                <i class="fas fa-filter" style="margin-right: 4px;"></i>
+                <span id="resultsCount">{{ recent_requalifications|length }}</span> requalification(s) affichée(s)
+                <span id="filterInfo" style="margin-left: 8px; color: var(--primary-color); display: none;">
+                    — Filtres actifs
+                </span>
+            </div>
+        </div>
+        
+        <div class="card-body" style="padding: 0;">
+            {% if recent_requalifications %}
+            <!-- ✅ CONTENEUR AVEC SCROLL -->
+            <div style="max-height: 500px; overflow-y: auto; overflow-x: auto;">
+                <table class="data-table" id="requalificationsTable" style="width: 100%;">
+                    <thead style="position: sticky; top: 0; background: #f8fafc; z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                        <tr>
+                            <th style="cursor: pointer;" onclick="sortTable(0)">
+                                <i class="far fa-calendar"></i> Date
+                                <i class="fas fa-sort" style="margin-left: 4px; color: var(--gray-400); font-size: 10px;"></i>
+                            </th>
+                            <th><i class="fas fa-user"></i> Employé</th>
+                            <th><i class="fas fa-industry"></i> Ligne</th>
+                            <th><i class="fas fa-clipboard-check"></i> Résultat</th>
+                            <th><i class="fas fa-user-check"></i> Évaluateur</th>
+                        </tr>
+                    </thead>
+                    <tbody id="requalificationsBody">
+                        {% for req in recent_requalifications %}
+                        <tr class="requalification-row" 
+                            data-employee="{{ req.employee.first_name|lower }} {{ req.employee.last_name|lower }} {{ req.employee.matricule|default:''|lower }}"
+                            data-line="{{ req.line.code|default:'' }}"
+                            data-result="{{ req.result }}"
+                            data-date="{{ req.requalification_date|date:'Y-m-d' }}">
+                            <td style="font-size: 14px; font-weight: 500;">{{ req.requalification_date|date:"d/m/Y" }}</td>
+                            <td>
+                                <div class="employee-info">
+                                    <div class="avatar" style="width: 32px; height: 32px; font-size: 11px;">
+                                        {{ req.employee.first_name|first }}{{ req.employee.last_name|first }}
+                                    </div>
+                                    <div>
+                                        <div style="font-size: 13px; font-weight: 600;">{{ req.employee.first_name }} {{ req.employee.last_name }}</div>
+                                        <div style="font-size: 11px; color: var(--gray-500);">{{ req.employee.matricule|default:"N/A" }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                {% if req.line %}
+                                <span class="badge badge-gray" style="font-size: 11px;">{{ req.line.code }}</span>
+                                {% else %}—{% endif %}
+                            </td>
+                            <td>
+                                {% if req.result == 'PASS' %}
+                                <span class="badge badge-success"><i class="fas fa-check"></i> Maintien</span>
+                                {% elif req.result == 'UPGRADE' %}
+                                <span class="badge badge-primary"><i class="fas fa-arrow-up"></i> Montée</span>
+                                {% elif req.result == 'DOWNGRADE' %}
+                                <span class="badge badge-danger"><i class="fas fa-arrow-down"></i> Descente</span>
+                                {% elif req.result == 'RETRAIN' %}
+                                <span class="badge badge-warning"><i class="fas fa-redo"></i> À reformer</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span style="font-size: 12px;">
+                                    <i class="fas fa-user-check" style="color: var(--success-color);"></i>
+                                    {{ req.evaluated_by.get_full_name|default:req.evaluated_by.username|default:"—" }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Message quand aucun résultat après filtrage -->
+            <div id="noResultsMessage" style="display: none; padding: 60px 20px; text-align: center;">
+                <i class="fas fa-search" style="font-size: 48px; color: var(--gray-300); margin-bottom: 16px;"></i>
+                <h3 style="color: var(--gray-600); margin-bottom: 8px;">Aucun résultat trouvé</h3>
+                <p style="color: var(--gray-500); font-size: 14px;">Essayez de modifier vos critères de recherche.</p>
+                <button onclick="resetFilters()" 
+                        style="margin-top: 16px; padding: 10px 20px; background: var(--primary-color); color: white; border: none; border-radius: 8px; cursor: pointer;">
+                    <i class="fas fa-undo" style="margin-right: 6px;"></i> Réinitialiser les filtres
+                </button>
+            </div>
+            
+            {% else %}
+            <div class="empty-state">
+                <i class="fas fa-history"></i>
+                <h3>Aucune requalification enregistrée</h3>
+                <p>L'historique des requalifications RH apparaîtra ici.</p>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- ✅ FOOTER AVEC STATISTIQUES -->
+        {% if recent_requalifications %}
+        <div style="padding: 16px 20px; background: var(--gray-50); border-top: 1px solid var(--gray-200);">
+            <div style="display: flex; justify-content: space-around; flex-wrap: wrap; gap: 16px; text-align: center;">
+                <div>
+                    <span style="font-size: 20px; font-weight: 700; color: var(--success-color);" id="statPass">0</span>
+                    <p style="font-size: 11px; color: var(--gray-500); margin: 4px 0 0 0;">Maintien</p>
+                </div>
+                <div style="border-left: 1px solid var(--gray-300); padding-left: 20px;">
+                    <span style="font-size: 20px; font-weight: 700; color: var(--primary-color);" id="statUpgrade">0</span>
+                    <p style="font-size: 11px; color: var(--gray-500); margin: 4px 0 0 0;">Montée</p>
+                </div>
+                <div style="border-left: 1px solid var(--gray-300); padding-left: 20px;">
+                    <span style="font-size: 20px; font-weight: 700; color: var(--danger-color);" id="statDowngrade">0</span>
+                    <p style="font-size: 11px; color: var(--gray-500); margin: 4px 0 0 0;">Descente</p>
+                </div>
+                <div style="border-left: 1px solid var(--gray-300); padding-left: 20px;">
+                    <span style="font-size: 20px; font-weight: 700; color: var(--warning-color);" id="statRetrain">0</span>
+                    <p style="font-size: 11px; color: var(--gray-500); margin: 4px 0 0 0;">À reformer</p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+</div>
+
+<!-- JavaScript pour les onglets -->
+<script>
+function showTab(tabId) {
+    // Masquer tous les contenus
+    document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    
+    // Désactiver tous les boutons
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    // Afficher le contenu sélectionné
+    document.getElementById(tabId).classList.add('active');
+    
+    // Activer le bouton correspondant
+    event.target.closest('.tab-btn').classList.add('active');
+}
+</script>
+
+<style>
+/* Styles pour les onglets */
+.tabs-container {
+    display: flex;
+    gap: 4px;
+    background: var(--gray-100);
+    padding: 4px;
+    border-radius: 10px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+}
+
+.tab-btn {
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: var(--gray-600);
+    background: transparent;
+    border: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.tab-btn:hover {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+.tab-btn.active {
+    background: white;
+    color: var(--accent-color);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.tab-count {
+    background: var(--gray-200);
+    color: var(--gray-700);
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 10px;
+}
+
+.tab-btn.active .tab-count {
+    background: var(--accent-color);
+    color: white;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+</style>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Toggle export menu
+    function toggleExportMenu() {
+        document.getElementById('exportMenu').classList.toggle('active');
+    }
+
+    // Close export menu on outside click
+    document.addEventListener('click', function(e) {
+        const dropdown = document.querySelector('.export-dropdown');
+        if (!dropdown.contains(e.target)) {
+            document.getElementById('exportMenu').classList.remove('active');
+        }
+    });
+
+    // Filter table
+    function filterTable() {
+        const input = document.getElementById('searchTable');
+        const filter = input.value.toLowerCase();
+        const table = document.getElementById('historyTable');
+        const rows = table.getElementsByTagName('tr');
+        let visibleCount = 0;
+
+        for (let i = 1; i < rows.length; i++) {
+            const row = rows[i];
+            const text = row.textContent.toLowerCase();
+
+            if (text.includes(filter)) {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        }
+
+        document.getElementById('visibleCount').textContent = visibleCount;
+    }
+
+    // Export functions
+    function exportTable(format) {
+        if (format === 'excel' || format === 'csv') {
+            // Simple CSV export
+            const table = document.getElementById('historyTable');
+            const rows = table.querySelectorAll('tr');
+            let csv = [];
+
+            rows.forEach(row => {
+                if (row.style.display !== 'none') {
+                    const cols = row.querySelectorAll('td, th');
+                    let rowData = [];
+                    cols.forEach(col => {
+                        let text = col.innerText.replace(/"/g, '""');
+                        rowData.push('"' + text + '"');
+                    });
+                    csv.push(rowData.join(','));
+                }
+            });
+
+            const csvContent = csv.join('\n');
+            const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'historique_requalifications_' + new Date().toISOString().slice(0, 10) + '.csv';
+            link.click();
+        }
+
+        document.getElementById('exportMenu').classList.remove('active');
+    }
+
+    // Fade-in animation
+    const observerOptions = {
+        threshold: 0.05,
+        rootMargin: '0px 0px -50px 0px'
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry, index) => {
+            if (entry.isIntersecting) {
+                setTimeout(() => {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }, index * 50);
+                observer.unobserve(entry.target);
+            }
+        });
+    }, observerOptions);
+
+    document.querySelectorAll('.fade-in').forEach(el => {
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(15px)';
+        el.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+        observer.observe(el);
+    });
+
+function filterRequalifications() {
+    const searchValue = document.getElementById('searchEmployee').value.toLowerCase().trim();
+    const lineValue = document.getElementById('filterLine').value;
+    const resultValue = document.getElementById('filterResult').value;
+    const dateFromValue = document.getElementById('filterDateFrom').value;
+    const dateToValue = document.getElementById('filterDateTo').value;
+    
+    const rows = document.querySelectorAll('.requalification-row');
+    let visibleCount = 0;
+    let stats = { PASS: 0, UPGRADE: 0, DOWNGRADE: 0, RETRAIN: 0 };
+    
+    rows.forEach(row => {
+        const employeeData = row.getAttribute('data-employee');
+        const lineData = row.getAttribute('data-line');
+        const resultData = row.getAttribute('data-result');
+        const dateData = row.getAttribute('data-date');
+        
+        let show = true;
+        
+        // Filtre recherche employé
+        if (searchValue && !employeeData.includes(searchValue)) {
+            show = false;
+        }
+        
+        // Filtre ligne
+        if (lineValue && lineData !== lineValue) {
+            show = false;
+        }
+        
+        // Filtre résultat
+        if (resultValue && resultData !== resultValue) {
+            show = false;
+        }
+        
+        // Filtre date de début
+        if (dateFromValue && dateData < dateFromValue) {
+            show = false;
+        }
+        
+        // Filtre date de fin
+        if (dateToValue && dateData > dateToValue) {
+            show = false;
+        }
+        
+        // Afficher ou masquer la ligne
+        row.style.display = show ? '' : 'none';
+        
+        if (show) {
+            visibleCount++;
+            if (stats.hasOwnProperty(resultData)) {
+                stats[resultData]++;
+            }
+        }
+    });
+    
+    // Mettre à jour le compteur
+    document.getElementById('resultsCount').textContent = visibleCount;
+    document.getElementById('countBadge').textContent = visibleCount;
+    
+    // Afficher/masquer l'indicateur de filtres actifs
+    const hasFilters = searchValue || lineValue || resultValue || dateFromValue || dateToValue;
+    document.getElementById('filterInfo').style.display = hasFilters ? 'inline' : 'none';
+    
+    // Afficher/masquer le message "aucun résultat"
+    const tableContainer = document.querySelector('#requalificationsTable').closest('div');
+    const noResultsMessage = document.getElementById('noResultsMessage');
+    
+    if (visibleCount === 0 && rows.length > 0) {
+        tableContainer.style.display = 'none';
+        noResultsMessage.style.display = 'block';
+    } else {
+        tableContainer.style.display = '';
+        noResultsMessage.style.display = 'none';
+    }
+    
+    // Mettre à jour les statistiques
+    document.getElementById('statPass').textContent = stats.PASS;
+    document.getElementById('statUpgrade').textContent = stats.UPGRADE;
+    document.getElementById('statDowngrade').textContent = stats.DOWNGRADE;
+    document.getElementById('statRetrain').textContent = stats.RETRAIN;
+}
+
+function resetFilters() {
+    document.getElementById('searchEmployee').value = '';
+    document.getElementById('filterLine').value = '';
+    document.getElementById('filterResult').value = '';
+    document.getElementById('filterDateFrom').value = '';
+    document.getElementById('filterDateTo').value = '';
+    filterRequalifications();
+}
+
+function sortTable(columnIndex) {
+    const table = document.getElementById('requalificationsTable');
+    const tbody = document.getElementById('requalificationsBody');
+    const rows = Array.from(tbody.querySelectorAll('tr'));
+    
+    // Déterminer l'ordre de tri
+    const currentOrder = table.getAttribute('data-sort-order') || 'asc';
+    const newOrder = currentOrder === 'asc' ? 'desc' : 'asc';
+    table.setAttribute('data-sort-order', newOrder);
+    
+    rows.sort((a, b) => {
+        let aValue, bValue;
+        
+        if (columnIndex === 0) {
+            // Tri par date
+            aValue = a.getAttribute('data-date');
+            bValue = b.getAttribute('data-date');
+        }
+        
+        if (newOrder === 'asc') {
+            return aValue > bValue ? 1 : -1;
+        } else {
+            return aValue < bValue ? 1 : -1;
+        }
+    });
+    
+    // Réorganiser les lignes
+    rows.forEach(row => tbody.appendChild(row));
+}
+
+// Initialiser les statistiques au chargement
+document.addEventListener('DOMContentLoaded', function() {
+    filterRequalifications();
+});
+</script>
+
+</body>
+</html>

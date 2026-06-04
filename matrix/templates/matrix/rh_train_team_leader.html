@@ -1,0 +1,813 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Former les Chefs d'Équipe | RH</title>
+    <link rel="icon" type="image/png" href="{% static 'images/logo.png' %}">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-navy: #0A1F44;
+            --primary-blue: #1E3A8A;
+            --accent-blue: #2563EB;
+            --purple: #7C3AED;
+            --success-green: #10B981;
+            --warning-amber: #F59E0B;
+            --danger-red: #EF4444;
+            --gray-50: #F9FAFB;
+            --gray-100: #F3F4F6;
+            --gray-200: #E5E7EB;
+            --gray-300: #D1D5DB;
+            --gray-500: #6B7280;
+            --gray-700: #374151;
+            --gray-900: #111827;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #F5F7FA;
+        }
+
+        .corporate-header {
+            background: linear-gradient(135deg, var(--primary-navy) 0%, var(--primary-blue) 100%);
+            border-bottom: 4px solid var(--purple);
+        }
+
+        .section {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            border: 1px solid var(--gray-200);
+            margin-bottom: 24px;
+        }
+
+        .section-header {
+            padding: 20px 28px;
+            border-bottom: 1px solid var(--gray-200);
+            background: var(--gray-50);
+        }
+
+        .section-header.purple {
+            background: linear-gradient(135deg, #F5F3FF 0%, #EDE9FE 100%);
+            border-bottom: 2px solid var(--purple);
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--gray-900);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .section-title i { color: var(--purple); }
+
+        .section-body { padding: 28px; }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-group.full-width { grid-column: 1 / -1; }
+
+        .form-group label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--gray-700);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .form-group label i { color: var(--purple); margin-right: 6px; }
+        .form-group label .required { color: var(--danger-red); }
+
+        .form-select, .form-input, .form-textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid var(--gray-200);
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+
+        .form-select:focus, .form-input:focus, .form-textarea:focus {
+            outline: none;
+            border-color: var(--purple);
+            box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.1);
+        }
+
+        .form-select:disabled {
+            background-color: var(--gray-100);
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--purple) 0%, #A855F7 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(124, 58, 237, 0.35);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: var(--gray-700);
+            border: 2px solid var(--gray-300);
+        }
+
+        .leader-card {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px;
+            background: linear-gradient(135deg, #F5F3FF 0%, #EDE9FE 100%);
+            border: 2px solid #DDD6FE;
+            border-radius: 10px;
+        }
+
+        .leader-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--purple) 0%, #A855F7 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 18px;
+            color: white;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            gap: 4px;
+        }
+
+        .badge-purple { background: var(--purple); color: white; }
+        .badge-line { background: rgba(37, 99, 235, 0.1); color: var(--accent-blue); }
+        .badge-level-i { background: #FEF3C7; color: #92400E; }
+        .badge-level-l { background: #DBEAFE; color: #1E3A8A; }
+        .badge-level-u { background: #D1FAE5; color: #065F46; }
+
+        .data-table { width: 100%; border-collapse: separate; border-spacing: 0; }
+        .data-table thead th {
+            background: var(--gray-50);
+            padding: 14px 18px;
+            text-align: left;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            border-bottom: 2px solid var(--gray-200);
+        }
+        .data-table tbody td {
+            padding: 14px 18px;
+            border-bottom: 1px solid var(--gray-100);
+        }
+        .data-table tbody tr:hover { background: var(--gray-50); }
+
+        .info-box {
+            background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
+            border: 1px solid #93C5FD;
+            border-radius: 10px;
+            padding: 16px 20px;
+            margin-bottom: 24px;
+            display: flex;
+            gap: 12px;
+        }
+
+        .info-box i { color: var(--accent-blue); font-size: 20px; }
+
+        .warning-box {
+            background: linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%);
+            border: 2px solid #FCD34D;
+            border-radius: 10px;
+            padding: 16px 20px;
+            margin-top: 16px;
+        }
+
+        .force-checkbox-container {
+            background: linear-gradient(135deg, #FEF2F2 0%, #FEE2E2 100%);
+            border: 2px solid #FCA5A5;
+            border-radius: 10px;
+            padding: 16px 20px;
+            margin-top: 20px;
+        }
+
+        .force-checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            color: #991B1B;
+        }
+
+        .force-checkbox-label input {
+            width: 20px;
+            height: 20px;
+            accent-color: var(--danger-red);
+        }
+
+        .training-info-panel {
+            background: linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%);
+            border: 2px solid #86EFAC;
+            border-radius: 10px;
+            padding: 16px;
+            margin-top: 16px;
+        }
+
+        .training-info-panel.warning {
+            background: linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%);
+            border-color: #FCD34D;
+        }
+
+        /* ✅ NOUVEAU : Badge auto-sélection */
+        .auto-selected-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.4s ease-out; }
+    </style>
+</head>
+<body>
+
+    <!-- HEADER -->
+    <header class="corporate-header">
+        <div style="max-width: 1400px; margin: 0 auto; padding: 20px 32px; display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <img src="{% static 'images/logo.png' %}" alt="Logo" style="max-width: 140px;">
+                <div style="border-left: 1px solid rgba(255,255,255,0.3); padding-left: 16px;">
+                    <div style="color: white; font-size: 18px; font-weight: 700;">Formation Chefs d'Équipe</div>
+                    <div style="color: rgba(255,255,255,0.7); font-size: 12px;">Réservé au Service RH</div>
+                </div>
+            </div>
+            <a href="{% url 'employee_list_rh' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Retour à la liste
+            </a>
+        </div>
+    </header>
+
+    <!-- MAIN -->
+    <div style="max-width: 1400px; margin: 0 auto; padding: 32px;">
+
+        <!-- Breadcrumb -->
+        <nav style="margin-bottom: 24px; font-size: 14px; color: var(--gray-500);" class="fade-in">
+            <a href="{% url 'rh_dashboard' %}" style="color: var(--accent-blue); text-decoration: none;">
+                <i class="fas fa-home"></i> Accueil
+            </a>
+            <i class="fas fa-chevron-right" style="margin: 0 8px; font-size: 10px;"></i>
+            <span>Former les Chefs d'Équipe</span>
+        </nav>
+
+        <!-- Info Box -->
+        <div class="info-box fade-in">
+            <i class="fas fa-info-circle" style="margin-top: 2px;"></i>
+            <div>
+                <p style="font-weight: 600; color: var(--gray-700); margin-bottom: 4px;">Règles de formation</p>
+                <ul style="color: var(--gray-600); font-size: 14px; margin: 0; padding-left: 20px;">
+                    <li>Le premier niveau doit être <strong>I (En formation)</strong></li>
+                    <li>Passage I → L : minimum <strong>7 jours</strong></li>
+                    <li>Passage L → U : minimum <strong>21 jours</strong></li>
+                    <li>Pas de saut direct I → U</li>
+                    <li>La ligne est <strong>automatiquement sélectionnée</strong> selon le chef d'équipe</li>
+                    <li>Utilisez "Forcer l'enregistrement" uniquement pour les cas exceptionnels</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Messages -->
+        {% if messages %}
+        {% for message in messages %}
+        <div class="fade-in" style="margin-bottom: 20px; padding: 16px 20px; border-radius: 10px; display: flex; align-items: flex-start; gap: 12px;
+            {% if message.tags == 'success' %}background: #D1FAE5; border: 1px solid #6EE7B7; color: #065F46;
+            {% elif message.tags == 'error' %}background: #FEE2E2; border: 1px solid #FCA5A5; color: #991B1B;
+            {% elif message.tags == 'warning' %}background: #FEF3C7; border: 1px solid #FCD34D; color: #92400E;
+            {% else %}background: #DBEAFE; border: 1px solid #93C5FD; color: #1E3A8A;{% endif %}">
+            <i class="fas {% if message.tags == 'success' %}fa-check-circle{% elif message.tags == 'error' %}fa-exclamation-circle{% elif message.tags == 'warning' %}fa-exclamation-triangle{% else %}fa-info-circle{% endif %}" style="margin-top: 3px;"></i>
+            <span style="white-space: pre-line;">{{ message }}</span>
+        </div>
+        {% endfor %}
+        {% endif %}
+
+        <div style="display: grid; grid-template-columns: 1fr 400px; gap: 24px;">
+            
+            <!-- Formulaire -->
+            <div class="section fade-in">
+                <div class="section-header purple">
+                    <h3 class="section-title">
+                        <i class="fas fa-user-graduate"></i>
+                        Enregistrer une Formation
+                    </h3>
+                </div>
+                <div class="section-body">
+                    <form method="post" id="trainingForm">
+                        {% csrf_token %}
+                        
+                        <div class="form-grid">
+                            <!-- Chef d'équipe -->
+                            <div class="form-group">
+                                <label>
+                                    <i class="fas fa-user-tie"></i>
+                                    Chef d'Équipe <span class="required">*</span>
+                                </label>
+                                {{ form.employee }}
+                            </div>
+
+                            <!-- Ligne (auto-sélectionnée) -->
+                            <div class="form-group">
+                                <label>
+                                    <i class="fas fa-industry"></i>
+                                    Ligne de Production <span class="required">*</span>
+                                    <span id="autoSelectBadge" class="auto-selected-badge" style="display: none;">
+                                        <i class="fas fa-magic"></i> Auto-sélectionné
+                                    </span>
+                                </label>
+                                {{ form.line }}
+                                <small style="color: var(--gray-500); font-size: 12px; margin-top: 4px;">
+                                    <i class="fas fa-lightbulb"></i> La ligne est automatiquement sélectionnée selon le chef d'équipe
+                                </small>
+                            </div>
+
+                            <!-- Tâche -->
+                            <div class="form-group">
+                                <label>
+                                    <i class="fas fa-tasks"></i>
+                                    Tâche <span class="required">*</span>
+                                </label>
+                                {{ form.task }}
+                            </div>
+
+                            <!-- Niveau -->
+                            <div class="form-group">
+                                <label>
+                                    <i class="fas fa-layer-group"></i>
+                                    Niveau <span class="required">*</span>
+                                </label>
+                                {{ form.level }}
+                            </div>
+
+                            <!-- Date -->
+                            <div class="form-group">
+                                <label>
+                                    <i class="fas fa-calendar-alt"></i>
+                                    Date de Formation <span class="required">*</span>
+                                </label>
+                                {{ form.date }}
+                            </div>
+
+                            <!-- Notes -->
+                            <div class="form-group full-width">
+                                <label>
+                                    <i class="fas fa-comment"></i>
+                                    Notes (optionnel)
+                                </label>
+                                {{ form.note }}
+                            </div>
+                        </div>
+
+                        <!-- Panel d'information sur la formation actuelle -->
+                        <div id="trainingInfoPanel" class="training-info-panel" style="display: none;">
+                            <div style="font-weight: 600; color: #065F46; margin-bottom: 8px;">
+                                <i class="fas fa-info-circle"></i> État actuel de la formation
+                            </div>
+                            <div id="trainingInfoContent" style="font-size: 14px; color: #047857;"></div>
+                        </div>
+
+                        <!-- Option Forcer -->
+                        <div class="force-checkbox-container">
+                            <label class="force-checkbox-label">
+                                {{ form.force_save }}
+                                <span>
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    <strong>Forcer l'enregistrement</strong> — Ignorer les restrictions de délai
+                                </span>
+                            </label>
+                            <p style="font-size: 12px; color: #B91C1C; margin: 8px 0 0 32px;">
+                                ⚠️ À utiliser uniquement pour les cas exceptionnels (rattrapage, correction, etc.)
+                            </p>
+                        </div>
+
+                        <!-- Erreurs -->
+                        {% if form.errors %}
+                        <div style="margin-top: 20px; padding: 16px; background: #FEE2E2; border: 1px solid #FCA5A5; border-radius: 8px; color: #991B1B;">
+                            <strong><i class="fas fa-exclamation-triangle"></i> Erreurs :</strong>
+                            <ul style="margin: 8px 0 0 20px;">
+                                {% for field in form %}
+                                    {% for error in field.errors %}
+                                    <li>{{ field.label }} : {{ error }}</li>
+                                    {% endfor %}
+                                {% endfor %}
+                                {% for error in form.non_field_errors %}
+                                <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
+
+                        <!-- Actions -->
+                        <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--gray-200);">
+                            <button type="reset" class="btn btn-secondary">
+                                <i class="fas fa-redo"></i> Réinitialiser
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Enregistrer
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Liste des chefs -->
+            <div class="section fade-in">
+                <div class="section-header">
+                    <h3 class="section-title">
+                        <i class="fas fa-users-cog"></i>
+                        Chefs d'Équipe ({{ leaders_data|length }})
+                    </h3>
+                </div>
+                <div class="section-body" style="padding: 16px; max-height: 600px; overflow-y: auto;">
+                    {% for item in leaders_data %}
+                    <div class="leader-card" style="margin-bottom: 12px;">
+                        <div class="leader-avatar">
+                            {{ item.employee.first_name|first }}{{ item.employee.last_name|first }}
+                        </div>
+                        <div style="flex: 1;">
+                            <div style="font-weight: 600; color: var(--gray-900);">
+                                {{ item.employee.first_name }} {{ item.employee.last_name }}
+                            </div>
+                            <div style="font-size: 12px; color: var(--gray-500); margin-top: 2px;">
+                                {{ item.employee.matricule }}
+                            </div>
+                            <div style="margin-top: 6px; display: flex; gap: 4px; flex-wrap: wrap;">
+                                <span class="badge badge-purple">
+                                    <i class="fas fa-star"></i> Chef
+                                </span>
+                                {% for code in item.managed_lines %}
+                                <span class="badge badge-line">{{ code }}</span>
+                                {% endfor %}
+                            </div>
+                            {% if item.last_training %}
+                            <div style="margin-top: 8px; font-size: 11px; color: var(--gray-500);">
+                                Dernière formation: {{ item.last_training.date|date:"d/m/Y" }}
+                                {% if item.last_training.level == 0 %}
+                                <span class="badge badge-level-i" style="font-size: 9px;">I</span>
+                                {% elif item.last_training.level == 1 %}
+                                <span class="badge badge-level-l" style="font-size: 9px;">L</span>
+                                {% elif item.last_training.level == 3 %}
+                                <span class="badge badge-level-u" style="font-size: 9px;">U</span>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-size: 20px; font-weight: 700; color: var(--purple);">
+                                {{ item.training_count }}
+                            </div>
+                            <div style="font-size: 10px; color: var(--gray-500); text-transform: uppercase;">
+                                Formations
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div style="text-align: center; padding: 40px; color: var(--gray-400);">
+                        <i class="fas fa-user-tie" style="font-size: 40px; margin-bottom: 12px;"></i>
+                        <p>Aucun chef d'équipe trouvé</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Historique -->
+        {% if recent_trainings %}
+        <div class="section fade-in">
+            <div class="section-header">
+                <h3 class="section-title">
+                    <i class="fas fa-history"></i>
+                    Formations Récentes des Chefs
+                </h3>
+            </div>
+            <div style="overflow-x: auto;">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Chef d'Équipe</th>
+                            <th>Tâche</th>
+                            <th>Ligne</th>
+                            <th>Niveau</th>
+                            <th>Date</th>
+                            <th>Formateur</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for record in recent_trainings %}
+                        <tr>
+                            <td>
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <div style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, var(--purple) 0%, #A855F7 100%); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 12px;">
+                                        {{ record.employee.first_name|first }}{{ record.employee.last_name|first }}
+                                    </div>
+                                    <div>
+                                        <strong>{{ record.employee.first_name }} {{ record.employee.last_name }}</strong>
+                                        <div style="font-size: 11px; color: var(--gray-500);">{{ record.employee.matricule }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge badge-line">{{ record.task.code }}</span>
+                                {{ record.task.title|truncatewords:5 }}
+                            </td>
+                            <td>
+                                {% for line in record.lines.all %}
+                                <span class="badge badge-line">{{ line.code }}</span>
+                                {% empty %}
+                                <span style="color: var(--gray-400);">—</span>
+                                {% endfor %}
+                            </td>
+                            <td>
+                                {% if record.level == 0 %}
+                                <span class="badge badge-level-i">I - En formation</span>
+                                {% elif record.level == 1 %}
+                                <span class="badge badge-level-l">L - Autonome</span>
+                                {% elif record.level == 3 %}
+                                <span class="badge badge-level-u">U - Formateur</span>
+                                {% endif %}
+                            </td>
+                            <td style="font-family: 'JetBrains Mono', monospace; font-size: 13px;">
+                                {{ record.date|date:"d/m/Y" }}
+                            </td>
+                            <td>
+                                {% if record.trainer %}
+                                <span style="color: var(--purple); font-weight: 600;">
+                                    <i class="fas fa-user-graduate"></i>
+                                    {{ record.trainer.first_name }} {{ record.trainer.last_name }}
+                                </span>
+                                {% else %}
+                                <span style="color: var(--gray-400);">—</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+
+    </div>
+
+    <script>
+        // ═══════════════════════════════════════════════════════════════════
+        // ✅ DONNÉES POUR LE FILTRAGE DYNAMIQUE
+        // ═══════════════════════════════════════════════════════════════════
+        const linesData = {{ lines_data_json|safe }};
+        const leadersLines = {{ leaders_lines_json|safe }};
+        const leadersHistory = {{ leaders_history_json|safe }};
+        const employeeLinesMap = {{ employee_lines_json|safe }};  // ✅ NOUVEAU
+        
+        const lineSelect = document.getElementById('id_line');
+        const taskSelect = document.getElementById('id_task');
+        const employeeSelect = document.getElementById('id_employee');
+        const levelSelect = document.getElementById('id_level');
+        const trainingInfoPanel = document.getElementById('trainingInfoPanel');
+        const trainingInfoContent = document.getElementById('trainingInfoContent');
+        const autoSelectBadge = document.getElementById('autoSelectBadge');
+        
+        // Sauvegarder toutes les options de tâches
+        const allTaskOptions = Array.from(taskSelect.options);
+        
+        // ═══════════════════════════════════════════════════════════════════
+        // ✅ FONCTION : Auto-sélection de la ligne selon le chef d'équipe
+        // ═══════════════════════════════════════════════════════════════════
+        function updateLineFromEmployee() {
+            const employeeId = parseInt(employeeSelect.value);
+            
+            if (!employeeId) {
+                lineSelect.value = '';
+                autoSelectBadge.style.display = 'none';
+                // Réafficher toutes les lignes
+                Array.from(lineSelect.options).forEach(option => {
+                    option.style.display = '';
+                });
+                return;
+            }
+            
+            // Trouver les lignes gérées par ce chef
+            const employeeData = employeeLinesMap.find(e => e.employee_id === employeeId);
+            
+            if (employeeData && employeeData.managed_line_ids.length > 0) {
+                // ✅ Auto-sélectionner la première ligne
+                const firstLineId = employeeData.managed_line_ids[0];
+                lineSelect.value = firstLineId;
+                
+                // Afficher le badge "Auto-sélectionné"
+                autoSelectBadge.style.display = 'inline-block';
+                
+                // Filtrer les options pour n'afficher que les lignes gérées
+                Array.from(lineSelect.options).forEach(option => {
+                    if (option.value === '') {
+                        option.style.display = '';
+                    } else if (employeeData.managed_line_ids.includes(parseInt(option.value))) {
+                        option.style.display = '';
+                    } else {
+                        option.style.display = 'none';
+                    }
+                });
+                
+                // Déclencher le changement pour filtrer les tâches
+                lineSelect.dispatchEvent(new Event('change'));
+            } else {
+                // Aucune ligne trouvée
+                lineSelect.value = '';
+                autoSelectBadge.style.display = 'none';
+                Array.from(lineSelect.options).forEach(option => {
+                    option.style.display = '';
+                });
+            }
+        }
+        
+        // ═══════════════════════════════════════════════════════════════════
+        // FONCTION : Afficher l'info de formation
+        // ═══════════════════════════════════════════════════════════════════
+        function updateTrainingInfo() {
+            const empId = parseInt(employeeSelect.value);
+            const lineId = parseInt(lineSelect.value);
+            const taskId = parseInt(taskSelect.value);
+            const newLevel = parseInt(levelSelect.value);
+            
+            if (!empId || !lineId || !taskId || isNaN(newLevel)) {
+                trainingInfoPanel.style.display = 'none';
+                return;
+            }
+            
+            const history = leadersHistory[empId] || [];
+            
+            // Trouver le dernier enregistrement pour cette tâche et ligne
+            const lastRecord = history.find(r => 
+                r.task_id === taskId && r.line_ids.includes(lineId)
+            );
+            
+            if (!lastRecord) {
+                trainingInfoPanel.className = 'training-info-panel';
+                trainingInfoContent.innerHTML = `
+                    <strong>Première formation</strong> sur cette tâche/ligne.<br>
+                    Le niveau doit être <strong>I (En formation)</strong>.
+                `;
+                trainingInfoPanel.style.display = 'block';
+                return;
+            }
+            
+            const levelLabels = {0: 'I (En formation)', 1: 'L (Autonome)', 3: 'U (Formateur)'};
+            const lastDate = new Date(lastRecord.date);
+            const today = new Date();
+            const daysSince = Math.floor((today - lastDate) / (1000 * 60 * 60 * 24));
+            
+            let message = `
+                <strong>Niveau actuel :</strong> ${levelLabels[lastRecord.level] || lastRecord.level}<br>
+                <strong>Dernière formation :</strong> ${lastDate.toLocaleDateString('fr-FR')}<br>
+                <strong>Jours écoulés :</strong> ${daysSince} jour(s)
+            `;
+            
+            let isWarning = false;
+            
+            // Vérifier les conditions
+            if (lastRecord.level === 0 && newLevel === 1) {
+                if (daysSince < 7) {
+                    message += `<br><br>⚠️ <strong>Attention :</strong> Passage I→L nécessite 7 jours minimum (${daysSince}/7)`;
+                    isWarning = true;
+                } else {
+                    message += `<br><br>✅ Passage I→L autorisé (${daysSince} ≥ 7 jours)`;
+                }
+            } else if (lastRecord.level === 1 && newLevel === 3) {
+                if (daysSince < 21) {
+                    message += `<br><br>⚠️ <strong>Attention :</strong> Passage L→U nécessite 21 jours minimum (${daysSince}/21)`;
+                    isWarning = true;
+                } else {
+                    message += `<br><br>✅ Passage L→U autorisé (${daysSince} ≥ 21 jours)`;
+                }
+            } else if (lastRecord.level === 0 && newLevel === 3) {
+                message += `<br><br>❌ <strong>Interdit :</strong> Impossible de passer directement de I à U`;
+                isWarning = true;
+            } else if (newLevel < lastRecord.level) {
+                message += `<br><br>❌ <strong>Attention :</strong> Rétrogradation de niveau`;
+                isWarning = true;
+            }
+            
+            trainingInfoPanel.className = isWarning ? 'training-info-panel warning' : 'training-info-panel';
+            trainingInfoContent.innerHTML = message;
+            trainingInfoPanel.style.display = 'block';
+        }
+        
+        // ═══════════════════════════════════════════════════════════════════
+        // ✅ EVENT : Quand on sélectionne un chef d'équipe
+        // ═══════════════════════════════════════════════════════════════════
+        if (employeeSelect) {
+            employeeSelect.addEventListener('change', function() {
+                updateLineFromEmployee();
+                updateTrainingInfo();
+            });
+        }
+        
+        // ═══════════════════════════════════════════════════════════════════
+        // EVENT : Quand on change la ligne, filtrer les tâches
+        // ═══════════════════════════════════════════════════════════════════
+        if (lineSelect) {
+            lineSelect.addEventListener('change', function() {
+                const selectedLineId = parseInt(this.value);
+                
+                taskSelect.innerHTML = '<option value="">---------</option>';
+                
+                if (selectedLineId) {
+                    const lineInfo = linesData.find(l => l.id === selectedLineId);
+                    
+                    if (lineInfo && lineInfo.task_ids) {
+                        allTaskOptions.forEach(option => {
+                            if (option.value && lineInfo.task_ids.includes(parseInt(option.value))) {
+                                taskSelect.appendChild(option.cloneNode(true));
+                            }
+                        });
+                    }
+                }
+                
+                updateTrainingInfo();
+            });
+        }
+        
+        // ═══════════════════════════════════════════════════════════════════
+        // EVENT : Quand on change la tâche ou le niveau
+        // ═══════════════════════════════════════════════════════════════════
+        if (taskSelect) taskSelect.addEventListener('change', updateTrainingInfo);
+        if (levelSelect) levelSelect.addEventListener('change', updateTrainingInfo);
+        
+        // ═══════════════════════════════════════════════════════════════════
+        // ✅ INITIALISATION : Si un employé est déjà sélectionné
+        // ═══════════════════════════════════════════════════════════════════
+        document.addEventListener('DOMContentLoaded', function() {
+            if (employeeSelect.value) {
+                updateLineFromEmployee();
+            }
+        });
+        
+        // ═══════════════════════════════════════════════════════════════════
+        // Animation
+        // ═══════════════════════════════════════════════════════════════════
+        document.querySelectorAll('.fade-in').forEach((el, index) => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(10px)';
+            setTimeout(() => {
+                el.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+                el.style.opacity = '1';
+                el.style.transform = 'translateY(0)';
+            }, index * 80);
+        });
+    </script>
+
+</body>
+</html>

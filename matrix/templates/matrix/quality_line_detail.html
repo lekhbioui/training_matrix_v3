@@ -1,0 +1,602 @@
+<!-- matrix/templates/matrix/quality_line_detail.html -->
+{% extends 'matrix/quality_base.html' %}
+{% block title %}{{ line.name }} — Détail{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ══ MATRICE ══════════════════════════════════════════ */
+    .matrix-wrap { overflow-x:auto; border-radius:8px; }
+
+    .matrix-table {
+        border-collapse:separate; border-spacing:0;
+        font-size:.78rem; min-width:100%;
+    }
+
+    /* En-têtes */
+    .matrix-table thead th {
+        position:sticky; top:0; z-index:12;
+        background:#1a237e; color:#fff;
+        font-weight:600; font-size:.68rem;
+        padding:4px 2px; text-align:center;
+        white-space:nowrap;
+        border-right:1px solid rgba(255,255,255,.1);
+    }
+    .matrix-table thead th.th-task {
+        position:sticky; left:0; z-index:20;
+        background:#0d1b6e; text-align:left;
+        padding-left:10px;
+        min-width:200px; max-width:240px;
+    }
+    /* ✅ En-tête I / L / U au-dessus des colonnes */
+    .matrix-table thead th.th-level {
+        font-size:.70rem;
+        min-width:52px; max-width:60px;
+        padding:3px 1px;
+    }
+    .th-level-I { background:#e65100 !important; }
+    .th-level-L { background:#2e7d32 !important; }
+    .th-level-U { background:#1565c0 !important; }
+
+    /* En-têtes employés (ligne du haut) */
+    .matrix-table thead th.th-emp-name {
+        min-width:156px; max-width:180px;
+        height:120px; vertical-align:bottom;
+        padding-bottom:6px;
+    }
+    .th-emp-name .emp-name-wrap {
+        writing-mode:vertical-rl;
+        text-orientation:mixed;
+        transform:rotate(180deg);
+        display:inline-block;
+        font-size:.68rem; line-height:1.2;
+        max-height:100px;
+        overflow:hidden; text-overflow:ellipsis;
+    }
+    .th-emp-name .emp-badge {
+        display:block; margin-top:3px;
+        font-size:.58rem; opacity:.7;
+    }
+    .leader-marker {
+        font-size:.55rem; background:#ff6f00; color:#fff;
+        border-radius:3px; padding:1px 3px;
+        display:block; margin-top:2px;
+    }
+
+    /* Colonnes données */
+    .matrix-table tbody th.td-task {
+        position:sticky; left:0; z-index:8;
+        background:#f8f9fa; font-weight:500;
+        font-size:.76rem; padding:4px 8px;
+        border-right:2px solid #dee2e6;
+        white-space:normal; max-width:240px;
+        border-bottom:1px solid #e9ecef;
+    }
+    .matrix-table tbody td {
+        text-align:center; vertical-align:middle;
+        padding:2px 1px; border:1px solid #e9ecef;
+        min-width:52px; max-width:60px;
+    }
+
+    /* ✅ Cellules niveaux */
+    .cell-I-filled {
+        background:#fff8e1; color:#e65100;
+        font-weight:800; font-size:.78rem;
+    }
+    .cell-L-filled {
+        background:#e8f5e9; color:#1b5e20;
+        font-weight:800; font-size:.78rem;
+    }
+    .cell-U-filled {
+        background:#e3f2fd; color:#0d47a1;
+        font-weight:800; font-size:.78rem;
+    }
+    .cell-empty {
+        background:#fafafa; color:#e0e0e0;
+    }
+    .cell-date {
+        font-size:.55rem; color:#9e9e9e;
+        display:block; line-height:1; margin-top:1px;
+    }
+
+    /* Chef d'équipe */
+    .col-leader {
+        border-left:2px solid #5c6bc0 !important;
+    }
+    .col-leader-first {
+        border-left:3px solid #283593 !important;
+    }
+
+    /* Séparateur entre employés */
+    .emp-separator {
+        border-right:2px solid #bdbdbd !important;
+    }
+
+    /* Groupe */
+    .group-row td {
+        background:#283593!important; color:#fff!important;
+        font-weight:700; font-size:.70rem;
+        text-transform:uppercase; letter-spacing:.6px;
+        padding:5px 10px; text-align:left!important;
+    }
+
+    /* ══ LÉGENDE ══════════════════════════════════════════ */
+    .legend { display:flex; flex-wrap:wrap; gap:.5rem; }
+    .legend-item {
+        display:inline-flex; align-items:center;
+        gap:5px; padding:3px 10px;
+        border-radius:20px; font-size:.76rem; font-weight:600;
+    }
+    .legend-dot { width:12px; height:12px; border-radius:3px; }
+
+    /* ══ KPIs ═════════════════════════════════════════════ */
+    .kpi-box {
+        text-align:center; padding:.75rem; border-radius:10px;
+    }
+    .kpi-box .num { font-size:1.5rem; font-weight:800; line-height:1; }
+    .kpi-box .lbl { font-size:.70rem; color:#757575; margin-top:3px; }
+
+    .completion-ring {
+        width:50px; height:50px; border-radius:50%;
+        display:flex; align-items:center; justify-content:center;
+        font-weight:800; font-size:.82rem; color:#fff;
+    }
+
+    /* Tabs */
+    .nav-tabs .nav-link { font-size:.84rem; font-weight:600; color:#555; }
+    .nav-tabs .nav-link.active { color:#1a237e; border-bottom:2px solid #1a237e; }
+</style>
+{% endblock %}
+
+
+{% block content %}
+
+<!-- ══ BREADCRUMB + TITRE ══════════════════════════════════════════ -->
+<div class="d-flex justify-content-between align-items-start mb-4">
+    <div>
+        <nav aria-label="breadcrumb" class="mb-1">
+            <ol class="breadcrumb mb-0" style="font-size:.8rem;">
+                <li class="breadcrumb-item">
+                    <a href="{% url 'quality_dashboard' %}" class="text-decoration-none">
+                        <i class="fas fa-chart-pie me-1"></i>Dashboard
+                    </a>
+                </li>
+                <li class="breadcrumb-item active">{{ line.name }}</li>
+            </ol>
+        </nav>
+        <h4 class="fw-bold mb-0">
+            <i class="fas fa-industry me-2 text-primary"></i>
+            {{ line.name }}
+            <small class="text-muted fw-normal" style="font-size:.75rem;">
+                {{ line.code }}
+            </small>
+        </h4>
+    </div>
+    <span class="badge bg-info-subtle text-info fs-6 py-2 px-3">
+        <i class="fas fa-eye me-1"></i>Lecture seule
+    </span>
+</div>
+
+<!-- ══ KPIs ═══════════════════════════════════════════════════════ -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-2">
+        <div class="kpi-box" style="background:#e8eaf6;">
+            <div class="num text-primary">{{ stats.total_employees }}</div>
+            <div class="lbl">Total</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-2">
+        <div class="kpi-box" style="background:#f3e5f5;">
+            <div class="num" style="color:#6a1b9a;">{{ stats.total_operators }}</div>
+            <div class="lbl">Opérateurs</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-2">
+        <div class="kpi-box" style="background:#e3f2fd;">
+            <div class="num text-primary">{{ stats.total_leaders }}</div>
+            <div class="lbl">Chefs</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-2">
+        <div class="kpi-box" style="background:#e8f5e9;">
+            <div class="num text-success">{{ stats.total_tasks }}</div>
+            <div class="lbl">Tâches</div>
+        </div>
+    </div>
+    <div class="col-12 col-md-4">
+        <div class="card border-0 h-100" style="background:#fff8e1;">
+            <div class="card-body d-flex align-items-center gap-3 py-2">
+                <div class="completion-ring"
+                     style="background:{% if stats.completion_rate >= 70 %}#2e7d32{% elif stats.completion_rate >= 40 %}#f57f17{% else %}#c62828{% endif %};">
+                    {{ stats.completion_rate }}%
+                </div>
+                <div>
+                    <div class="fw-bold" style="font-size:.88rem;">Taux de Complétion</div>
+                    <div class="progress mt-1" style="height:6px; width:140px;">
+                        <div class="progress-bar
+                            {% if stats.completion_rate >= 70 %}bg-success
+                            {% elif stats.completion_rate >= 40 %}bg-warning
+                            {% else %}bg-danger{% endif %}"
+                             style="width:{{ stats.completion_rate }}%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══ LÉGENDE ════════════════════════════════════════════════════ -->
+<div class="legend mb-3">
+    <div class="legend-item" style="background:#fff8e1; color:#e65100;">
+        <div class="legend-dot" style="background:#ff9800;"></div>I — En formation
+    </div>
+    <div class="legend-item" style="background:#e8f5e9; color:#1b5e20;">
+        <div class="legend-dot" style="background:#4caf50;"></div>L — Approuvé
+    </div>
+    <div class="legend-item" style="background:#e3f2fd; color:#0d47a1;">
+        <div class="legend-dot" style="background:#2196f3;"></div>U — Formateur
+    </div>
+    <div class="legend-item" style="background:#e8eaf6; color:#283593;">
+        <div class="legend-dot" style="background:#5c6bc0;"></div>Chef d'équipe
+    </div>
+    <div class="legend-item bg-light text-muted">
+        <div class="legend-dot" style="background:#e0e0e0;"></div>Non formé
+    </div>
+</div>
+
+<!-- ══ ONGLETS ════════════════════════════════════════════════════ -->
+<ul class="nav nav-tabs mb-0">
+    <li class="nav-item">
+        <button class="nav-link active" data-bs-toggle="tab"
+                data-bs-target="#tab-global" type="button">
+            <i class="fas fa-globe me-1"></i>Vue Globale
+            <span class="badge bg-secondary rounded-pill ms-1">{{ employees|length }}</span>
+        </button>
+    </li>
+    {% for item in matrices_by_leader %}
+    <li class="nav-item">
+        <button class="nav-link" data-bs-toggle="tab"
+                data-bs-target="#tab-leader-{{ item.leader.id }}" type="button">
+            <i class="fas fa-user-tie me-1"></i>{{ item.leader_name }}
+            <span class="badge bg-primary rounded-pill ms-1">{{ item.operator_count }}</span>
+        </button>
+    </li>
+    {% endfor %}
+</ul>
+
+<!-- ══ CONTENU ONGLETS ════════════════════════════════════════════ -->
+<div class="tab-content">
+
+    <!-- ────────────────────────────────────────────────────────
+         VUE GLOBALE
+    ──────────────────────────────────────────────────────────── -->
+    <div class="tab-pane fade show active" id="tab-global">
+        <div class="card border-0 shadow-sm border-top-0 rounded-top-0">
+            <div class="card-body p-0">
+                {% if employees %}
+                <div class="matrix-wrap" style="max-height:75vh; overflow:auto;">
+                    <table class="matrix-table table table-bordered mb-0">
+
+                        <!-- ✅ DOUBLE EN-TÊTE : Nom + I/L/U -->
+                        <thead>
+                            <!-- Ligne 1 : Noms des employés (colspan=3) -->
+                            <tr>
+                                <th class="th-task" rowspan="2"
+                                    style="vertical-align:bottom;">
+                                    <i class="fas fa-tasks me-1 opacity-75"></i>Tâche
+                                </th>
+                                {% for emp in employees %}
+                                <th class="th-emp-name" colspan="3"
+                                    style="border-right:2px solid rgba(255,255,255,.3);
+                                    {% for lid, lemp in team_leader_employees.items %}
+                                        {% if lemp.id == emp.id %}background:#283593;{% endif %}
+                                    {% endfor %}">
+                                    <span class="emp-name-wrap"
+                                          title="{{ emp.last_name }} {{ emp.first_name }} ({{ emp.matricule }})">
+                                        {{ emp.last_name }} {{ emp.first_name|first }}.
+                                    </span>
+                                    {% for lid, lemp in team_leader_employees.items %}
+                                        {% if lemp.id == emp.id %}
+                                        <span class="leader-marker">Chef</span>
+                                        {% endif %}
+                                    {% endfor %}
+                                    <span class="emp-badge">{{ emp.matricule }}</span>
+                                </th>
+                                {% endfor %}
+                            </tr>
+
+                            <!-- Ligne 2 : I / L / U pour chaque employé -->
+                            <tr>
+                                {% for emp in employees %}
+                                <th class="th-level th-level-I">I</th>
+                                <th class="th-level th-level-L">L</th>
+                                <th class="th-level th-level-U"
+                                    style="border-right:2px solid rgba(255,255,255,.3);">U</th>
+                                {% endfor %}
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                        {% for row in global_matrix_rows %}
+
+                            <!-- Séparateur de groupe -->
+                            {% if row.group_changed and row.group_title %}
+                            <tr class="group-row">
+                                <td colspan="{{ employees|length|add:employees|length|add:employees|length|add:1 }}">
+                                    <i class="fas fa-layer-group me-1"></i>
+                                    {{ row.group_title }}
+                                </td>
+                            </tr>
+                            {% endif %}
+
+                            <tr>
+                                <!-- Tâche -->
+                                <th class="td-task">
+                                    <span class="text-muted me-1" style="font-size:.68rem;">
+                                        {{ row.task.task_number }}
+                                    </span>
+                                    {{ row.task.title|truncatechars:36 }}
+                                </th>
+
+                                <!-- ✅ 3 colonnes par employé : I / L / U -->
+                                {% for cell in row.cells %}
+
+                                    <!-- Colonne I -->
+                                    <td class="{% if cell.has_I %}cell-I-filled{% else %}cell-empty{% endif %}
+                                               {% if cell.is_team_leader %}col-leader-first{% endif %}">
+                                        {% if cell.has_I %}
+                                            I
+                                            <span class="cell-date">{{ cell.date_I }}</span>
+                                        {% else %}
+                                            —
+                                        {% endif %}
+                                    </td>
+
+                                    <!-- Colonne L -->
+                                    <td class="{% if cell.has_L %}cell-L-filled{% else %}cell-empty{% endif %}
+                                               {% if cell.is_team_leader %}col-leader{% endif %}">
+                                        {% if cell.has_L %}
+                                            L
+                                            <span class="cell-date">{{ cell.date_L }}</span>
+                                        {% else %}
+                                            —
+                                        {% endif %}
+                                    </td>
+
+                                    <!-- Colonne U -->
+                                    <td class="{% if cell.has_U %}cell-U-filled{% else %}cell-empty{% endif %}
+                                               {% if cell.is_team_leader %}col-leader{% endif %}
+                                               emp-separator">
+                                        {% if cell.has_U %}
+                                            U
+                                            <span class="cell-date">{{ cell.date_U }}</span>
+                                        {% else %}
+                                            —
+                                        {% endif %}
+                                    </td>
+
+                                {% endfor %}
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center text-muted py-5">
+                    <i class="fas fa-table fa-3x d-block mb-2 opacity-25"></i>
+                    Aucun employé sur cette ligne
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- ────────────────────────────────────────────────────────
+         ONGLETS PAR CHEF D'ÉQUIPE
+    ──────────────────────────────────────────────────────────── -->
+    {% for item in matrices_by_leader %}
+    <div class="tab-pane fade" id="tab-leader-{{ item.leader.id }}">
+        <div class="card border-0 shadow-sm border-top-0 rounded-top-0">
+
+            <!-- Info chef -->
+            <div class="card-header border-0 py-3" style="background:#e8eaf6;">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="rounded-circle bg-primary text-white
+                                    d-flex align-items-center justify-content-center"
+                             style="width:46px;height:46px;font-size:1rem;font-weight:700;">
+                            {{ item.leader.first_name|first|upper }}{{ item.leader.last_name|first|upper }}
+                        </div>
+                        <div>
+                            <div class="fw-bold">{{ item.leader_name }}</div>
+                            <small class="text-muted">
+                                <i class="fas fa-at me-1"></i>{{ item.leader.username }}
+                            </small>
+                        </div>
+                    </div>
+                    <div class="d-flex gap-3 flex-wrap">
+                        <div class="text-center">
+                            <div class="fw-bold fs-5">{{ item.operator_count }}</div>
+                            <div class="text-muted" style="font-size:.7rem;">Opérateurs</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="fw-bold fs-5">{{ tasks|length }}</div>
+                            <div class="text-muted" style="font-size:.7rem;">Tâches</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="completion-ring"
+                                 style="width:42px;height:42px;font-size:.75rem;
+                                 background:{% if item.completion_rate >= 70 %}#2e7d32{% elif item.completion_rate >= 40 %}#f57f17{% else %}#c62828{% endif %};">
+                                {{ item.completion_rate }}%
+                            </div>
+                            <div class="text-muted" style="font-size:.7rem;">Complétion</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Matrice du chef -->
+            <div class="card-body p-0">
+                {% if item.employees %}
+                <div class="matrix-wrap" style="max-height:70vh; overflow:auto;">
+                    <table class="matrix-table table table-bordered mb-0">
+
+                        <thead>
+                            <!-- Ligne 1 : Noms -->
+                            <tr>
+                                <th class="th-task" rowspan="2"
+                                    style="vertical-align:bottom;">
+                                    <i class="fas fa-tasks me-1 opacity-75"></i>Tâche
+                                </th>
+                                {% for emp in item.employees %}
+                                <th class="th-emp-name" colspan="3"
+                                    style="border-right:2px solid rgba(255,255,255,.3);
+                                    {% if item.leader_employee and emp.id == item.leader_employee.id %}
+                                    background:#283593;{% endif %}">
+                                    <span class="emp-name-wrap"
+                                          title="{{ emp.last_name }} {{ emp.first_name }} ({{ emp.matricule }})">
+                                        {{ emp.last_name }} {{ emp.first_name|first }}.
+                                    </span>
+                                    {% if item.leader_employee and emp.id == item.leader_employee.id %}
+                                    <span class="leader-marker">Chef</span>
+                                    {% endif %}
+                                    <span class="emp-badge">{{ emp.matricule }}</span>
+                                </th>
+                                {% endfor %}
+                            </tr>
+
+                            <!-- Ligne 2 : I / L / U -->
+                            <tr>
+                                {% for emp in item.employees %}
+                                <th class="th-level th-level-I">I</th>
+                                <th class="th-level th-level-L">L</th>
+                                <th class="th-level th-level-U"
+                                    style="border-right:2px solid rgba(255,255,255,.3);">U</th>
+                                {% endfor %}
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                        {% for row in item.matrix_rows %}
+
+                            {% if row.group_changed and row.group_title %}
+                            <tr class="group-row">
+                                <td colspan="{{ item.employees|length|add:item.employees|length|add:item.employees|length|add:1 }}">
+                                    <i class="fas fa-layer-group me-1"></i>
+                                    {{ row.group_title }}
+                                </td>
+                            </tr>
+                            {% endif %}
+
+                            <tr>
+                                <th class="td-task">
+                                    <span class="text-muted me-1" style="font-size:.68rem;">
+                                        {{ row.task.task_number }}
+                                    </span>
+                                    {{ row.task.title|truncatechars:36 }}
+                                </th>
+
+                                {% for cell in row.cells %}
+                                    <td class="{% if cell.has_I %}cell-I-filled{% else %}cell-empty{% endif %}
+                                               {% if cell.is_team_leader %}col-leader-first{% endif %}">
+                                        {% if cell.has_I %}
+                                            I<span class="cell-date">{{ cell.date_I }}</span>
+                                        {% else %}—{% endif %}
+                                    </td>
+
+                                    <td class="{% if cell.has_L %}cell-L-filled{% else %}cell-empty{% endif %}
+                                               {% if cell.is_team_leader %}col-leader{% endif %}">
+                                        {% if cell.has_L %}
+                                            L<span class="cell-date">{{ cell.date_L }}</span>
+                                        {% else %}—{% endif %}
+                                    </td>
+
+                                    <td class="{% if cell.has_U %}cell-U-filled{% else %}cell-empty{% endif %}
+                                               {% if cell.is_team_leader %}col-leader{% endif %}
+                                               emp-separator">
+                                        {% if cell.has_U %}
+                                            U<span class="cell-date">{{ cell.date_U }}</span>
+                                        {% else %}—{% endif %}
+                                    </td>
+                                {% endfor %}
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center text-muted py-4">
+                    <i class="fas fa-users-slash fa-2x d-block mb-2 opacity-25"></i>
+                    Aucun opérateur
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+
+</div>
+
+<!-- ══ RÉSUMÉ PAR CHEF ════════════════════════════════════════════ -->
+{% if matrices_by_leader %}
+<div class="card border-0 shadow-sm mt-4">
+    <div class="card-header bg-white border-0 fw-semibold">
+        <i class="fas fa-chart-bar me-2 text-primary"></i>
+        Résumé par Chef d'Équipe
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Chef d'équipe</th>
+                    <th class="text-center">Opérateurs</th>
+                    <th class="text-center">Tâches</th>
+                    <th class="text-center">Complétion</th>
+                    <th style="width:200px;">Progression</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for item in matrices_by_leader %}
+            <tr>
+                <td>
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="rounded-circle bg-primary text-white
+                                    d-flex align-items-center justify-content-center"
+                             style="width:32px;height:32px;font-size:.75rem;font-weight:700;">
+                            {{ item.leader.first_name|first|upper }}{{ item.leader.last_name|first|upper }}
+                        </div>
+                        <div>
+                            <div class="fw-semibold" style="font-size:.88rem;">{{ item.leader_name }}</div>
+                            <div class="text-muted" style="font-size:.72rem;">{{ item.leader.username }}</div>
+                        </div>
+                    </div>
+                </td>
+                <td class="text-center">
+                    <span class="badge bg-secondary rounded-pill">{{ item.operator_count }}</span>
+                </td>
+                <td class="text-center">
+                    <span class="badge bg-light text-dark border">{{ tasks|length }}</span>
+                </td>
+                <td class="text-center fw-bold
+                    {% if item.completion_rate >= 70 %}text-success
+                    {% elif item.completion_rate >= 40 %}text-warning
+                    {% else %}text-danger{% endif %}">
+                    {{ item.completion_rate }}%
+                </td>
+                <td>
+                    <div class="progress" style="height:10px;">
+                        <div class="progress-bar
+                            {% if item.completion_rate >= 70 %}bg-success
+                            {% elif item.completion_rate >= 40 %}bg-warning
+                            {% else %}bg-danger{% endif %}"
+                             style="width:{{ item.completion_rate }}%"></div>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}

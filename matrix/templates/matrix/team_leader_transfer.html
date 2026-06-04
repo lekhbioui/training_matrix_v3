@@ -1,0 +1,1007 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demande de Transfert - Training Matrix System</title>
+    <link rel="icon" type="image/png" href="{% static 'images/logo.png' %}">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+
+        :root {
+            --primary-color: #1e40af;
+            --secondary-color: #64748b;
+            --success-color: #16a34a;
+            --danger-color: #dc2626;
+            --warning-color: #ea580c;
+            --info-color: #0284c7;
+            --background: #f8fafc;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --border-color: #e2e8f0;
+        }
+
+        body {
+            background-color: var(--background);
+            color: var(--text-primary);
+        }
+
+        .form-container {
+            background: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--border-color);
+        }
+
+        .form-field {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-field label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .form-field label.required::after {
+            content: "*";
+            color: var(--danger-color);
+            margin-left: 0.25rem;
+            font-weight: 400;
+        }
+
+        .form-field input[type="text"],
+        .form-field input[type="email"],
+        .form-field input[type="number"],
+        .form-field input[type="date"],
+        .form-field select,
+        .form-field textarea {
+            width: 100%;
+            padding: 0.625rem 0.875rem;
+            border: 1px solid var(--border-color);
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            color: var(--text-primary);
+            background-color: white;
+            transition: all 0.15s ease;
+        }
+
+        .form-field input:focus,
+        .form-field select:focus,
+        .form-field textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+        }
+
+        .form-field select {
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.75rem center;
+            background-size: 1rem;
+            padding-right: 2.5rem;
+            cursor: pointer;
+        }
+
+        .form-field select:disabled {
+            background-color: #f1f5f9;
+            color: var(--text-secondary);
+            cursor: not-allowed;
+        }
+
+        .form-field .helptext {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-top: 0.375rem;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .form-field .helptext i {
+            color: var(--info-color);
+            font-size: 0.625rem;
+        }
+
+        .btn {
+            padding: 0.625rem 1.5rem;
+            font-weight: 500;
+            font-size: 0.875rem;
+            border-radius: 0.375rem;
+            transition: all 0.15s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            border: 1px solid transparent;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background-color: #1e3a8a;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-secondary {
+            background-color: white;
+            color: var(--text-secondary);
+            border-color: var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background-color: #f8fafc;
+            border-color: var(--text-secondary);
+            color: var(--text-primary);
+        }
+
+        .btn-success {
+            background-color: var(--success-color);
+            color: white;
+            border-color: var(--success-color);
+        }
+
+        .btn-success:hover:not(:disabled) {
+            background-color: #15803d;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-divider {
+            border-top: 1px solid var(--border-color);
+            margin: 2rem 0;
+            position: relative;
+        }
+
+        .form-divider-text {
+            position: absolute;
+            top: -0.75rem;
+            left: 1rem;
+            background: white;
+            padding: 0 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .required-note {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .required-note span {
+            color: var(--danger-color);
+        }
+
+        .step-indicator {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 1.5rem;
+            height: 1.5rem;
+            border-radius: 50%;
+            background-color: var(--primary-color);
+            color: white;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-right: 0.5rem;
+        }
+
+        .employee-info-card {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            border: 1px solid #bae6fd;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .employee-info-card.hidden { display: none; }
+
+        /* Chef d'équipe info card */
+        .chef-info-card {
+            background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+            border: 1px solid #fcd34d;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-top: 0.75rem;
+        }
+
+        .chef-info-card.hidden { display: none; }
+
+        /* Transfer visualization */
+        .transfer-visual {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            padding: 1.5rem;
+            background: #fafafa;
+            border-radius: 0.5rem;
+            margin: 1.5rem 0;
+        }
+
+        .transfer-visual.hidden { display: none; }
+
+        .line-box {
+            padding: 0.75rem 1.25rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            font-size: 0.875rem;
+            text-align: center;
+            min-width: 140px;
+        }
+
+        .line-box.from {
+            background: #fee2e2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+        }
+
+        .line-box.to {
+            background: #dcfce7;
+            color: #16a34a;
+            border: 1px solid #bbf7d0;
+        }
+
+        .transfer-arrow {
+            color: var(--text-secondary);
+            font-size: 1.5rem;
+        }
+
+        /* Requests table */
+        .requests-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .requests-table th {
+            text-align: left;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 0.75rem 1rem;
+            background: #f8fafc;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .requests-table td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.875rem;
+            vertical-align: middle;
+        }
+
+        .requests-table tbody tr:hover { background: #f8fafc; }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.375rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .status-badge.pending  { background: #fef3c7; color: #b45309; }
+        .status-badge.approved { background: #dcfce7; color: #16a34a; }
+        .status-badge.rejected { background: #fee2e2; color: #dc2626; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navigation -->
+    <nav class="bg-white border-b border-gray-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center gap-3">
+                    <a href="{% url 'matrix_view' %}" class="flex items-center gap-2">
+                        <img src="{% static 'images/logo.png' %}" alt="Logo" class="h-8 w-auto">
+                        <span class="text-xl font-semibold text-gray-900">
+                            Système de gestion des formations
+                        </span>
+                    </a>
+                </div>
+                <div class="flex items-center gap-6">
+                    <a href="{% url 'matrix_view' %}"
+                       class="text-sm text-gray-600 hover:text-gray-900 flex items-center gap-2">
+                        <i class="fas fa-th-large"></i> Matrice
+                    </a>
+                    <span class="text-sm text-gray-600">
+                        <i class="fas fa-user-circle mr-2 text-gray-400"></i>
+                        {{ request.user.first_name }} {{ request.user.last_name }}
+                    </span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Messages -->
+    {% if messages %}
+    <div class="max-w-3xl mx-auto px-4 mt-4">
+        {% for message in messages %}
+        <div class="{% if message.tags == 'success' %}bg-green-50 border-green-200 text-green-800
+                     {% elif message.tags == 'error' %}bg-red-50 border-red-200 text-red-800
+                     {% elif message.tags == 'warning' %}bg-yellow-50 border-yellow-200 text-yellow-800
+                     {% else %}bg-blue-50 border-blue-200 text-blue-800{% endif %}
+                     border rounded-lg p-4 mb-4 flex items-start gap-3 animate-fade-in">
+            <i class="fas {% if message.tags == 'success' %}fa-check-circle text-green-500
+                          {% elif message.tags == 'error' %}fa-exclamation-circle text-red-500
+                          {% elif message.tags == 'warning' %}fa-exclamation-triangle text-yellow-500
+                          {% else %}fa-info-circle text-blue-500{% endif %} mt-0.5"></i>
+            <div class="flex-1">
+                <p class="text-sm whitespace-pre-line">{{ message }}</p>
+            </div>
+            <button onclick="this.parentElement.remove()" class="text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Main Content -->
+    <div class="min-h-screen py-8 px-4">
+        <div class="max-w-3xl mx-auto">
+
+            <!-- Breadcrumb -->
+            <nav class="flex mb-6" aria-label="Breadcrumb">
+                <ol class="inline-flex items-center space-x-1 text-sm">
+                    <li>
+                        <a href="{% url 'matrix_view' %}" class="text-gray-500 hover:text-gray-700">
+                            <i class="fas fa-home"></i>
+                        </a>
+                    </li>
+                    <li>
+                        <span class="mx-2 text-gray-400">/</span>
+                        <span class="text-gray-700">Demande de Transfert</span>
+                    </li>
+                </ol>
+            </nav>
+
+            <!-- Main Form Card -->
+            <div class="form-container animate-fade-in">
+
+                <!-- Header -->
+                <div class="px-6 py-5 border-b border-gray-200">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+                            <i class="fas fa-people-arrows text-blue-600 text-lg"></i>
+                        </div>
+                        <div>
+                            <h1 class="text-xl font-semibold text-gray-900">
+                                Demande de Transfert d'Opérateur
+                            </h1>
+                            <p class="mt-1 text-sm text-gray-600">
+                                Transférez un opérateur vers un autre chef d'équipe.
+                                La demande sera validée par le service RH.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Body -->
+                <form method="post"
+                      action="{% url 'team_leader_transfer' %}"
+                      class="px-6 py-6"
+                      id="transferForm">
+                    {% csrf_token %}
+
+                    <div class="required-note">
+                        <span>*</span> Champs obligatoires
+                    </div>
+
+                    <!-- ══════════════════════════════════════
+                         ÉTAPE 1 : Sélection de l'opérateur
+                    ══════════════════════════════════════ -->
+                    <div class="mb-6">
+                        <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-4 flex items-center">
+                            <span class="step-indicator">1</span>
+                            Sélection de l'opérateur
+                        </h3>
+
+                        <div class="form-field">
+                            <label for="employeeSelect" class="required">
+                                Opérateur à transférer
+                            </label>
+                            <select name="employee_id" id="employeeSelect" required>
+                                <option value="">-- Sélectionnez un opérateur --</option>
+                                {% for emp in my_employees %}
+                                <option value="{{ emp.id }}"
+                                        data-name="{{ emp.first_name }} {{ emp.last_name }}"
+                                        data-matricule="{{ emp.matricule }}"
+                                        data-line="{{ emp.line.name|default:'Non assigné' }}"
+                                        data-line-id="{{ emp.line.id|default:'' }}"
+                                        data-line-code="{{ emp.line.code|default:'—' }}">
+                                    {{ emp.last_name }} {{ emp.first_name }}
+                                    ({{ emp.matricule }})
+                                    — {{ emp.line.code|default:'—' }}
+                                </option>
+                                {% empty %}
+                                <option value="" disabled>Aucun opérateur disponible</option>
+                                {% endfor %}
+                            </select>
+                            <p class="helptext">
+                                <i class="fas fa-info-circle"></i>
+                                Sélectionnez l'opérateur que vous souhaitez transférer
+                            </p>
+                        </div>
+
+                        <!-- Employee Info Card -->
+                        <div class="employee-info-card hidden" id="employeeInfoCard">
+                            <div class="flex items-center gap-3">
+                                <div class="w-12 h-12 rounded-full bg-blue-600
+                                            flex items-center justify-center
+                                            text-white font-semibold text-lg"
+                                     id="employeeAvatar">--</div>
+                                <div>
+                                    <p class="font-semibold text-gray-900" id="employeeName">-</p>
+                                    <p class="text-sm text-gray-600">
+                                        <i class="fas fa-id-badge mr-1"></i>
+                                        <span id="employeeMatricule">-</span>
+                                        <span class="mx-2">•</span>
+                                        <i class="fas fa-industry mr-1"></i>
+                                        Ligne actuelle :
+                                        <strong id="employeeLine">-</strong>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Divider -->
+                    <div class="form-divider">
+                        <span class="form-divider-text">Destination</span>
+                    </div>
+
+                    <!-- ══════════════════════════════════════
+                         ÉTAPE 2 : Chef d'équipe destinataire
+                    ══════════════════════════════════════ -->
+                    <div class="mb-6">
+                        <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-4 flex items-center">
+                            <span class="step-indicator">2</span>
+                            Chef d'équipe destinataire
+                        </h3>
+
+                        <div class="form-field">
+                            <label for="chefSelect" class="required">
+                                Transférer vers le chef d'équipe
+                            </label>
+                            <select name="target_chef_id" id="chefSelect" required disabled>
+                                <option value="">-- Sélectionnez d'abord un opérateur --</option>
+                            </select>
+                            <p class="helptext">
+                                <i class="fas fa-info-circle"></i>
+                                Choisissez le chef d'équipe qui prendra en charge cet opérateur
+                            </p>
+                        </div>
+
+                        <!-- Chef Info Card -->
+                        <div class="chef-info-card hidden" id="chefInfoCard">
+                            <div class="flex items-start gap-2">
+                                <i class="fas fa-crown text-amber-600 mt-0.5"></i>
+                                <div>
+                                    <p class="font-medium text-amber-800 text-sm"
+                                       id="chefInfoName">-</p>
+                                    <p class="text-xs text-amber-700 mt-0.5"
+                                       id="chefInfoLines">-</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ══════════════════════════════════════
+                         ÉTAPE 3 : Ligne de destination
+                         (affiché si le chef gère plusieurs lignes)
+                    ══════════════════════════════════════ -->
+                    <div class="mb-6" id="lineSection">
+                        <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-4 flex items-center">
+                            <span class="step-indicator">3</span>
+                            Ligne de destination
+                        </h3>
+
+                        <div class="form-field">
+                            <label for="lineSelect" class="required">
+                                Ligne de production
+                            </label>
+                            <select name="target_line_id" id="lineSelect" required disabled>
+                                <option value="">-- Sélectionnez d'abord un chef --</option>
+                            </select>
+                            <p class="helptext" id="lineHelp">
+                                <i class="fas fa-info-circle"></i>
+                                Choisissez la ligne de destination
+                            </p>
+                        </div>
+
+                        <!-- Transfer Visualization -->
+                        <div class="transfer-visual hidden" id="transferVisual">
+                            <div class="line-box from">
+                                <div class="text-xs opacity-75 mb-1">
+                                    <i class="fas fa-sign-out-alt"></i> Départ
+                                </div>
+                                <div id="fromLineVisual">-</div>
+                            </div>
+                            <div class="transfer-arrow">
+                                <i class="fas fa-arrow-right"></i>
+                            </div>
+                            <div class="line-box to">
+                                <div class="text-xs opacity-75 mb-1">
+                                    <i class="fas fa-sign-in-alt"></i> Destination
+                                </div>
+                                <div id="toLineVisual">-</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Divider -->
+                    <div class="form-divider">
+                        <span class="form-divider-text">Justification</span>
+                    </div>
+
+                    <!-- ══════════════════════════════════════
+                         ÉTAPE 4 : Raison du transfert
+                    ══════════════════════════════════════ -->
+                    <div class="mb-6">
+                        <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-4 flex items-center">
+                            <span class="step-indicator">4</span>
+                            Raison du transfert
+                        </h3>
+
+                        <div class="form-field">
+                            <label for="reason">Motif du transfert</label>
+                            <textarea name="reason"
+                                      id="reason"
+                                      rows="4"
+                                      placeholder="Expliquez pourquoi cet opérateur doit être transféré..."
+                                      class="resize-none"></textarea>
+                            <p class="helptext">
+                                <i class="fas fa-info-circle"></i>
+                                Fournir une raison détaillée facilite l'approbation par RH
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="flex items-center justify-between pt-6 mt-6 border-t border-gray-200">
+                        <a href="{% url 'matrix_view' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i>
+                            Annuler
+                        </a>
+                        <button type="submit"
+                                class="btn btn-success"
+                                id="submitBtn"
+                                disabled>
+                            <i class="fas fa-paper-plane"></i>
+                            Soumettre la demande
+                        </button>
+                    </div>
+
+                </form>
+            </div>
+
+            <!-- ══════════════════════════════════════
+                 DEMANDES EN ATTENTE
+            ══════════════════════════════════════ -->
+            {% if pending_requests %}
+            <div class="form-container mt-6 animate-fade-in">
+                <div class="px-6 py-4 border-b border-gray-200 bg-amber-50">
+                    <h2 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                        <i class="fas fa-hourglass-half text-amber-600"></i>
+                        Mes demandes en attente ({{ pending_requests.count }})
+                    </h2>
+                    <p class="text-sm text-gray-600 mt-1">
+                        En cours de validation par le service RH
+                    </p>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="requests-table">
+                        <thead>
+                            <tr>
+                                <th>Opérateur</th>
+                                <th>Transfert</th>
+                                <th>Chef destinataire</th>
+                                <th>Date</th>
+                                <th>Statut</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for req in pending_requests %}
+                            <tr>
+                                <td>
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-8 h-8 rounded-full bg-gray-200
+                                                    flex items-center justify-center
+                                                    text-gray-600 font-medium text-xs">
+                                            {{ req.employee.first_name|first }}{{ req.employee.last_name|first }}
+                                        </div>
+                                        <div>
+                                            <p class="font-medium text-gray-900">
+                                                {{ req.employee.first_name }}
+                                                {{ req.employee.last_name }}
+                                            </p>
+                                            <p class="text-xs text-gray-500">
+                                                {{ req.employee.matricule }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-sm text-red-600 font-medium">
+                                            {{ req.from_line.code|default:"—" }}
+                                        </span>
+                                        <i class="fas fa-arrow-right text-gray-400 text-xs"></i>
+                                        <span class="text-sm text-green-600 font-medium">
+                                            {{ req.to_line.code }}
+                                        </span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="flex items-center gap-2">
+                                        <i class="fas fa-crown text-amber-400 text-xs"></i>
+                                        <span class="text-sm text-gray-700">
+                                            {% if req.new_manager %}
+                                                {{ req.new_manager.get_full_name|default:req.new_manager.username }}
+                                            {% else %}
+                                                —
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <p class="text-sm text-gray-900">
+                                        {{ req.date_requested|date:"d/m/Y" }}
+                                    </p>
+                                    <p class="text-xs text-gray-500">
+                                        {{ req.date_requested|date:"H:i" }}
+                                    </p>
+                                </td>
+                                <td>
+                                    <span class="status-badge pending">
+                                        <i class="fas fa-clock"></i>
+                                        En attente RH
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- ══════════════════════════════════════
+                 HISTORIQUE
+            ══════════════════════════════════════ -->
+            {% if processed_requests %}
+            <div class="form-container mt-6 animate-fade-in">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h2 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                        <i class="fas fa-history text-gray-500"></i>
+                        Historique des demandes
+                    </h2>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="requests-table">
+                        <thead>
+                            <tr>
+                                <th>Opérateur</th>
+                                <th>Transfert</th>
+                                <th>Chef destinataire</th>
+                                <th>Date</th>
+                                <th>Décision</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for req in processed_requests %}
+                            <tr>
+                                <td>
+                                    <p class="font-medium text-gray-900">
+                                        {{ req.employee.first_name }}
+                                        {{ req.employee.last_name }}
+                                    </p>
+                                    <p class="text-xs text-gray-500">
+                                        {{ req.employee.matricule }}
+                                    </p>
+                                </td>
+                                <td>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-sm">
+                                            {{ req.from_line.name|default:"—" }}
+                                        </span>
+                                        <i class="fas fa-arrow-right text-gray-400 text-xs"></i>
+                                        <span class="text-sm">
+                                            {{ req.to_line.name }}
+                                        </span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="flex items-center gap-2">
+                                        <i class="fas fa-crown text-amber-400 text-xs"></i>
+                                        <span class="text-sm text-gray-700">
+                                            {% if req.new_manager %}
+                                                {{ req.new_manager.get_full_name|default:req.new_manager.username }}
+                                            {% else %}
+                                                —
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <p class="text-sm text-gray-600">
+                                        {{ req.decision_date|date:"d/m/Y" }}
+                                    </p>
+                                </td>
+                                <td>
+                                    {% if req.approved %}
+                                    <span class="status-badge approved">
+                                        <i class="fas fa-check"></i> Approuvé
+                                    </span>
+                                    {% else %}
+                                    <span class="status-badge rejected">
+                                        <i class="fas fa-times"></i> Refusé
+                                    </span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Help Section -->
+            <div class="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg animate-fade-in">
+                <div class="flex">
+                    <i class="fas fa-info-circle text-blue-600 mt-0.5 mr-3"></i>
+                    <div class="text-sm text-blue-800">
+                        <p class="font-medium mb-1">Comment ça fonctionne ?</p>
+                        <ul class="list-disc pl-5 space-y-1 text-blue-700">
+                            <li>Sélectionnez l'opérateur que vous souhaitez transférer</li>
+                            <li>Choisissez le <strong>chef d'équipe destinataire</strong></li>
+                            <li>Si le chef gère plusieurs lignes, sélectionnez la ligne de destination</li>
+                            <li>Ajoutez une raison pour faciliter l'approbation</li>
+                            <li>Votre demande sera envoyée au service RH pour validation</li>
+                            <li>Vous serez notifié dès que la décision sera prise</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         JAVASCRIPT
+    ══════════════════════════════════════ -->
+    <script>
+        const chefsData = {{ chefs_json|safe }};
+
+        const employeeSelect  = document.getElementById('employeeSelect');
+        const chefSelect      = document.getElementById('chefSelect');
+        const lineSelect      = document.getElementById('lineSelect');
+        const submitBtn       = document.getElementById('submitBtn');
+        const employeeInfoCard = document.getElementById('employeeInfoCard');
+        const chefInfoCard    = document.getElementById('chefInfoCard');
+        const transferVisual  = document.getElementById('transferVisual');
+
+        let selectedEmployee = null;
+        let selectedChef     = null;
+
+        // ── ÉTAPE 1 : Changement d'opérateur ──────────────────────
+        employeeSelect.addEventListener('change', function () {
+            const opt = this.options[this.selectedIndex];
+
+            // Reset tout
+            chefSelect.innerHTML  = '<option value="">-- Sélectionnez un chef --</option>';
+            chefSelect.disabled   = true;
+            lineSelect.innerHTML  = '<option value="">-- Sélectionnez un chef --</option>';
+            lineSelect.disabled   = true;
+            chefInfoCard.classList.add('hidden');
+            transferVisual.classList.add('hidden');
+            submitBtn.disabled    = true;
+            selectedEmployee      = null;
+            selectedChef          = null;
+
+            if (!this.value) {
+                employeeInfoCard.classList.add('hidden');
+                return;
+            }
+
+            // Infos employé
+            const name      = opt.dataset.name;
+            const matricule = opt.dataset.matricule;
+            const line      = opt.dataset.line;
+            const lineId    = opt.dataset.lineId;
+            const lineCode  = opt.dataset.lineCode;
+
+            selectedEmployee = {
+                id: this.value,
+                name: name,
+                lineId: lineId ? parseInt(lineId) : null,
+                lineCode: lineCode,
+                lineName: line,
+            };
+
+            document.getElementById('employeeName').textContent      = name;
+            document.getElementById('employeeMatricule').textContent = matricule;
+            document.getElementById('employeeLine').textContent      = line;
+            document.getElementById('employeeAvatar').textContent    =
+                name.split(' ').map(n => n[0]).join('').toUpperCase();
+            document.getElementById('fromLineVisual').textContent    = lineCode || line;
+
+            employeeInfoCard.classList.remove('hidden');
+
+            // Remplir les chefs (sauf si aucun chef disponible)
+            if (chefsData.length === 0) {
+                chefSelect.innerHTML = '<option value="">Aucun autre chef d\'équipe</option>';
+                return;
+            }
+
+            chefsData.forEach(chef => {
+                const o = document.createElement('option');
+                o.value = chef.id;
+
+                // Indiquer le nombre de lignes
+                const linesInfo = chef.lines.map(l => l.code).join(', ');
+                o.textContent = `${chef.name} (${chef.lines_count} ligne${chef.lines_count > 1 ? 's' : ''} : ${linesInfo})`;
+                chefSelect.appendChild(o);
+            });
+
+            chefSelect.disabled = false;
+        });
+
+        // ── ÉTAPE 2 : Changement du chef ──────────────────────────
+        chefSelect.addEventListener('change', function () {
+            const chefId = this.value;
+
+            // Reset ligne
+            lineSelect.innerHTML = '<option value="">-- Sélectionnez une ligne --</option>';
+            lineSelect.disabled  = true;
+            chefInfoCard.classList.add('hidden');
+            transferVisual.classList.add('hidden');
+            submitBtn.disabled   = true;
+            selectedChef         = null;
+
+            if (!chefId) return;
+
+            // Trouver le chef
+            selectedChef = chefsData.find(c => String(c.id) === String(chefId));
+            if (!selectedChef) return;
+
+            // Afficher info chef
+            document.getElementById('chefInfoName').textContent =
+                `Chef : ${selectedChef.name}`;
+            document.getElementById('chefInfoLines').textContent =
+                `Gère ${selectedChef.lines_count} ligne${selectedChef.lines_count > 1 ? 's' : ''} : ` +
+                selectedChef.lines.map(l => `${l.code} (${l.operators_count} opérateurs)`).join(', ');
+            chefInfoCard.classList.remove('hidden');
+
+            // Remplir les lignes du chef
+            const availableLines = selectedChef.lines.filter(
+                l => !selectedEmployee || l.id !== selectedEmployee.lineId
+            );
+
+            if (availableLines.length === 0) {
+                lineSelect.innerHTML =
+                    '<option value="">Aucune ligne disponible (même ligne actuelle)</option>';
+                return;
+            }
+
+            availableLines.forEach(line => {
+                const o = document.createElement('option');
+                o.value         = line.id;
+                o.dataset.code  = line.code;
+                o.dataset.name  = line.name;
+                o.dataset.count = line.operators_count;
+                o.textContent   = `${line.code} — ${line.name} (${line.operators_count} opérateurs)`;
+                lineSelect.appendChild(o);
+            });
+
+            lineSelect.disabled = false;
+
+            // Auto-sélection si une seule ligne disponible
+            if (availableLines.length === 1) {
+                lineSelect.value = availableLines[0].id;
+                lineSelect.dispatchEvent(new Event('change'));
+            }
+        });
+
+        // ── ÉTAPE 3 : Changement de la ligne ──────────────────────
+        lineSelect.addEventListener('change', function () {
+            const opt = this.options[this.selectedIndex];
+
+            transferVisual.classList.add('hidden');
+            submitBtn.disabled = true;
+
+            if (!opt || !opt.value) return;
+
+            const lineCode = opt.dataset.code;
+            const lineName = opt.dataset.name;
+
+            // Visualisation du transfert
+            document.getElementById('toLineVisual').textContent =
+                `${lineCode} — ${lineName}`;
+            transferVisual.classList.remove('hidden');
+
+            // Activer le bouton
+            submitBtn.disabled = false;
+        });
+
+        // ── Validation et soumission ──────────────────────────────
+        document.getElementById('transferForm').addEventListener('submit', function (e) {
+            const empId  = employeeSelect.value;
+            const chefId = chefSelect.value;
+            const lineId = lineSelect.value;
+
+            if (!empId || !chefId || !lineId) {
+                e.preventDefault();
+                alert('Veuillez remplir tous les champs obligatoires.');
+                return;
+            }
+
+            // Confirmation
+            const empName  = selectedEmployee ? selectedEmployee.name : '';
+            const chefName = selectedChef ? selectedChef.name : '';
+            const lineOpt  = lineSelect.options[lineSelect.selectedIndex];
+            const lineName = lineOpt ? lineOpt.dataset.name : '';
+
+            const msg = `Confirmer la demande de transfert ?\n\n` +
+                        `Opérateur : ${empName}\n` +
+                        `Vers chef : ${chefName}\n` +
+                        `Ligne : ${lineName}\n\n` +
+                        `Cette demande sera envoyée au service RH pour validation.`;
+
+            if (!confirm(msg)) {
+                e.preventDefault();
+                return;
+            }
+
+            // Feedback
+            submitBtn.disabled  = true;
+            submitBtn.innerHTML =
+                '<i class="fas fa-spinner fa-spin"></i> Soumission en cours...';
+        });
+    </script>
+
+</body>
+</html>

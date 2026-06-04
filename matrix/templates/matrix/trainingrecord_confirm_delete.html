@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Supprimer un enregistrement de formation</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        h1 { color: #f44336; }
+        p { margin: 20px 0; font-size: 1.1em; }
+        .buttons a, .buttons button {
+            display: inline-block;
+            margin-right: 10px;
+            padding: 8px 12px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .buttons button.confirm { background-color: #f44336; }
+        .buttons a.cancel { background-color: #2196F3; }
+        .buttons button:hover, .buttons a:hover { opacity: 0.8; }
+    </style>
+</head>
+<body>
+    <h1>Supprimer l'enregistrement de formation</h1>
+
+    <p>
+        Êtes-vous sûr de vouloir supprimer la formation de 
+        <strong>{{ record.employee.first_name }} {{ record.employee.last_name }}</strong> 
+        pour la tâche <strong>{{ record.task.code }}</strong> ?
+    </p>
+
+    <form method="post" class="buttons">
+        {% csrf_token %}
+        <button type="submit" class="confirm">Oui, supprimer</button>
+        <a href="{% url 'matrix_view' %}" class="cancel">Annuler</a>
+    </form>
+</body>
+</html>

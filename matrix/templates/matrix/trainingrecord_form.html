@@ -1,0 +1,768 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>
+        {% if form.instance.pk %}Modifier{% else %}Ajouter{% endif %}
+        une formation
+    </title>
+    <link rel="icon" type="image/png" href="{% static 'images/logo.png' %}">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+          rel="stylesheet">
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        :root {
+            --primary:   #1e40af;
+            --primary-d: #1e3a8a;
+            --danger:    #dc2626;
+            --bg:        #f8fafc;
+            --text:      #1e293b;
+            --muted:     #64748b;
+            --border:    #e2e8f0;
+        }
+        body { background: var(--bg); color: var(--text); }
+
+        .form-card {
+            background: white;
+            border-radius: .5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,.1);
+            border: 1px solid var(--border);
+        }
+        .field-wrap { margin-bottom: 1.25rem; }
+        .field-label {
+            display: block;
+            font-size: .875rem;
+            font-weight: 500;
+            margin-bottom: .4rem;
+        }
+        .field-label.required::after { content:" *"; color:var(--danger); }
+        .field-input {
+            width: 100%;
+            padding: .5rem .75rem;
+            border: 1px solid var(--border);
+            border-radius: .375rem;
+            font-size: .875rem;
+            background: white;
+            transition: border .15s, box-shadow .15s;
+        }
+        .field-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(30,64,175,.1);
+        }
+        .field-input[type="date"] {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right .5rem center;
+            background-size: 1.25rem;
+            padding-right: 2.5rem;
+        }
+        .field-input.is-error { border-color: var(--danger); }
+        .field-error {
+            color: var(--danger);
+            font-size: .75rem;
+            margin-top: .25rem;
+            display: flex;
+            align-items: center;
+            gap: .25rem;
+        }
+
+        /* ── Info boxes ── */
+        .info-box {
+            border-radius: .375rem;
+            padding: .6rem .875rem;
+            font-size: .8rem;
+            display: flex;
+            align-items: flex-start;
+            gap: .5rem;
+            margin-top: .5rem;
+        }
+        .ib-blue   { background:#f0f9ff; border:1px solid #bae6fd; color:#0c4a6e; }
+        .ib-yellow { background:#fffbeb; border:1px solid #fcd34d; color:#92400e; }
+        .ib-green  { background:#f0fdf4; border:1px solid #bbf7d0; color:#14532d; }
+        .ib-red    { background:#fef2f2; border:1px solid #fecaca; color:#991b1b; }
+        .ib-gray   { background:#f8fafc; border:1px solid var(--border); color:var(--muted); }
+
+        /* ── Chips lignes ── */
+        .lines-chips { display:flex; flex-wrap:wrap; gap:.35rem; margin-top:.4rem; }
+        .chip {
+            display: inline-flex;
+            align-items: center;
+            gap: .3rem;
+            font-size: .7rem;
+            font-weight: 600;
+            padding: .2rem .6rem;
+            border-radius: 9999px;
+            cursor: pointer;
+            border: 1.5px solid;
+            transition: all .15s;
+        }
+        .chip-main  { background:#dcfce7; color:#166534; border-color:#86efac; }
+        .chip-other { background:#dbeafe; color:#1e40af; border-color:#93c5fd; }
+        .chip:hover { opacity: .8; transform: scale(1.04); }
+
+        /* ── Niveaux ── */
+        .level-badge {
+            display:inline-flex; align-items:center; gap:.4rem;
+            padding:.35rem .7rem; border-radius:.375rem;
+            font-size:.75rem; font-weight:500; margin-top:.3rem;
+        }
+        .lv-I { background:#fef3c7; color:#92400e; border:1px solid #fcd34d; }
+        .lv-L { background:#dbeafe; color:#1e40af; border:1px solid #93c5fd; }
+        .lv-U { background:#dcfce7; color:#166534; border:1px solid #86efac; }
+
+        /* ── Boutons ── */
+        .btn {
+            padding:.5rem 1.25rem; font-weight:500; font-size:.875rem;
+            border-radius:.375rem; transition:all .15s;
+            display:inline-flex; align-items:center; gap:.5rem;
+            border:1px solid transparent; cursor:pointer;
+        }
+        .btn-primary { background:var(--primary); color:white; }
+        .btn-primary:hover { background:var(--primary-d); }
+        .btn-ghost   { background:white; color:var(--muted); border-color:var(--border); }
+        .btn-ghost:hover { background:#f8fafc; }
+
+        /* ✅ Spinner chargement tâches */
+        .task-loading {
+            display: none;
+            font-size: .75rem;
+            color: var(--muted);
+            margin-top: .25rem;
+        }
+        .task-loading.visible { display: flex; align-items: center; gap: .35rem; }
+    </style>
+</head>
+
+<body>
+
+<!-- Nav -->
+<nav class="bg-white border-b border-gray-200 sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+        <span class="text-lg font-semibold text-gray-900">Système de gestion des formations</span>
+        <span class="text-sm text-gray-500">
+            <i class="fas fa-user-circle mr-1 text-gray-400"></i>
+            {{ request.user.get_full_name|default:request.user.username }}
+        </span>
+    </div>
+</nav>
+
+<div class="min-h-screen py-8 px-4">
+<div class="max-w-2xl mx-auto">
+
+    <!-- Breadcrumb -->
+    <nav class="flex items-center gap-2 text-sm text-gray-500 mb-5">
+        <a href="{% url 'matrix_view' %}{% if selected_line_id %}?line_id={{ selected_line_id }}{% endif %}"
+           class="hover:text-gray-700"><i class="fas fa-home"></i></a>
+        <i class="fas fa-chevron-right text-xs text-gray-400"></i>
+        <a href="{% url 'matrix_view' %}{% if selected_line_id %}?line_id={{ selected_line_id }}{% endif %}"
+           class="hover:text-gray-700">Matrice</a>
+        <i class="fas fa-chevron-right text-xs text-gray-400"></i>
+        <span class="text-gray-800 font-medium">
+            {% if form.instance.pk %}Modifier{% else %}Nouvelle formation{% endif %}
+        </span>
+    </nav>
+
+    <div class="form-card">
+
+        <!-- Header -->
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h1 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                {% if form.instance.pk %}
+                    <i class="fas fa-edit text-blue-500"></i>Modifier un enregistrement
+                {% else %}
+                    <i class="fas fa-plus-circle text-blue-500"></i>Nouvel enregistrement
+                {% endif %}
+            </h1>
+            <p class="text-sm text-gray-400 mt-0.5">
+                Sélectionnez l'opérateur, la ligne, puis la tâche correspondante.
+            </p>
+        </div>
+
+        <form method="post" class="px-6 py-6" novalidate>
+            {% csrf_token %}
+
+            <!-- Erreurs globales -->
+            {% if form.non_field_errors %}
+            <div class="flex gap-3 bg-red-50 border border-red-200 rounded-lg p-4 mb-5">
+                <i class="fas fa-triangle-exclamation text-red-500 mt-0.5 flex-shrink-0"></i>
+                <div class="text-sm text-red-700">
+                    <p class="font-semibold mb-1">Erreur(s) :</p>
+                    <ul class="list-disc pl-4 space-y-0.5">
+                        {% for error in form.non_field_errors %}
+                            {% if error != "RH_REQUEST_CREATED" %}
+                            <li>{{ error }}</li>
+                            {% endif %}
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            {% endif %}
+
+            <p class="text-xs text-gray-400 mb-5">
+                <span class="text-red-500 font-bold">*</span> Champs obligatoires
+            </p>
+
+            <!-- ══ ÉTAPE 1 : EMPLOYÉ ══════════════════════════════ -->
+            <div class="field-wrap">
+
+                <!-- Indicateur d'étape -->
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="w-5 h-5 rounded-full bg-blue-600 text-white text-xs
+                                 flex items-center justify-center font-bold flex-shrink-0">
+                        1
+                    </span>
+                    <label class="field-label required mb-0" for="{{ form.employee.id_for_label }}">
+                        Employé
+                    </label>
+                </div>
+
+                <select id="{{ form.employee.id_for_label }}"
+                        name="employee"
+                        class="field-input {% if form.employee.errors %}is-error{% endif %}">
+                    <option value="">— Sélectionnez un opérateur —</option>
+                    {% for emp in form.fields.employee.queryset %}
+                    <option value="{{ emp.id }}"
+                        {% if form.employee.value|stringformat:"s" == emp.id|stringformat:"s" %}
+                            selected
+                        {% endif %}>
+                        {{ emp.last_name }} {{ emp.first_name }} ({{ emp.matricule }})
+                    </option>
+                    {% endfor %}
+                </select>
+
+                {% if form.employee.errors %}
+                <p class="field-error">
+                    <i class="fas fa-circle-exclamation"></i>
+                    {{ form.employee.errors|join:", " }}
+                </p>
+                {% endif %}
+
+                <!-- ✅ Chips des lignes de visibilité -->
+                <div id="visible-lines-wrap" style="display:none" class="mt-2">
+                    <p class="text-xs text-gray-400 mb-1">
+                        <i class="fas fa-table-columns mr-1"></i>
+                        Cet opérateur est présent dans ces matrices :
+                    </p>
+                    <div class="lines-chips" id="visible-lines-chips"></div>
+                </div>
+
+            </div>
+
+            <!-- ══ ÉTAPE 2 : LIGNE ══════════════════════════════ -->
+            <!--
+                ✅ TOUJOURS affiché si l'opérateur a plusieurs visible_lines
+                   Cliquer sur un chip = sélectionner la ligne et charger les tâches
+            -->
+            <div id="line-step" style="display:none" class="field-wrap">
+
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="w-5 h-5 rounded-full bg-blue-600 text-white text-xs
+                                 flex items-center justify-center font-bold flex-shrink-0">
+                        2
+                    </span>
+                    <label class="field-label required mb-0" for="{{ form.line.id_for_label }}">
+                        Ligne de production
+                    </label>
+                </div>
+
+                <select id="{{ form.line.id_for_label }}"
+                        name="line"
+                        class="field-input {% if form.line.errors %}is-error{% endif %}">
+                    <option value="">— Sélectionnez la ligne —</option>
+                    {% for pk, label in form.line.field.choices %}
+                        {% if pk %}
+                        <option value="{{ pk }}"
+                            {% if form.line.value|stringformat:"s" == pk|stringformat:"s" %}
+                                selected
+                            {% endif %}>
+                            {{ label }}
+                        </option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+
+                {% if form.line.errors %}
+                <p class="field-error">
+                    <i class="fas fa-circle-exclamation"></i>
+                    {{ form.line.errors|join:", " }}
+                </p>
+                {% endif %}
+
+                <div class="info-box ib-blue mt-2">
+                    <i class="fas fa-info-circle flex-shrink-0 mt-0.5"></i>
+                    <span>
+                        Sélectionnez la ligne sur laquelle enregistrer
+                        cette formation. Les tâches se mettront à jour automatiquement.
+                    </span>
+                </div>
+
+            </div>
+
+            <!-- Ligne auto (mono-ligne) -->
+            <div id="line-auto" class="info-box ib-gray" style="display:none">
+                <i class="fas fa-industry flex-shrink-0 mt-0.5"></i>
+                <span>
+                    Ligne : <strong id="line-auto-name">—</strong>
+                    <span class="block text-xs opacity-70 mt-0.5">
+                        Assignée automatiquement (seule ligne de cet opérateur).
+                    </span>
+                </span>
+            </div>
+
+            <!-- ✅ Avertissement visibilité -->
+            <div id="visibility-warn" class="info-box ib-red" style="display:none">
+                <i class="fas fa-triangle-exclamation flex-shrink-0 mt-0.5"></i>
+                <span id="visibility-warn-msg"></span>
+            </div>
+
+            <!-- ══ ÉTAPE 3 : TÂCHE ══════════════════════════════ -->
+            <div id="task-step" class="field-wrap" style="display:none">
+
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="w-5 h-5 rounded-full bg-blue-600 text-white text-xs
+                                 flex items-center justify-center font-bold flex-shrink-0">
+                        3
+                    </span>
+                    <label class="field-label required mb-0" for="{{ form.task.id_for_label }}">
+                        Tâche
+                    </label>
+                </div>
+
+                <select id="{{ form.task.id_for_label }}"
+                        name="task"
+                        class="field-input {% if form.task.errors %}is-error{% endif %}">
+                    <option value="">— Sélectionnez d'abord une ligne —</option>
+                    {% for task in form.fields.task.queryset %}
+                    <option value="{{ task.id }}"
+                        {% if form.task.value|stringformat:"s" == task.id|stringformat:"s" %}
+                            selected
+                        {% endif %}>
+                        #{{ task.task_number }} — {{ task.title }}
+                    </option>
+                    {% endfor %}
+                </select>
+
+                <div class="task-loading" id="task-loading">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    Chargement des tâches…
+                </div>
+
+                {% if form.task.errors %}
+                <p class="field-error">
+                    <i class="fas fa-circle-exclamation"></i>
+                    {{ form.task.errors|join:", " }}
+                </p>
+                {% endif %}
+
+            </div>
+
+            <!-- ══ NIVEAU ══════════════════════════════════════ -->
+            <div id="level-step" class="field-wrap" style="display:none">
+
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="w-5 h-5 rounded-full bg-blue-600 text-white text-xs
+                                 flex items-center justify-center font-bold flex-shrink-0">
+                        4
+                    </span>
+                    <label class="field-label required mb-0" for="{{ form.level.id_for_label }}">
+                        Niveau
+                    </label>
+                </div>
+
+                <select id="{{ form.level.id_for_label }}"
+                        name="level"
+                        class="field-input {% if form.level.errors %}is-error{% endif %}">
+                    {% for val, label in form.fields.level.choices %}
+                    <option value="{{ val }}"
+                        {% if form.level.value|stringformat:"s" == val|stringformat:"s" %}
+                            selected
+                        {% endif %}>
+                        {{ label }}
+                    </option>
+                    {% endfor %}
+                </select>
+
+                {% if form.level.errors %}
+                <p class="field-error">
+                    <i class="fas fa-circle-exclamation"></i>
+                    {{ form.level.errors|join:", " }}
+                </p>
+                {% endif %}
+
+                <div class="mt-3 p-3 bg-gray-50 rounded border border-gray-200">
+                    <p class="text-xs font-semibold text-gray-600 mb-2">Niveaux :</p>
+                    <div class="space-y-1.5">
+                        <div class="level-badge lv-I">
+                            <i class="fas fa-graduation-cap"></i>
+                            <strong>I</strong> — En formation
+                        </div>
+                        <div class="level-badge lv-L">
+                            <i class="fas fa-user-check"></i>
+                            <strong>L</strong> — Autonome
+                            <em class="text-xs opacity-70">→ Validation RH</em>
+                        </div>
+                        <div class="level-badge lv-U">
+                            <i class="fas fa-user-graduate"></i>
+                            <strong>U</strong> — Formateur
+                            <em class="text-xs opacity-70">→ Validation RH</em>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ══ DATE ════════════════════════════════════════ -->
+            <div id="date-step" class="field-wrap" style="display:none">
+
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="w-5 h-5 rounded-full bg-blue-600 text-white text-xs
+                                 flex items-center justify-center font-bold flex-shrink-0">
+                        5
+                    </span>
+                    <label class="field-label required mb-0" for="{{ form.date.id_for_label }}">
+                        Date de formation
+                    </label>
+                </div>
+
+                <input type="date"
+                       id="{{ form.date.id_for_label }}"
+                       name="date"
+                       value="{{ form.date.value|default:'' }}"
+                       max="{% now 'Y-m-d' %}"
+                       class="field-input {% if form.date.errors %}is-error{% endif %}">
+
+            </div>
+
+            <!-- Formateur caché -->
+            {% if form.trainer.is_hidden %}{{ form.trainer }}{% endif %}
+
+            <!-- ══ ACTIONS ════════════════════════════════════ -->
+            <div id="form-actions" style="display:none"
+                 class="flex items-center justify-between pt-5 mt-5 border-t border-gray-200">
+                <a href="{% url 'matrix_view' %}{% if selected_line_id %}?line_id={{ selected_line_id }}{% endif %}"
+                   class="btn btn-ghost">
+                    <i class="fas fa-arrow-left"></i>Annuler
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-check"></i>
+                    {% if form.instance.pk %}Enregistrer les modifications
+                    {% else %}Enregistrer la formation{% endif %}
+                </button>
+            </div>
+
+            <!-- Annuler (toujours visible) -->
+            <div class="mt-4">
+                <a href="{% url 'matrix_view' %}{% if selected_line_id %}?line_id={{ selected_line_id }}{% endif %}"
+                   class="btn btn-ghost text-sm">
+                    <i class="fas fa-arrow-left"></i>Retour à la matrice
+                </a>
+            </div>
+
+        </form>
+    </div><!-- /card -->
+
+    <!-- Aide -->
+    <div class="mt-5 p-4 bg-blue-50 border border-blue-200 rounded-lg flex gap-3">
+        <i class="fas fa-circle-info text-blue-500 mt-0.5 flex-shrink-0"></i>
+        <div class="text-sm text-blue-800">
+            <p class="font-semibold mb-1">Comment ça marche ?</p>
+            <ol class="list-decimal pl-4 space-y-0.5 text-blue-700">
+                <li>Choisissez l'opérateur</li>
+                <li>Sélectionnez la <strong>ligne</strong> où la formation a lieu</li>
+                <li>Choisissez la <strong>tâche</strong> de cette ligne</li>
+                <li>Indiquez le <strong>niveau</strong> et la <strong>date</strong></li>
+            </ol>
+        </div>
+    </div>
+
+</div>
+</div>
+
+<!-- ════════════════════════════════════════════════════
+     JAVASCRIPT
+════════════════════════════════════════════════════ -->
+<script>
+(function () {
+    'use strict';
+
+    /* ── DOM ── */
+    const empSel      = document.getElementById('{{ form.employee.id_for_label }}');
+    const lineSel     = document.getElementById('{{ form.line.id_for_label }}');
+    const taskSel     = document.getElementById('{{ form.task.id_for_label }}');
+    const dateInp     = document.getElementById('{{ form.date.id_for_label }}');
+
+    const vlWrap      = document.getElementById('visible-lines-wrap');
+    const vlChips     = document.getElementById('visible-lines-chips');
+    const lineStep    = document.getElementById('line-step');
+    const lineAuto    = document.getElementById('line-auto');
+    const lineAutoNm  = document.getElementById('line-auto-name');
+    const visWarn     = document.getElementById('visibility-warn');
+    const visWarnMsg  = document.getElementById('visibility-warn-msg');
+    const taskStep    = document.getElementById('task-step');
+    const taskLoading = document.getElementById('task-loading');
+    const levelStep   = document.getElementById('level-step');
+    const dateStep    = document.getElementById('date-step');
+    const formActions = document.getElementById('form-actions');
+    const delayInfo   = document.getElementById('delay-info');
+    const delayMsg    = document.getElementById('delay-msg');
+
+    /* ── Contexte ── */
+    const SELECTED_LINE_ID = {% if selected_line_id %}"{{ selected_line_id }}"{% else %}null{% endif %};
+
+    /* ── ✅ Données employés avec visible_lines ── */
+    const EMPLOYEES = {
+        {% for emp in form.fields.employee.queryset %}
+        "{{ emp.id }}": {
+            name:      "{{ emp.last_name|escapejs }} {{ emp.first_name|escapejs }}",
+            matricule: "{{ emp.matricule|escapejs }}",
+            lineId:    {% if emp.line %}{{ emp.line.id }}{% else %}null{% endif %},
+            lineName:  "{{ emp.line.name|default:''|escapejs }}",
+            lineCode:  "{{ emp.line.code|default:''|escapejs }}",
+            visibleLines: [
+                {% for vl in emp.visible_lines.all %}
+                {
+                    id:     {{ vl.id }},
+                    name:   "{{ vl.name|escapejs }}",
+                    code:   "{{ vl.code|escapejs }}",
+                    isMain: {% if emp.line and vl.id == emp.line.id %}true{% else %}false{% endif %}
+                }{% if not forloop.last %},{% endif %}
+                {% endfor %}
+            ]
+        }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    };
+
+    /* ══════════════════════════════════════════
+       UTILITAIRES
+    ══════════════════════════════════════════ */
+    const show = el => el && (el.style.display = '');
+    const hide = el => el && (el.style.display = 'none');
+
+    /* ── Chip cliquable ── */
+    function makeChip(vl) {
+        const chip = document.createElement('button');
+        chip.type      = 'button';
+        chip.className = 'chip ' + (vl.isMain ? 'chip-main' : 'chip-other');
+        chip.dataset.lineId = vl.id;
+        chip.innerHTML =
+            (vl.isMain ? '★ ' : '◆ ') +
+            '<strong>' + vl.code + '</strong> — ' + vl.name;
+
+        chip.addEventListener('click', () => selectLine(vl.id));
+        return chip;
+    }
+
+    /* ══════════════════════════════════════════
+       SÉLECTION D'UNE LIGNE
+       → Met à jour le select, charge les tâches
+    ══════════════════════════════════════════ */
+    function selectLine(lineId) {
+        if (!lineId) return;
+
+        // Mettre à jour le select Ligne
+        if (lineSel) lineSel.value = String(lineId);
+
+        // Mettre en surbrillance le chip actif
+        document.querySelectorAll('.chip').forEach(c => {
+            const active = String(c.dataset.lineId) === String(lineId);
+            c.style.outline = active ? '2px solid #1e40af' : '';
+            c.style.outlineOffset = active ? '2px' : '';
+        });
+
+        // Charger les tâches de cette ligne
+        fetchTasks(lineId);
+    }
+
+    /* ══════════════════════════════════════════
+       CHARGEMENT DES TÂCHES (AJAX)
+    ══════════════════════════════════════════ */
+    function fetchTasks(lineId) {
+        if (!taskSel || !lineId) return;
+
+        const currentVal = taskSel.value;
+
+        // Afficher spinner
+        if (taskLoading) taskLoading.classList.add('visible');
+        taskSel.disabled = true;
+        taskSel.innerHTML = '<option value="">Chargement…</option>';
+
+        // Afficher l'étape tâche
+        show(taskStep);
+
+        fetch('/ajax/get-tasks-by-employee/?line_id=' + lineId)
+            .then(r => r.json())
+            .then(data => {
+                taskSel.innerHTML =
+                    '<option value="">— Sélectionnez une tâche —</option>';
+
+                const tasks = data.tasks || [];
+                tasks.forEach(t => {
+                    const opt = document.createElement('option');
+                    opt.value       = t.id;
+                    opt.textContent =
+                        '#' + (t.task_number || '') + ' — ' + (t.title || t.name);
+                    if (String(t.id) === String(currentVal)) opt.selected = true;
+                    taskSel.appendChild(opt);
+                });
+
+                if (tasks.length === 0) {
+                    taskSel.innerHTML +=
+                        '<option disabled>Aucune tâche sur cette ligne</option>';
+                }
+
+                taskSel.disabled = false;
+                if (taskLoading) taskLoading.classList.remove('visible');
+
+                // Afficher les étapes suivantes
+                show(levelStep);
+                show(dateStep);
+                show(formActions);
+            })
+            .catch(() => {
+                taskSel.disabled = false;
+                if (taskLoading) taskLoading.classList.remove('visible');
+            });
+    }
+
+    /* ══════════════════════════════════════════
+       CHANGEMENT D'EMPLOYÉ
+    ══════════════════════════════════════════ */
+    function onEmployeeChange() {
+        const empId = empSel ? empSel.value : null;
+
+        // Tout masquer
+        hide(vlWrap);
+        hide(lineStep);
+        hide(lineAuto);
+        hide(visWarn);
+        hide(taskStep);
+        hide(levelStep);
+        hide(dateStep);
+        hide(formActions);
+
+        if (!empId) return;
+
+        const emp = EMPLOYEES[empId];
+        if (!emp) return;
+
+        const vls = emp.visibleLines || [];
+
+        /* ── Afficher les chips de lignes ─────────────────────── */
+        if (vls.length > 0 && vlChips) {
+            vlChips.innerHTML = '';
+            vls.forEach(vl => vlChips.appendChild(makeChip(vl)));
+            show(vlWrap);
+        }
+
+        /* ══════════════════════════════════════════════════════
+           ✅ LOGIQUE PRINCIPALE :
+           Si l'opérateur est visible sur UNE SEULE ligne
+           → sélection automatique, pas de choix
+           Si visible sur PLUSIEURS lignes
+           → afficher le select (étape 2) + les chips
+        ══════════════════════════════════════════════════════ */
+
+        if (vls.length === 0) {
+            // Pas de visible_lines → fallback ligne principale FK
+            if (emp.lineId) {
+                if (lineAutoNm) lineAutoNm.textContent =
+                    emp.lineName + (emp.lineCode ? ' (' + emp.lineCode + ')' : '');
+                show(lineAuto);
+                if (lineSel) lineSel.value = emp.lineId;
+                fetchTasks(emp.lineId);
+            }
+
+        } else if (vls.length === 1) {
+            // ── UNE SEULE ligne → automatique ─────────────────
+            const vl = vls[0];
+            if (lineAutoNm) lineAutoNm.textContent =
+                vl.name + ' (' + vl.code + ')';
+            show(lineAuto);
+            if (lineSel) lineSel.value = vl.id;
+            fetchTasks(vl.id);
+
+        } else {
+            // ── PLUSIEURS lignes → afficher le choix ──────────
+            show(lineStep);
+
+            // Pré-sélectionner la ligne du contexte URL si disponible
+            if (SELECTED_LINE_ID) {
+                const contextVl = vls.find(
+                    vl => String(vl.id) === String(SELECTED_LINE_ID)
+                );
+                if (contextVl) {
+                    // Ligne du contexte disponible → la pré-sélectionner
+                    if (lineSel) lineSel.value = contextVl.id;
+                    selectLine(contextVl.id);
+                } else {
+                    // L'opérateur n'est pas sur la ligne du contexte
+                    visWarnMsg.textContent =
+                        emp.name + ' n\'est pas visible sur la ligne ' +
+                        'actuellement filtrée. Choisissez une autre ligne.';
+                    show(visWarn);
+                }
+            } else if (lineSel && lineSel.value) {
+                // Ligne déjà sélectionnée (retour après erreur)
+                fetchTasks(lineSel.value);
+            }
+        }
+    }
+
+    /* ══════════════════════════════════════════
+       INDICATEUR DÉLAI (date)
+    ══════════════════════════════════════════ */
+    function updateDelayInfo() {
+        if (!dateInp || !dateInp.value || !delayInfo) return;
+
+        const today    = new Date();
+        const selected = new Date(dateInp.value);
+        const days     = Math.floor((today - selected) / 86400000);
+
+        let msg = '', cls = 'info-box ib-green mt-2';
+
+        if (days < 0) { hide(delayInfo); return; }
+
+        if (days === 0)       { msg = "✅ Formation d'aujourd'hui."; }
+        else if (days <= 6)   { msg = `⏳ ${days} j. Délai I→L non atteint (7 j min).`; cls = 'info-box ib-blue mt-2'; }
+        else if (days <= 20)  { msg = `⏳ ${days} j. I→L possible. Délai L→U non atteint (21 j min).`; cls = 'info-box ib-yellow mt-2'; }
+        else if (days <= 90)  { msg = `✅ ${days} j. Délais I→L et L→U atteints.`; }
+       
+
+        delayMsg.textContent = msg;
+        delayInfo.className  = cls;
+        show(delayInfo);
+    }
+
+    /* ══════════════════════════════════════════
+       ÉVÉNEMENTS
+    ══════════════════════════════════════════ */
+    if (empSel)   empSel.addEventListener('change', onEmployeeChange);
+    if (lineSel)  lineSel.addEventListener('change', function () {
+        if (this.value) selectLine(this.value);
+    });
+    if (dateInp) {
+        dateInp.addEventListener('change', updateDelayInfo);
+        dateInp.addEventListener('input',  updateDelayInfo);
+    }
+
+    /* ══════════════════════════════════════════
+       INIT (retour après erreur Django)
+    ══════════════════════════════════════════ */
+    (function init() {
+        if (empSel && empSel.value) {
+            onEmployeeChange();
+        }
+        if (dateInp && dateInp.value) {
+            updateDelayInfo();
+        }
+    })();
+
+})();
+</script>
+</body>
+</html>

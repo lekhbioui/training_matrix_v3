@@ -1,0 +1,120 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <title>Connexion</title>
+    <link rel="icon" type="image/png" href="{% static 'images/logo.png' %}">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Open Sans', sans-serif;
+            color: #333;
+        }
+        h1, h2, h3 {
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        /* Styles pour les champs du formulaire Django */
+        .form-field {
+            margin-bottom: 1.25rem; /* 20px */
+        }
+        .form-field label {
+            display: block;
+            font-weight: 600; /* semibold */
+            color: #4B5563; /* gray-700 */
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+        .form-field input[type="text"],
+        .form-field input[type="password"] {
+            width: 100%;
+            padding: 0.75rem 1rem; /* py-3 px-4 */
+            border: 1px solid #D1D5DB; /* gray-300 */
+            border-radius: 0.625rem; /* 10px */
+            font-size: 1rem;
+            color: #1F2937; /* gray-900 */
+            background-color: #F9FAFB; /* gray-50 */
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
+        .form-field input[type="text"]:focus,
+        .form-field input[type="password"]:focus {
+            outline: none;
+            border-color: #4F46E5; /* indigo-600 */
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25); /* indigo-500 with opacity */
+        }
+        .form-field .errorlist {
+            color: #EF4444; /* red-500 */
+            font-size: 0.875rem; /* text-sm */
+            margin-top: 0.5rem;
+            list-style: none;
+            padding: 0;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center bg-gray-100">
+
+<div class="w-full max-w-md">
+    <div class="bg-white shadow-xl rounded-2xl p-8 md:p-10 border border-gray-100">
+
+        <!-- Logo -->
+        <div class="flex justify-center mb-6">
+            <img src="{% static 'images/logo.png' %}" alt="Logo de l'entreprise" class="h-20 w-auto">
+        </div>
+
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-extrabold text-gray-800">Connexion</h1>
+            <p class="text-gray-500 text-base mt-2">Accédez à votre espace sécurisé</p>
+        </div>
+
+        <!-- Formulaire -->
+        <form method="post" class="space-y-6" novalidate>
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+            <div class="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-4 mb-4" role="alert">
+                <p class="font-medium">⚠️ Erreur(s) :</p>
+                <ul class="list-disc pl-5 mt-2">
+                    {% for error in form.non_field_errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            <!-- Rendu du formulaire Django personnalisé -->
+            <div class="space-y-4">
+                {% for field in form %}
+                    <div class="form-field">
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}
+                            <ul class="errorlist">
+                                {% for error in field.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+
+            <div>
+                <button type="submit" 
+                    class="w-full mt-4 inline-flex items-center justify-center px-8 py-3 border border-transparent text-base font-semibold rounded-xl text-white bg-indigo-600 hover:bg-indigo-700 shadow-lg transition-all duration-200 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Se connecter
+                </button>
+            </div>
+        </form>
+
+        <!-- Footer -->
+        <div class="text-center mt-8 text-sm text-gray-500">
+            <p>Besoin d’aide ? Veuillez contacter votre administrateur système.</p>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

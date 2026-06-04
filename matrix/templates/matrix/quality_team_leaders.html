@@ -1,0 +1,170 @@
+<!-- matrix/templates/matrix/quality_team_leaders.html -->
+{% extends 'matrix/quality_base.html' %}
+{% block title %}Chefs d'équipe{% endblock %}
+
+{% block extra_css %}
+<style>
+    .leader-card {
+        border: none;
+        border-radius: 12px;
+        transition: transform .15s, box-shadow .15s;
+    }
+    .leader-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0,0,0,.1) !important;
+    }
+    .leader-avatar {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 1.2rem;
+        color: #fff;
+    }
+    .line-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 10px;
+        border-radius: 15px;
+        font-size: .75rem;
+        font-weight: 600;
+        background: #e8eaf6;
+        color: #283593;
+        text-decoration: none;
+        transition: background .15s;
+    }
+    .line-tag:hover {
+        background: #c5cae9;
+        color: #1a237e;
+    }
+    .gauge {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: .85rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- ══ EN-TÊTE ═════════════════════════════════════════ -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1">
+            <i class="fas fa-user-tie me-2 text-primary"></i>Chefs d'Équipe
+        </h4>
+        <span class="text-muted small">
+            {{ total }} chef{{ total|pluralize }} d'équipe
+        </span>
+    </div>
+    <span class="badge bg-info-subtle text-info fs-6 py-2 px-3">
+        <i class="fas fa-eye me-1"></i>Lecture seule
+    </span>
+</div>
+
+<!-- ══ CARTES DES CHEFS ════════════════════════════════ -->
+<div class="row g-4">
+{% for item in leaders_data %}
+    <div class="col-md-6 col-lg-4">
+        <div class="card leader-card shadow-sm h-100">
+            <div class="card-body">
+
+                <!-- En-tête : avatar + nom -->
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <div class="leader-avatar bg-primary">
+                        {{ item.user.first_name|first|upper }}{{ item.user.last_name|first|upper }}
+                    </div>
+                    <div>
+                        <h6 class="fw-bold mb-0">
+                            {{ item.user.get_full_name|default:item.user.username }}
+                        </h6>
+                        <small class="text-muted">
+                            <i class="fas fa-at me-1"></i>{{ item.user.username }}
+                        </small>
+                    </div>
+                </div>
+
+                <!-- Lignes gérées -->
+                <div class="mb-3">
+                    <small class="text-muted fw-semibold d-block mb-1">
+                        <i class="fas fa-sitemap me-1"></i>
+                        Ligne{{ item.nb_lines|pluralize:"s" }} gérée{{ item.nb_lines|pluralize:"s" }}
+                    </small>
+                    <div class="d-flex flex-wrap gap-1">
+                        {% for line in item.lines %}
+                            <a href="{% url 'quality_line_detail' line.pk %}"
+                               class="line-tag">
+                                <i class="fas fa-industry" style="font-size:.65rem;"></i>
+                                {{ line.name }}
+                            </a>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Stats -->
+                <div class="row g-2 text-center mb-3">
+                    <div class="col-4">
+                        <div class="rounded p-2" style="background:#f8f9fa;">
+                            <div class="fw-bold fs-5">{{ item.nb_employees }}</div>
+                            <div class="text-muted" style="font-size:.7rem;">Opérateurs</div>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="rounded p-2" style="background:#f8f9fa;">
+                            <div class="fw-bold fs-5 text-primary">{{ item.taux_trainer }}%</div>
+                            <div class="text-muted" style="font-size:.7rem;">Formateurs</div>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="rounded p-2" style="background:#f8f9fa;">
+                            {% if item.pending > 0 %}
+                                <div class="fw-bold fs-5 text-warning">{{ item.pending }}</div>
+                            {% else %}
+                                <div class="fw-bold fs-5 text-success">0</div>
+                            {% endif %}
+                            <div class="text-muted" style="font-size:.7rem;">En attente</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Barre de progression formateurs -->
+                <div class="mb-2">
+                    <div class="d-flex justify-content-between small text-muted mb-1">
+                        <span>Taux de formateurs (U)</span>
+                        <span class="fw-semibold">{{ item.taux_trainer }}%</span>
+                    </div>
+                    <div class="progress" style="height:8px;">
+                        <div class="progress-bar
+                            {% if item.taux_trainer >= 70 %}bg-success
+                            {% elif item.taux_trainer >= 40 %}bg-warning
+                            {% else %}bg-danger{% endif %}"
+                             style="width:{{ item.taux_trainer }}%">
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+{% empty %}
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center text-muted py-5">
+                <i class="fas fa-user-tie fa-3x d-block mb-2 opacity-50"></i>
+                <p class="fw-semibold mb-0">Aucun chef d'équipe trouvé</p>
+            </div>
+        </div>
+    </div>
+{% endfor %}
+</div>
+{% endblock %}

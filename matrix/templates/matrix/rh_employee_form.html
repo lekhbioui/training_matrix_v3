@@ -1,0 +1,777 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }} - Training Matrix System</title>
+    <link rel="icon" type="image/png" href="{% static 'images/logo.png' %}">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+        
+        :root {
+            --primary-color: #1e40af;
+            --secondary-color: #64748b;
+            --success-color: #16a34a;
+            --danger-color: #dc2626;
+            --warning-color: #ea580c;
+            --background: #f8fafc;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --border-color: #e2e8f0;
+        }
+        
+        body {
+            background-color: var(--background);
+            color: var(--text-primary);
+        }
+        
+        .form-container {
+            background: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--border-color);
+        }
+        
+        .form-field {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-field label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+        
+        .form-field input[type="text"],
+        .form-field input[type="email"],
+        .form-field input[type="number"],
+        .form-field input[type="date"],
+        .form-field select,
+        .form-field textarea {
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            color: var(--text-primary);
+            background-color: white;
+            transition: all 0.15s ease;
+        }
+        
+        .form-field input:focus,
+        .form-field select:focus,
+        .form-field textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+        }
+        
+        .form-field input[type="date"] {
+            appearance: none;
+            -webkit-appearance: none;
+            position: relative;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z'%3E%3C/path%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.5rem center;
+            background-size: 1.25rem;
+            padding-right: 2.5rem;
+        }
+        
+        .form-field input[type="date"]::-webkit-calendar-picker-indicator {
+            opacity: 0;
+            cursor: pointer;
+            position: absolute;
+            right: 0;
+            width: 2.5rem;
+            height: 100%;
+        }
+        
+        .form-field .helptext {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+        
+        .form-field .helptext::before {
+            content: "ℹ";
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background-color: #f1f5f9;
+            color: var(--text-secondary);
+            font-size: 10px;
+            font-weight: bold;
+        }
+        
+        .form-field .errorlist,
+        .form-field ul.errorlist {
+            color: var(--danger-color);
+            font-size: 0.75rem;
+            margin-top: 0.5rem;
+            list-style: none;
+            padding: 0;
+        }
+        
+        .form-field .errorlist li,
+        .form-field ul.errorlist li {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.5rem;
+            background-color: #fee;
+            border-left: 3px solid var(--danger-color);
+            border-radius: 0.25rem;
+            margin-bottom: 0.25rem;
+        }
+        
+        .form-field .errorlist li::before,
+        .form-field ul.errorlist li::before {
+            content: "⚠";
+            font-size: 0.875rem;
+        }
+        
+        .btn {
+            padding: 0.5rem 1.25rem;
+            font-weight: 500;
+            font-size: 0.875rem;
+            border-radius: 0.375rem;
+            transition: all 0.15s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            border: 1px solid transparent;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+        
+        .btn-primary:hover {
+            background-color: #1e3a8a;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn-secondary {
+            background-color: white;
+            color: var(--text-secondary);
+            border-color: var(--border-color);
+        }
+        
+        .btn-secondary:hover {
+            background-color: #f8fafc;
+            border-color: var(--text-secondary);
+        }
+        
+        .form-divider {
+            border-top: 1px solid var(--border-color);
+            margin: 2rem 0;
+            position: relative;
+        }
+        
+        .form-divider-text {
+            position: absolute;
+            top: -0.75rem;
+            left: 1rem;
+            background: white;
+            padding: 0 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .required-note {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            margin-bottom: 1rem;
+        }
+        
+        .required-note span {
+            color: var(--danger-color);
+        }
+        
+        /* ✅ NOUVEAU : Styles pour la sélection du chef */
+        .manager-section {
+            margin-top: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .manager-section.hidden {
+            display: none;
+        }
+        
+        .manager-card {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.875rem;
+            border: 2px solid var(--border-color);
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            margin-bottom: 0.5rem;
+            background: white;
+        }
+        
+        .manager-card:hover {
+            border-color: var(--primary-color);
+            background-color: #eff6ff;
+        }
+        
+        .manager-card.selected {
+            border-color: var(--primary-color);
+            background-color: #eff6ff;
+            box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+        }
+        
+        .manager-card input[type="radio"] {
+            display: none;
+        }
+        
+        .manager-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #1e40af, #60a5fa);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 0.875rem;
+            flex-shrink: 0;
+        }
+        
+        .manager-info {
+            flex: 1;
+        }
+        
+        .manager-name {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .manager-username {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+        
+        .manager-check {
+            color: var(--primary-color);
+            font-size: 1.25rem;
+        }
+        
+        .info-box {
+            padding: 0.75rem 1rem;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.5rem;
+        }
+        
+        .info-box.blue {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            color: #1e40af;
+        }
+        
+        .info-box.green {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            color: #166534;
+        }
+        
+        .info-box.amber {
+            background: #fffbeb;
+            border: 1px solid #fcd34d;
+            color: #92400e;
+        }
+        
+        .info-box.red {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #991b1b;
+        }
+        
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .animate-slide {
+            animation: slideDown 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    
+    <!-- Navigation -->
+    <nav class="bg-white border-b border-gray-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <span class="text-xl font-semibold text-gray-900">
+                        Training Matrix System
+                    </span>
+                    <span class="ml-3 px-2 py-1 text-xs font-semibold text-blue-700 bg-blue-100 rounded">
+                        RH
+                    </span>
+                </div>
+                <div class="flex items-center gap-6">
+                    <span class="text-sm text-gray-600">
+                        <i class="fas fa-user-circle mr-2 text-gray-400"></i>
+                        {{ request.user.first_name }} {{ request.user.last_name }}
+                    </span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="min-h-screen py-8 px-4">
+        <div class="max-w-3xl mx-auto">
+            
+            <!-- Breadcrumb -->
+            <nav class="flex mb-6" aria-label="Breadcrumb">
+                <ol class="inline-flex items-center space-x-1 text-sm">
+                    <li>
+                        <a href="{% url 'employee_list_rh' %}" class="text-gray-500 hover:text-gray-700">
+                            <i class="fas fa-home"></i>
+                        </a>
+                    </li>
+                    <li>
+                        <span class="mx-2 text-gray-400">/</span>
+                        <a href="{% url 'employee_list_rh' %}" class="text-gray-500 hover:text-gray-700">Gestion Employés</a>
+                    </li>
+                    <li>
+                        <span class="mx-2 text-gray-400">/</span>
+                        <span class="text-gray-700">{% if form.instance.pk %}Modifier{% else %}Nouveau{% endif %}</span>
+                    </li>
+                </ol>
+            </nav>
+
+            <!-- Form Card -->
+            <div class="form-container">
+                <!-- Header -->
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h1 class="text-xl font-semibold text-gray-900">
+                        {% if form.instance.pk %}
+                            <i class="fas fa-user-edit mr-2 text-gray-400"></i>
+                            Modifier l'employé
+                        {% else %}
+                            <i class="fas fa-user-plus mr-2 text-gray-400"></i>
+                            Nouvel employé
+                        {% endif %}
+                    </h1>
+                    <p class="mt-1 text-sm text-gray-600">
+                        {% if form.instance.pk %}
+                            Modifiez les informations de <strong>{{ form.instance.first_name }} {{ form.instance.last_name }}</strong>
+                        {% else %}
+                            Remplissez les informations pour créer un nouvel employé
+                        {% endif %}
+                    </p>
+                </div>
+
+                <!-- Form Body -->
+                <form method="post" class="px-6 py-6">
+                    {% csrf_token %}
+
+                    <!-- Non-field Errors -->
+                    {% if form.non_field_errors %}
+                    <div class="bg-red-50 border border-red-200 text-red-700 text-sm rounded p-4 mb-6" role="alert">
+                        <div class="flex">
+                            <i class="fas fa-exclamation-triangle mr-3 mt-0.5"></i>
+                            <div>
+                                <p class="font-medium mb-2">Erreur(s) dans le formulaire :</p>
+                                <ul class="list-disc pl-5 space-y-1">
+                                    {% for error in form.non_field_errors %}
+                                        <li>{{ error }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Required Fields Note -->
+                    <div class="required-note">
+                        <span>*</span> Champs obligatoires
+                    </div>
+
+                    <!-- Form Fields -->
+                    <div class="space-y-4">
+                        <!-- Section: Informations personnelles -->
+                        <div>
+                            <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-4 flex items-center">
+                                <i class="fas fa-user mr-2 text-gray-400"></i>
+                                Informations personnelles
+                            </h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <!-- Matricule -->
+                                <div class="form-field md:col-span-2">
+                                    <label for="{{ form.matricule.id_for_label }}">
+                                        <i class="fas fa-id-card text-gray-400 mr-1"></i>
+                                        {{ form.matricule.label }}
+                                        {% if form.matricule.field.required %}<span class="text-red-600">*</span>{% endif %}
+                                    </label>
+                                    {{ form.matricule }}
+                                    {% if form.matricule.help_text %}
+                                        <p class="helptext">{{ form.matricule.help_text }}</p>
+                                    {% endif %}
+                                    {% if form.matricule.errors %}
+                                        <ul class="errorlist">
+                                            {% for error in form.matricule.errors %}<li>{{ error }}</li>{% endfor %}
+                                        </ul>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Prénom -->
+                                <div class="form-field">
+                                    <label for="{{ form.first_name.id_for_label }}">
+                                        {{ form.first_name.label }}
+                                        {% if form.first_name.field.required %}<span class="text-red-600">*</span>{% endif %}
+                                    </label>
+                                    {{ form.first_name }}
+                                    {% if form.first_name.errors %}
+                                        <ul class="errorlist">
+                                            {% for error in form.first_name.errors %}<li>{{ error }}</li>{% endfor %}
+                                        </ul>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Nom -->
+                                <div class="form-field">
+                                    <label for="{{ form.last_name.id_for_label }}">
+                                        {{ form.last_name.label }}
+                                        {% if form.last_name.field.required %}<span class="text-red-600">*</span>{% endif %}
+                                    </label>
+                                    {{ form.last_name }}
+                                    {% if form.last_name.errors %}
+                                        <ul class="errorlist">
+                                            {% for error in form.last_name.errors %}<li>{{ error }}</li>{% endfor %}
+                                        </ul>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Date d'embauche -->
+                                {% if form.hire_date %}
+                                <div class="form-field md:col-span-2">
+                                    <label for="{{ form.hire_date.id_for_label }}">
+                                        <i class="fas fa-calendar-alt text-gray-400 mr-1"></i>
+                                        {{ form.hire_date.label }}
+                                        {% if form.hire_date.field.required %}<span class="text-red-600">*</span>{% endif %}
+                                    </label>
+                                    {{ form.hire_date }}
+                                    {% if form.hire_date.errors %}
+                                        <ul class="errorlist">
+                                            {% for error in form.hire_date.errors %}<li>{{ error }}</li>{% endfor %}
+                                        </ul>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Section: Affectation -->
+                        <div class="form-divider">
+                            <span class="form-divider-text">
+                                <i class="fas fa-building mr-1"></i>
+                                Affectation
+                            </span>
+                        </div>
+                        
+                        <div>
+                            <!-- Ligne de production -->
+                            <div class="form-field">
+                                <label for="id_line">
+                                    <i class="fas fa-industry text-gray-400 mr-1"></i>
+                                    {{ form.line.label }}
+                                    {% if form.line.field.required %}<span class="text-red-600">*</span>{% endif %}
+                                </label>
+                                {{ form.line }}
+                                {% if form.line.help_text %}
+                                    <p class="helptext">{{ form.line.help_text }}</p>
+                                {% endif %}
+                                {% if form.line.errors %}
+                                    <ul class="errorlist">
+                                        {% for error in form.line.errors %}<li>{{ error }}</li>{% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </div>
+
+                            <!-- ═══════════════════════════════════════════════════════════════ -->
+                            <!-- ✅ SECTION CHEF D'ÉQUIPE (dynamique) -->
+                            <!-- ═══════════════════════════════════════════════════════════════ -->
+                            
+                            <!-- Info box par défaut -->
+                            <div id="defaultInfo" class="info-box blue">
+                                <i class="fas fa-info-circle mt-0.5"></i>
+                                <span>Le chef responsable sera automatiquement assigné en fonction de la ligne sélectionnée.</span>
+                            </div>
+                            
+                            <!-- Section Manager (affichée dynamiquement) -->
+                            <div id="managerSection" class="manager-section hidden">
+                                <label class="block text-sm font-medium text-gray-700 mb-3">
+                                    <i class="fas fa-user-tie text-gray-400 mr-1"></i>
+                                    Chef d'équipe responsable
+                                    <span class="text-red-600">*</span>
+                                </label>
+                                
+                                <!-- Info : Un seul chef (assignation auto) -->
+                                <div id="singleManagerInfo" class="info-box green hidden animate-slide mb-3">
+                                    <i class="fas fa-check-circle mt-0.5"></i>
+                                    <div>
+                                        <strong>Chef assigné automatiquement :</strong>
+                                        <span id="singleManagerName"></span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Warning : Plusieurs chefs (choix requis) -->
+                                <div id="multipleManagerWarning" class="info-box amber hidden animate-slide mb-3">
+                                    <i class="fas fa-exclamation-triangle mt-0.5"></i>
+                                    <span>Cette ligne a plusieurs chefs d'équipe. <strong>Veuillez en sélectionner un.</strong></span>
+                                </div>
+                                
+                                <!-- Liste des chefs (cartes cliquables) -->
+                                <div id="managersList" class="space-y-2"></div>
+                                
+                                <!-- Champ caché pour le manager -->
+                                <input type="hidden" name="manager" id="id_manager" value="">
+                                
+                                {% if form.manager.errors %}
+                                <ul class="errorlist mt-2">
+                                    {% for error in form.manager.errors %}<li>{{ error }}</li>{% endfor %}
+                                </ul>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Warning : Aucun chef sur la ligne -->
+                            <div id="noManagerWarning" class="info-box red hidden animate-slide mt-3">
+                                <i class="fas fa-exclamation-circle mt-0.5"></i>
+                                <div>
+                                    <strong>Attention :</strong> Cette ligne n'a aucun chef d'équipe assigné.
+                                    <a href="{% url 'rh_manage_users' %}" class="underline font-medium ml-1">
+                                        Assigner un chef →
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="flex items-center justify-between pt-6 mt-6 border-t border-gray-200">
+                        <a href="{% url 'employee_list_rh' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i>
+                            Retour à la liste
+                        </a>
+                        <div class="flex gap-3">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-check"></i>
+                                {% if form.instance.pk %}
+                                    Enregistrer les modifications
+                                {% else %}
+                                    Créer l'employé
+                                {% endif %}
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Help Section -->
+            <div class="mt-6 p-4 bg-blue-50 border border-blue-200 rounded">
+                <div class="flex">
+                    <i class="fas fa-lightbulb text-blue-600 mt-0.5 mr-3 text-xl"></i>
+                    <div class="text-sm text-blue-800">
+                        <p class="font-medium mb-2">💡 Conseils RH</p>
+                        <ul class="list-disc pl-5 space-y-1">
+                            <li>Vérifiez que le matricule est unique avant de créer l'employé</li>
+                            <li>Si la ligne a <strong>un seul chef</strong>, il sera assigné automatiquement</li>
+                            <li>Si la ligne a <strong>plusieurs chefs</strong>, vous devez en choisir un</li>
+                            <li>La date d'embauche sera utilisée pour calculer l'ancienneté</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- JavaScript pour la sélection dynamique du chef -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const lineSelect = document.getElementById('id_line') || document.getElementById('id_line_select') || document.querySelector('select[name="line"]');
+    const defaultInfo = document.getElementById('defaultInfo');
+    const managerSection = document.getElementById('managerSection');
+    const managersList = document.getElementById('managersList');
+    const managerInput = document.getElementById('id_manager');
+    const singleManagerInfo = document.getElementById('singleManagerInfo');
+    const singleManagerName = document.getElementById('singleManagerName');
+    const multipleManagerWarning = document.getElementById('multipleManagerWarning');
+    const noManagerWarning = document.getElementById('noManagerWarning');
+    
+    // ✅ Données des lignes passées depuis Django
+    const linesData = {{ lines_json|safe }};
+    
+    // ✅ Manager actuel (pour modification)
+    const currentManagerId = {{ current_manager_id|default:"null" }};
+    
+    function getInitials(name) {
+        if (!name) return '?';
+        return name.split(' ').map(n => n.charAt(0).toUpperCase()).slice(0, 2).join('');
+    }
+    
+    function updateManagerSection() {
+        const selectedLineId = parseInt(lineSelect.value);
+        
+        // Reset tous les éléments
+        defaultInfo.classList.add('hidden');
+        managerSection.classList.add('hidden');
+        singleManagerInfo.classList.add('hidden');
+        multipleManagerWarning.classList.add('hidden');
+        noManagerWarning.classList.add('hidden');
+        managersList.innerHTML = '';
+        
+        // Si aucune ligne sélectionnée
+        if (!selectedLineId) {
+            defaultInfo.classList.remove('hidden');
+            managerInput.value = '';
+            return;
+        }
+        
+        // Trouver la ligne sélectionnée
+        const line = linesData.find(l => l.id === selectedLineId);
+        
+        if (!line) {
+            defaultInfo.classList.remove('hidden');
+            return;
+        }
+        
+        const leaders = line.team_leaders;
+        
+        // ═══════════════════════════════════════════════════════════════
+        // CAS 1 : Aucun chef sur la ligne
+        // ═══════════════════════════════════════════════════════════════
+        if (leaders.length === 0) {
+            noManagerWarning.classList.remove('hidden');
+            managerInput.value = '';
+            return;
+        }
+        
+        // Afficher la section manager
+        managerSection.classList.remove('hidden');
+        
+        // ═══════════════════════════════════════════════════════════════
+        // CAS 2 : Un seul chef → assignation automatique
+        // ═══════════════════════════════════════════════════════════════
+        if (leaders.length === 1) {
+            singleManagerInfo.classList.remove('hidden');
+            singleManagerName.textContent = leaders[0].name;
+            managerInput.value = leaders[0].id;
+            
+            // Afficher une carte (non cliquable, juste info)
+            managersList.innerHTML = `
+                <div class="manager-card selected" style="cursor: default;">
+                    <div class="manager-avatar">${getInitials(leaders[0].name)}</div>
+                    <div class="manager-info">
+                        <div class="manager-name">${leaders[0].name}</div>
+                        <div class="manager-username">@${leaders[0].username}</div>
+                    </div>
+                    <i class="fas fa-check-circle manager-check"></i>
+                </div>
+            `;
+            return;
+        }
+        
+        // ═══════════════════════════════════════════════════════════════
+        // CAS 3 : Plusieurs chefs → choix requis
+        // ═══════════════════════════════════════════════════════════════
+        multipleManagerWarning.classList.remove('hidden');
+        
+        // Créer les cartes pour chaque chef
+        leaders.forEach(leader => {
+            const isSelected = currentManagerId && currentManagerId === leader.id;
+            
+            const card = document.createElement('label');
+            card.className = `manager-card ${isSelected ? 'selected' : ''}`;
+            card.innerHTML = `
+                <input type="radio" name="manager_radio" value="${leader.id}" ${isSelected ? 'checked' : ''}>
+                <div class="manager-avatar">${getInitials(leader.name)}</div>
+                <div class="manager-info">
+                    <div class="manager-name">${leader.name}</div>
+                    <div class="manager-username">@${leader.username}</div>
+                </div>
+                <i class="fas fa-check-circle manager-check ${isSelected ? '' : 'hidden'}"></i>
+            `;
+            
+            // Événement de sélection
+            card.addEventListener('click', function() {
+                // Désélectionner tous
+                document.querySelectorAll('.manager-card').forEach(c => {
+                    c.classList.remove('selected');
+                    const icon = c.querySelector('.manager-check');
+                    if (icon) icon.classList.add('hidden');
+                });
+                
+                // Sélectionner celui-ci
+                card.classList.add('selected');
+                card.querySelector('.manager-check').classList.remove('hidden');
+                managerInput.value = leader.id;
+            });
+            
+            managersList.appendChild(card);
+            
+            // Si sélectionné, mettre à jour le champ caché
+            if (isSelected) {
+                managerInput.value = leader.id;
+            }
+        });
+        
+        // Si aucun n'est sélectionné par défaut, vider le champ
+        if (!currentManagerId) {
+            managerInput.value = '';
+        }
+    }
+    
+    // Écouter les changements de ligne
+    if (lineSelect) {
+        lineSelect.addEventListener('change', updateManagerSection);
+        
+        // Initialiser au chargement
+        updateManagerSection();
+    }
+});
+</script>
+
+</body>
+</html>

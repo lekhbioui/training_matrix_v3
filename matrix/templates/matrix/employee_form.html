@@ -1,0 +1,1223 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>
+        {% if form.instance.pk %}Modifier{% else %}Nouvel{% endif %} Opérateur
+    </title>
+    <link rel="icon" type="image/png" href="{% static 'images/logo.png' %}">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+          rel="stylesheet">
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+
+        :root {
+            --primary:      #1e40af;
+            --primary-dark: #1e3a8a;
+            --primary-bg:   #eff6ff;
+            --success:      #16a34a;
+            --success-bg:   #f0fdf4;
+            --danger:       #dc2626;
+            --border:       #e2e8f0;
+            --text:         #1e293b;
+            --muted:        #64748b;
+            --bg:           #f8fafc;
+        }
+
+        body { background: var(--bg); color: var(--text); }
+
+        /* ── Champs ── */
+        .field-input {
+            width: 100%;
+            padding: .5rem .75rem;
+            border: 1px solid var(--border);
+            border-radius: .375rem;
+            font-size: .875rem;
+            transition: border .15s, box-shadow .15s;
+            background: white;
+        }
+        .field-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(30,64,175,.1);
+        }
+        .field-input.has-error { border-color: var(--danger); }
+
+        /* Champ lecture seule */
+        .field-input.readonly {
+            background: #f8fafc;
+            color: var(--muted);
+            cursor: not-allowed;
+        }
+
+        /* ── Labels ── */
+        .field-label {
+            display: block;
+            font-size: .8125rem;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: .375rem;
+        }
+        .required-star { color: var(--danger); margin-left: 2px; }
+
+        /* ── Erreurs ── */
+        .field-error {
+            font-size: .75rem;
+            color: var(--danger);
+            margin-top: .25rem;
+            display: flex;
+            align-items: center;
+            gap: .25rem;
+        }
+        .field-help {
+            font-size: .75rem;
+            color: var(--muted);
+            margin-top: .25rem;
+        }
+
+        /* ── Section divider ── */
+        .section-title {
+            font-size: .7rem;
+            font-weight: 700;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            color: var(--muted);
+            padding-bottom: .5rem;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+        }
+
+        /* ── Recherche matricule ── */
+        .search-box {
+            display: flex;
+            gap: .5rem;
+            align-items: stretch;
+        }
+        .search-box .field-input {
+            flex: 1;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            font-weight: 500;
+        }
+        .btn-search {
+            padding: .5rem 1rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: .375rem;
+            font-size: .875rem;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: .4rem;
+            white-space: nowrap;
+            transition: background .15s;
+        }
+        .btn-search:hover { background: var(--primary-dark); }
+        .btn-search:disabled {
+            opacity: .6;
+            cursor: not-allowed;
+        }
+
+        /* Statut recherche */
+        .search-status {
+            margin-top: .5rem;
+            font-size: .8125rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: .375rem;
+        }
+        .search-status.success { color: var(--success); }
+        .search-status.error   { color: var(--danger); }
+        .search-status.loading { color: var(--muted); }
+
+        /* Infos employé trouvé */
+        .employee-found-card {
+            background: var(--success-bg);
+            border: 1.5px solid #bbf7d0;
+            border-radius: .5rem;
+            padding: .875rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: .75rem;
+            margin-bottom: 1rem;
+        }
+        .employee-found-avatar {
+            width: 2.5rem;
+            height: 2.5rem;
+            background: var(--success);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: .875rem;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        /* Section masquée */
+        .section-hidden { display: none; }
+
+        /* ══════════════════════════════════════════
+           CHECKBOXES LIGNES DE VISIBILITÉ
+        ══════════════════════════════════════════ */
+        .line-card {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: .625rem;
+            padding: .625rem .875rem;
+            border: 1.5px solid var(--border);
+            border-radius: .5rem;
+            cursor: pointer;
+            transition: all .15s ease;
+            background: white;
+            user-select: none;
+        }
+        .line-card:hover {
+            border-color: #93c5fd;
+            background: #f0f9ff;
+        }
+        .line-card.checked {
+            border-color: var(--primary);
+            background: var(--primary-bg);
+        }
+        .line-card.is-main {
+            border-color: var(--success);
+            background: var(--success-bg);
+        }
+        .line-card input[type="checkbox"] {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .line-indicator {
+            width: 1.125rem;
+            height: 1.125rem;
+            border-radius: 50%;
+            border: 2px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all .15s;
+            font-size: .6rem;
+            color: white;
+        }
+        .line-card.checked .line-indicator {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+        .line-card.is-main .line-indicator {
+            background: var(--success);
+            border-color: var(--success);
+        }
+        .line-label {
+            font-size: .8125rem;
+            font-weight: 500;
+            color: var(--text);
+            flex: 1;
+        }
+        .line-card.checked .line-label { color: var(--primary); }
+        .line-card.is-main  .line-label { color: var(--success); }
+        .badge-main {
+            font-size: .65rem;
+            font-weight: 600;
+            padding: .15rem .5rem;
+            border-radius: 9999px;
+            background: #dcfce7;
+            color: var(--success);
+            white-space: nowrap;
+        }
+        .lines-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+            gap: .5rem;
+        }
+        .lines-counter {
+            font-size: .75rem;
+            color: var(--muted);
+            margin-top: .625rem;
+            display: flex;
+            align-items: center;
+            gap: .375rem;
+        }
+        .counter-val {
+            font-weight: 700;
+            color: var(--primary);
+            font-size: .875rem;
+        }
+        .quick-btn {
+            font-size: .72rem;
+            font-weight: 500;
+            padding: .2rem .6rem;
+            border-radius: .25rem;
+            border: 1px solid var(--border);
+            background: white;
+            color: var(--muted);
+            cursor: pointer;
+            transition: all .15s;
+        }
+        .quick-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: var(--primary-bg);
+        }
+
+        /* ── Boutons formulaire ── */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: .5rem;
+            padding: .5rem 1.25rem;
+            font-size: .875rem;
+            font-weight: 500;
+            border-radius: .375rem;
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: all .15s;
+        }
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,.12);
+        }
+        .btn-ghost {
+            background: white;
+            color: var(--muted);
+            border-color: var(--border);
+        }
+        .btn-ghost:hover {
+            background: var(--bg);
+            border-color: var(--muted);
+        }
+
+        /* ── Toast ── */
+        .toast {
+            position: fixed;
+            bottom: 1.25rem;
+            right: 1.25rem;
+            z-index: 9999;
+            padding: .625rem 1rem;
+            border-radius: .5rem;
+            font-size: .8125rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+            box-shadow: 0 8px 16px rgba(0,0,0,.12);
+            animation: toastIn .2s ease;
+        }
+        .toast-warn {
+            background: #fff7ed;
+            border: 1px solid #fed7aa;
+            color: #9a3412;
+        }
+        .toast-ok {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            color: #14532d;
+        }
+        .toast-err {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #991b1b;
+        }
+        @keyframes toastIn  { from { opacity:0; transform:translateY(8px); } }
+        @keyframes toastOut { to   { opacity:0; transform:translateY(8px); } }
+    </style>
+</head>
+
+<body>
+
+<!-- ── Nav ── -->
+<!-- Navigation -->
+<nav class="bg-white border-b border-gray-200 sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center h-16">
+            <div class="flex items-center gap-8">
+                <span class="text-xl font-semibold text-gray-900">
+                    Système de gestion des formations
+                </span>
+            </div>
+            <div class="flex items-center gap-4">
+                <span class="text-sm text-gray-600">
+                    <i class="fas fa-user-circle mr-2 text-gray-400"></i>
+                    {{ request.user.first_name }} {{ request.user.last_name }}
+                </span>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- ── Contenu ── -->
+<div class="min-h-screen py-8 px-4">
+<div class="max-w-3xl mx-auto">
+
+    <!-- Breadcrumb -->
+    <nav class="flex items-center gap-2 text-sm text-gray-500 mb-5">
+        <a href="{% url 'matrix_view' %}"
+           class="hover:text-gray-700">
+            <i class="fas fa-home"></i>
+        </a>
+        <i class="fas fa-chevron-right text-xs text-gray-400"></i>
+        <a href="{% url 'employee_list' %}"
+           class="hover:text-gray-700">Employés</a>
+        <i class="fas fa-chevron-right text-xs text-gray-400"></i>
+        <span class="text-gray-800 font-medium">
+            {% if form.instance.pk %}Modifier{% else %}Nouveau{% endif %}
+        </span>
+    </nav>
+
+    <!-- ════ CARD ════ -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+
+        <!-- En-tête -->
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h1 class="text-lg font-semibold text-gray-900
+                       flex items-center gap-2">
+                {% if form.instance.pk %}
+                    <i class="fas fa-user-pen text-blue-500"></i>
+                    Modifier l'opérateur
+                {% else %}
+                    <i class="fas fa-user-plus text-blue-500"></i>
+                    Nouvel opérateur
+                {% endif %}
+            </h1>
+            <p class="text-sm text-gray-400 mt-0.5">
+                {% if form.instance.pk %}
+                    Modifiez les informations et les lignes de visibilité.
+                {% else %}
+                    Saisissez le matricule pour charger automatiquement
+                    les informations enregistrées par RH.
+                {% endif %}
+            </p>
+        </div>
+
+        <!-- Formulaire -->
+        <form method="post" id="employee-form"
+              class="px-6 py-6" novalidate>
+            {% csrf_token %}
+
+            <!-- Erreurs globales -->
+            {% if form.non_field_errors %}
+            <div class="flex gap-3 bg-red-50 border border-red-200
+                        rounded-lg p-4 mb-5">
+                <i class="fas fa-triangle-exclamation text-red-500
+                          mt-0.5 flex-shrink-0"></i>
+                <div class="text-sm text-red-700">
+                    <p class="font-semibold mb-1">
+                        Erreur(s) à corriger :
+                    </p>
+                    <ul class="list-disc pl-4 space-y-0.5">
+                        {% for e in form.non_field_errors %}
+                        <li>{{ e }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            {% endif %}
+
+            <p class="text-xs text-gray-400 mb-5">
+                <span class="text-red-500 font-bold">*</span>
+                Champs obligatoires
+            </p>
+
+            <!-- ══════════════════════════════════════════════════════
+                 SECTION 1 : Recherche par matricule
+                 (cachée en mode modification)
+            ══════════════════════════════════════════════════════ -->
+            {% if not form.instance.pk %}
+            <div class="mb-6">
+                <p class="section-title">
+                    <i class="fas fa-magnifying-glass"></i>
+                    Recherche par matricule
+                </p>
+
+                <!-- Champ matricule + bouton -->
+                <div>
+                    <label class="field-label">
+                        Matricule
+                        <span class="required-star">*</span>
+                    </label>
+                    <div class="search-box">
+                        <input type="text"
+                               name="matricule"
+                               id="id_matricule_input"
+                               value="{{ form.matricule.value|default:'' }}"
+                               placeholder="Ex : EMP001"
+                               autocomplete="off"
+                               class="field-input
+                                      {% if form.matricule.errors %}
+                                          has-error
+                                      {% endif %}">
+                        <button type="button"
+                                id="btn-search"
+                                class="btn-search">
+                            <i class="fas fa-search"></i>
+                            Rechercher
+                        </button>
+                    </div>
+
+                    <!-- Statut -->
+                    <div id="search-status" class="hidden search-status">
+                        <i id="status-icon"></i>
+                        <span id="status-text"></span>
+                    </div>
+
+                    {% if form.matricule.errors %}
+                    <p class="field-error">
+                        <i class="fas fa-circle-exclamation"></i>
+                        {{ form.matricule.errors|join:", " }}
+                    </p>
+                    {% endif %}
+
+                    <p class="field-help">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Saisissez le matricule puis cliquez sur
+                        Rechercher. Les informations seront chargées
+                        automatiquement depuis la base RH.
+                    </p>
+                </div>
+
+                <!-- Prompt initial -->
+                <div id="search-prompt"
+                     class="mt-4 py-8 text-center text-gray-400
+                            border border-dashed border-gray-200
+                            rounded-lg bg-gray-50">
+                    <i class="fas fa-id-card text-3xl mb-2 block
+                              text-gray-300"></i>
+                    <p class="text-sm font-medium text-gray-500">
+                        En attente de la recherche
+                    </p>
+                    <p class="text-xs text-gray-400 mt-1">
+                        Saisissez un matricule et cliquez sur
+                        "Rechercher"
+                    </p>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- ══════════════════════════════════════════════════════
+                 SECTION 2 : Infos personnelles
+                 (visible après recherche OU en modification)
+            ══════════════════════════════════════════════════════ -->
+            <div id="section-personal"
+                 class="mb-6
+                        {% if not form.instance.pk and not form.first_name.value %}
+                            section-hidden
+                        {% endif %}">
+
+                <p class="section-title">
+                    <i class="fas fa-id-card"></i>
+                    Informations personnelles
+                </p>
+
+                <!-- Carte employé trouvé -->
+                <div id="employee-found-card"
+                     class="employee-found-card
+                            {% if not form.first_name.value %}
+                                hidden
+                            {% endif %}">
+                    <div class="employee-found-avatar"
+                         id="found-avatar">
+                        ?
+                    </div>
+                    <div>
+                        <p class="text-sm font-semibold
+                                  text-green-800" id="found-name">
+                            —
+                        </p>
+                        <p class="text-xs text-green-600"
+                           id="found-sub">
+                            —
+                        </p>
+                    </div>
+                    <i class="fas fa-circle-check text-green-500
+                              text-xl ml-auto"></i>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+                    <!-- Prénom -->
+                    <div>
+                        <label class="field-label"
+                               for="id_first_name">
+                            Prénom
+                            {% if not form.instance.pk %}
+                            <span class="text-xs text-gray-400
+                                         font-normal ml-1">
+                                (auto-rempli)
+                            </span>
+                            {% endif %}
+                        </label>
+                        <input type="text"
+                               id="id_first_name"
+                               name="first_name"
+                               value="{{ form.first_name.value|default:'' }}"
+                               placeholder="Chargé automatiquement"
+                               class="field-input
+                                      {% if not form.instance.pk %}
+                                          readonly
+                                      {% endif %}
+                                      {% if form.first_name.errors %}
+                                          has-error
+                                      {% endif %}"
+                               {% if not form.instance.pk %}
+                                   readonly
+                               {% endif %}>
+                        {% if form.first_name.errors %}
+                        <p class="field-error">
+                            <i class="fas fa-circle-exclamation"></i>
+                            {{ form.first_name.errors|join:", " }}
+                        </p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Nom -->
+                    <div>
+                        <label class="field-label"
+                               for="id_last_name">
+                            Nom
+                            {% if not form.instance.pk %}
+                            <span class="text-xs text-gray-400
+                                         font-normal ml-1">
+                                (auto-rempli)
+                            </span>
+                            {% endif %}
+                        </label>
+                        <input type="text"
+                               id="id_last_name"
+                               name="last_name"
+                               value="{{ form.last_name.value|default:'' }}"
+                               placeholder="Chargé automatiquement"
+                               class="field-input
+                                      {% if not form.instance.pk %}
+                                          readonly
+                                      {% endif %}
+                                      {% if form.last_name.errors %}
+                                          has-error
+                                      {% endif %}"
+                               {% if not form.instance.pk %}
+                                   readonly
+                               {% endif %}>
+                        {% if form.last_name.errors %}
+                        <p class="field-error">
+                            <i class="fas fa-circle-exclamation"></i>
+                            {{ form.last_name.errors|join:", " }}
+                        </p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Matricule (mode modification) -->
+                    {% if form.instance.pk %}
+                    <div class="sm:col-span-2">
+                        <label class="field-label">
+                            Matricule
+                        </label>
+                        <input type="text"
+                               name="matricule"
+                               value="{{ form.matricule.value|default:'' }}"
+                               class="field-input readonly"
+                               readonly>
+                        <p class="field-help">
+                            Le matricule ne peut pas être modifié.
+                        </p>
+                    </div>
+                    {% endif %}
+
+                    <!-- Date d'embauche -->
+                    <div class="sm:col-span-2">
+                        <label class="field-label"
+                               for="id_hire_date">
+                            Date d'embauche
+                            {% if not form.instance.pk %}
+                            <span class="text-xs text-gray-400
+                                         font-normal ml-1">
+                                (auto-rempli)
+                            </span>
+                            {% endif %}
+                        </label>
+                        <input type="date"
+                               id="id_hire_date"
+                               name="hire_date"
+                               value="{{ form.hire_date.value|default:'' }}"
+                               class="field-input
+                                      {% if not form.instance.pk %}
+                                          readonly
+                                      {% endif %}"
+                               {% if not form.instance.pk %}
+                                   readonly
+                               {% endif %}>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- ══════════════════════════════════════════════════════
+                 SECTION 3 : Ligne principale
+            ══════════════════════════════════════════════════════ -->
+            <div id="section-line"
+                 class="mb-6
+                        {% if not form.instance.pk and not form.first_name.value %}
+                            section-hidden
+                        {% endif %}">
+
+                <p class="section-title">
+                    <i class="fas fa-sitemap"></i>
+                    Affectation principale
+                </p>
+
+                <div>
+                    <label class="field-label"
+                           for="{{ form.line.id_for_label }}">
+                        Ligne principale
+                        <span class="required-star">*</span>
+                    </label>
+                    <select id="{{ form.line.id_for_label }}"
+                            name="line"
+                            class="field-input
+                                   {% if form.line.errors %}
+                                       has-error
+                                   {% endif %}">
+                        <option value="">
+                            -- Sélectionnez la ligne principale --
+                        </option>
+                        {% for pk, label in form.line.field.choices %}
+                        {% if pk %}
+                        <option value="{{ pk }}"
+                            {% if form.line.value|stringformat:"s" == pk|stringformat:"s" %}
+                                selected
+                            {% endif %}>
+                            {{ label }}
+                        </option>
+                        {% endif %}
+                        {% endfor %}
+                    </select>
+                    <p class="field-help">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        La ligne principale sera automatiquement
+                        cochée ci-dessous.
+                    </p>
+                    {% if form.line.errors %}
+                    <p class="field-error">
+                        <i class="fas fa-circle-exclamation"></i>
+                        {{ form.line.errors|join:", " }}
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- ══════════════════════════════════════════════════════
+                 SECTION 4 : Lignes de visibilité
+            ══════════════════════════════════════════════════════ -->
+            <div id="section-visibility"
+                 class="mb-6
+                        {% if not form.instance.pk and not form.first_name.value %}
+                            section-hidden
+                        {% endif %}">
+
+                <p class="section-title">
+                    <i class="fas fa-table-columns"></i>
+                    Apparaître dans les matrices
+                </p>
+
+                <div class="flex gap-3 bg-blue-50 border
+                            border-blue-200 rounded-lg p-3 mb-4
+                            text-sm text-blue-800">
+                    <i class="fas fa-circle-info mt-0.5
+                              flex-shrink-0 text-blue-500"></i>
+                    <p>
+                        Cochez les lignes dans lesquelles cet opérateur
+                        doit <strong>apparaître dans la matrice</strong>.
+                        Il pourra recevoir des formations sur chaque
+                        ligne cochée.
+                    </p>
+                </div>
+
+                <!-- Boutons rapides -->
+                <div class="flex items-center gap-2 mb-3">
+                    <span class="text-xs text-gray-400
+                                 font-medium mr-1">
+                        Sélection :
+                    </span>
+                    <button type="button" id="btn-all"
+                            class="quick-btn">
+                        <i class="fas fa-check-double mr-1"></i>
+                        Toutes
+                    </button>
+                    <button type="button" id="btn-none"
+                            class="quick-btn">
+                        <i class="fas fa-xmark mr-1"></i>
+                        Aucune
+                    </button>
+                </div>
+
+                <!-- Grille checkboxes -->
+                <div class="lines-grid" id="lines-grid">
+                    {% for choice in form.visible_lines %}
+                    <label class="line-card
+                                  {% if choice.data.selected %}
+                                      checked
+                                  {% endif %}"
+                           id="card-{{ choice.data.value }}"
+                           data-line-id="{{ choice.data.value }}"
+                           data-is-main="false">
+
+                        <input type="checkbox"
+                               name="{{ choice.data.name }}"
+                               value="{{ choice.data.value }}"
+                               id="{{ choice.id_for_label }}"
+                               class="line-cb"
+                               {% if choice.data.selected %}
+                                   checked
+                               {% endif %}>
+
+                        <span class="line-indicator">
+                            <i class="fas fa-check"
+                               style="font-size:.55rem"></i>
+                        </span>
+
+                        <span class="line-label">
+                            {{ choice.choice_label }}
+                        </span>
+
+                        <span class="badge-main"
+                              id="badge-{{ choice.data.value }}"
+                              style="display:none">
+                            Principal
+                        </span>
+                    </label>
+                    {% empty %}
+                    <div class="col-span-full py-6 text-center
+                                text-sm text-gray-400">
+                        <i class="fas fa-inbox text-2xl
+                                  block mb-2"></i>
+                        Aucune ligne disponible
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Compteur -->
+                <div class="lines-counter" id="counter-wrap">
+                    <i class="fas fa-table-columns text-blue-400"></i>
+                    Cet opérateur apparaîtra dans
+                    <strong class="counter-val"
+                            id="counter-n">0</strong>
+                    matrice<span id="counter-s"></span>
+                </div>
+
+                {% if form.visible_lines.errors %}
+                <p class="field-error mt-2">
+                    <i class="fas fa-circle-exclamation"></i>
+                    {{ form.visible_lines.errors|join:", " }}
+                </p>
+                {% endif %}
+            </div>
+
+            <!-- ══ ACTIONS ══ -->
+            <div id="section-actions"
+                 class="flex items-center justify-between
+                        pt-5 mt-5 border-t border-gray-200
+                        {% if not form.instance.pk and not form.first_name.value %}
+                            section-hidden
+                        {% endif %}">
+                <a href="{% url 'matrix_view' %}"
+                   class="btn btn-ghost">
+                    <i class="fas fa-arrow-left"></i>
+                    Annuler
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-check"></i>
+                    {% if form.instance.pk %}
+                        Enregistrer les modifications
+                    {% else %}
+                        Créer l'opérateur
+                    {% endif %}
+                </button>
+            </div>
+
+        </form>
+    </div><!-- /card -->
+
+</div>
+</div>
+
+<!-- ════════════════════════════════════════
+     JAVASCRIPT
+════════════════════════════════════════ -->
+<script>
+(function () {
+
+    /* ════════════════════════════════════
+       ÉLÉMENTS DOM
+    ════════════════════════════════════ */
+    const lineSelect   = document.getElementById(
+        '{{ form.line.id_for_label }}'
+    );
+    const allCards     = document.querySelectorAll('.line-card');
+    const allCBs       = document.querySelectorAll('.line-cb');
+    const btnAll       = document.getElementById('btn-all');
+    const btnNone      = document.getElementById('btn-none');
+    const counterN     = document.getElementById('counter-n');
+    const counterS     = document.getElementById('counter-s');
+
+    /* Éléments recherche matricule */
+    const btnSearch       = document.getElementById('btn-search');
+    const matriculeInput  = document.getElementById('id_matricule_input');
+    const searchStatus    = document.getElementById('search-status');
+    const statusIcon      = document.getElementById('status-icon');
+    const statusText      = document.getElementById('status-text');
+    const searchPrompt    = document.getElementById('search-prompt');
+    const foundCard       = document.getElementById('employee-found-card');
+    const foundAvatar     = document.getElementById('found-avatar');
+    const foundName       = document.getElementById('found-name');
+    const foundSub        = document.getElementById('found-sub');
+
+    /* Sections à afficher après recherche */
+    const sectionPersonal   = document.getElementById('section-personal');
+    const sectionLine       = document.getElementById('section-line');
+    const sectionVisibility = document.getElementById('section-visibility');
+    const sectionActions    = document.getElementById('section-actions');
+
+    const firstNameInput = document.getElementById('id_first_name');
+    const lastNameInput  = document.getElementById('id_last_name');
+    const hireDateInput  = document.getElementById('id_hire_date');
+
+    const IS_EDIT_MODE   = {{ form.instance.pk|yesno:"true,false" }};
+
+    /* ════════════════════════════════════
+       TOAST
+    ════════════════════════════════════ */
+    function toast(msg, type) {
+        const t = document.createElement('div');
+        t.className = 'toast toast-' + (type || 'warn');
+        t.innerHTML = msg;
+        document.body.appendChild(t);
+        setTimeout(() => {
+            t.style.animation = 'toastOut .2s ease forwards';
+            setTimeout(() => t.remove(), 220);
+        }, 2800);
+    }
+
+    /* ════════════════════════════════════
+       MISE À JOUR VISUELLE D'UNE CARTE
+    ════════════════════════════════════ */
+    function refreshCard(cb) {
+        const id    = cb.value;
+        const card  = document.getElementById('card-' + id);
+        const badge = document.getElementById('badge-' + id);
+        const isMain  = card && card.dataset.isMain === 'true';
+        const checked = cb.checked;
+
+        if (!card) return;
+
+        card.classList.remove('checked', 'is-main');
+        if (checked) {
+            card.classList.add(isMain ? 'is-main' : 'checked');
+        }
+        if (badge) {
+            badge.style.display = (isMain && checked)
+                ? 'inline' : 'none';
+        }
+    }
+
+    /* ════════════════════════════════════
+       COMPTEUR
+    ════════════════════════════════════ */
+    function updateCounter() {
+        const n = [...allCBs].filter(cb => cb.checked).length;
+        counterN.textContent = n;
+        counterS.textContent = n > 1 ? 's' : '';
+    }
+
+    /* ════════════════════════════════════
+       LIGNE PRINCIPALE
+    ════════════════════════════════════ */
+    function setMainLine(lineId) {
+        allCards.forEach(card => {
+            card.dataset.isMain = 'false';
+            const id    = card.dataset.lineId;
+            const badge = document.getElementById('badge-' + id);
+            if (badge) badge.style.display = 'none';
+        });
+
+        if (!lineId) return;
+
+        const card = document.getElementById('card-' + lineId);
+        const cb   = document.querySelector(
+            `.line-cb[value="${lineId}"]`
+        );
+
+        if (!card) return;
+        card.dataset.isMain = 'true';
+
+        if (cb && !cb.checked) {
+            cb.checked = true;
+            toast(
+                '<i class="fas fa-check mr-1"></i> ' +
+                'Ligne principale cochée automatiquement.',
+                'ok'
+            );
+        }
+        if (cb) refreshCard(cb);
+    }
+
+    /* ════════════════════════════════════
+       AFFICHER LES SECTIONS
+    ════════════════════════════════════ */
+    function showSections() {
+        [
+            sectionPersonal,
+            sectionLine,
+            sectionVisibility,
+            sectionActions,
+        ].forEach(el => {
+            if (el) el.classList.remove('section-hidden');
+        });
+    }
+
+    function hideSections() {
+        [
+            sectionPersonal,
+            sectionLine,
+            sectionVisibility,
+            sectionActions,
+        ].forEach(el => {
+            if (el) el.classList.add('section-hidden');
+        });
+    }
+
+    /* ════════════════════════════════════
+       STATUT RECHERCHE
+    ════════════════════════════════════ */
+    function showSearchStatus(type, message) {
+        searchStatus.classList.remove('hidden', 'success', 'error', 'loading');
+        searchStatus.classList.add(type);
+
+        const icons = {
+            success: 'fas fa-circle-check',
+            error:   'fas fa-circle-xmark',
+            loading: 'fas fa-spinner fa-spin',
+        };
+        statusIcon.className = icons[type] || '';
+        statusText.textContent = message;
+    }
+
+    /* ════════════════════════════════════
+       RECHERCHE PAR MATRICULE
+    ════════════════════════════════════ */
+    function searchByMatricule() {
+        if (!matriculeInput) return;
+
+        const matricule = matriculeInput.value.trim().toUpperCase();
+        if (!matricule) {
+            showSearchStatus('error', 'Veuillez saisir un matricule.');
+            return;
+        }
+
+        // UI chargement
+        if (btnSearch) btnSearch.disabled = true;
+        if (searchPrompt) searchPrompt.classList.add('hidden');
+        showSearchStatus('loading', 'Recherche en cours...');
+
+        const url = `{% url 'get_employee_by_matricule' %}` +
+                    `?matricule=${encodeURIComponent(matricule)}`;
+
+        fetch(url)
+            .then(r => r.json())
+            .then(data => {
+                if (btnSearch) btnSearch.disabled = false;
+
+                if (data.found) {
+                    // ✅ Remplir les champs
+                    if (firstNameInput) firstNameInput.value = data.first_name;
+                    if (lastNameInput)  lastNameInput.value  = data.last_name;
+                    if (hireDateInput)  hireDateInput.value  = data.hire_date;
+
+                    // Carte employé trouvé
+                    if (foundCard) {
+                        const initials = (
+                            (data.first_name[0] || '') +
+                            (data.last_name[0]  || '')
+                        ).toUpperCase();
+                        if (foundAvatar) foundAvatar.textContent = initials;
+                        if (foundName) {
+                            foundName.textContent = (
+                                data.first_name + ' ' + data.last_name
+                            );
+                        }
+                        if (foundSub) {
+                            foundSub.textContent = (
+                                'Matricule : ' + data.matricule
+                            );
+                        }
+                        foundCard.classList.remove('hidden');
+                    }
+
+                    // Afficher toutes les sections
+                    showSections();
+                    showSearchStatus('success', data.message);
+
+                    toast(
+                        '<i class="fas fa-circle-check mr-1"></i>' +
+                        data.message,
+                        'ok'
+                    );
+
+                } else {
+                    // Cacher les sections
+                    hideSections();
+
+                    if (foundCard) foundCard.classList.add('hidden');
+                    if (firstNameInput) firstNameInput.value = '';
+                    if (lastNameInput)  lastNameInput.value  = '';
+                    if (hireDateInput)  hireDateInput.value  = '';
+
+                    if (searchPrompt) {
+                        searchPrompt.classList.remove('hidden');
+                    }
+
+                    showSearchStatus('error', data.message);
+                    toast(
+                        '<i class="fas fa-circle-xmark mr-1"></i>' +
+                        data.message,
+                        'err'
+                    );
+                }
+            })
+            .catch(err => {
+                console.error('Erreur:', err);
+                if (btnSearch) btnSearch.disabled = false;
+                showSearchStatus(
+                    'error',
+                    'Erreur de connexion. Réessayez.'
+                );
+            });
+    }
+
+    /* ════════════════════════════════════
+       ÉVÉNEMENTS CHECKBOXES
+    ════════════════════════════════════ */
+    allCards.forEach(card => {
+        card.addEventListener('click', function () {
+            const id = this.dataset.lineId;
+            const cb = document.querySelector(
+                `.line-cb[value="${id}"]`
+            );
+            if (!cb) return;
+
+            // Empêcher de décocher la ligne principale
+            if (!cb.checked && this.dataset.isMain === 'true') {
+                cb.checked = true;
+                toast(
+                    '<i class="fas fa-lock mr-1"></i> ' +
+                    'La ligne principale ne peut pas être décochée.',
+                    'warn'
+                );
+            }
+            refreshCard(cb);
+            updateCounter();
+        });
+    });
+
+    /* ════════════════════════════════════
+       BOUTONS RAPIDES
+    ════════════════════════════════════ */
+    if (btnAll) {
+        btnAll.addEventListener('click', () => {
+            allCBs.forEach(cb => { cb.checked = true; refreshCard(cb); });
+            updateCounter();
+            toast(
+                '<i class="fas fa-check-double mr-1"></i>' +
+                'Toutes les lignes sélectionnées.',
+                'ok'
+            );
+        });
+    }
+
+    if (btnNone) {
+        btnNone.addEventListener('click', () => {
+            const mainId = lineSelect ? lineSelect.value : null;
+            allCBs.forEach(cb => {
+                cb.checked = (cb.value === mainId);
+                refreshCard(cb);
+            });
+            updateCounter();
+            if (mainId) {
+                toast(
+                    '<i class="fas fa-info-circle mr-1"></i>' +
+                    'Seule la ligne principale reste sélectionnée.',
+                    'warn'
+                );
+            }
+        });
+    }
+
+    /* ════════════════════════════════════
+       CHANGEMENT LIGNE PRINCIPALE
+    ════════════════════════════════════ */
+    if (lineSelect) {
+        lineSelect.addEventListener('change', function () {
+            setMainLine(this.value);
+            updateCounter();
+        });
+    }
+
+    /* ════════════════════════════════════
+       ÉVÉNEMENTS RECHERCHE
+    ════════════════════════════════════ */
+    if (!IS_EDIT_MODE) {
+        if (btnSearch) {
+            btnSearch.addEventListener('click', searchByMatricule);
+        }
+
+        if (matriculeInput) {
+            matriculeInput.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    searchByMatricule();
+                }
+            });
+
+            // Auto-recherche si matricule pré-rempli
+            // (retour après erreur de validation)
+            if (matriculeInput.value.trim()) {
+                searchByMatricule();
+            }
+        }
+    }
+
+    /* ════════════════════════════════════
+       INITIALISATION
+    ════════════════════════════════════ */
+    (function init() {
+        allCBs.forEach(cb => refreshCard(cb));
+
+        if (lineSelect && lineSelect.value) {
+            setMainLine(lineSelect.value);
+        }
+        updateCounter();
+    })();
+
+})();
+</script>
+
+</body>
+</html>

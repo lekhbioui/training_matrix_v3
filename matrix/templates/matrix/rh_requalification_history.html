@@ -1,0 +1,655 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historique des requalifications - {{ request.user.company }}</title>
+    <link rel="icon" type="image/png" href="{% static 'images/logo.png' %}">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        
+        :root {
+            --primary-color: #1e40af;
+            --success-color: #16a34a;
+            --danger-color: #dc2626;
+            --warning-color: #ea580c;
+            --info-color: #0284c7;
+            --border-color: #e2e8f0;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border: 1px solid var(--border-color);
+        }
+        
+        .card-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            background-color: #f8fafc;
+        }
+        
+        .btn {
+            padding: 0.5rem 1rem;
+            font-weight: 500;
+            font-size: 0.875rem;
+            border-radius: 0.375rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            text-decoration: none;
+            border: 1px solid transparent;
+            transition: all 0.15s;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #1e3a8a;
+        }
+        
+        .btn-secondary {
+            background-color: white;
+            color: #64748b;
+            border-color: var(--border-color);
+        }
+        
+        .btn-secondary:hover {
+            background-color: #f8fafc;
+        }
+        
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.625rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            border-radius: 9999px;
+        }
+        
+        .badge-success { background-color: #f0fdf4; color: var(--success-color); }
+        .badge-info { background-color: #f0f9ff; color: var(--info-color); }
+        .badge-warning { background-color: #fff7ed; color: var(--warning-color); }
+        .badge-danger { background-color: #fef2f2; color: var(--danger-color); }
+        
+        .level-badge {
+            width: 1.75rem;
+            height: 1.75rem;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .level-I { background-color: #fef3c7; color: #92400e; }
+        .level-L { background-color: #dbeafe; color: #1e40af; }
+        .level-U { background-color: #dcfce7; color: #166534; }
+        
+        .stat-card {
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+        
+        .stat-label {
+            font-size: 0.75rem;
+            color: #64748b;
+            margin-top: 0.25rem;
+            text-transform: uppercase;
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .data-table th {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+            background-color: #f8fafc;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .data-table td {
+            padding: 0.875rem 1rem;
+            font-size: 0.875rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .data-table tbody tr:hover {
+            background-color: #f8fafc;
+        }
+        
+        .form-field select,
+        .form-field input {
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+        }
+        
+        .form-field select:focus,
+        .form-field input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+        }
+        
+        .form-field label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: #64748b;
+            margin-bottom: 0.375rem;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    
+    <!-- Navigation -->
+    <nav class="bg-white border-b border-gray-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center gap-8">
+                    <span class="text-xl font-semibold text-gray-900">
+                        Training Matrix System
+                    </span>
+                    <div class="hidden md:flex items-center gap-1">
+                        <a href="{% url 'matrix_view' %}" class="px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md">
+                            <i class="fas fa-th-large mr-2"></i>Matrice
+                        </a>
+                        <a href="{% url 'employees_to_requalify' %}" class="px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md">
+                            <i class="fas fa-clock mr-2"></i>Requalifications
+                        </a>
+                        <a href="{% url 'requalification_history' %}" class="px-3 py-2 text-sm font-medium text-blue-700 bg-blue-50 rounded-md">
+                            <i class="fas fa-history mr-2"></i>Historique
+                        </a>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4">
+                    {% if is_rh %}
+                    <span class="px-2 py-1 bg-purple-100 text-purple-700 text-xs font-semibold rounded">RH</span>
+                    {% endif %}
+                    <span class="text-sm text-gray-600">
+                        <i class="fas fa-user-circle mr-2 text-gray-400"></i>
+                        {{ request.user.first_name }} {{ request.user.last_name }}
+                    </span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="min-h-screen py-6 px-4">
+        <div class="max-w-7xl mx-auto">
+            
+            <!-- Breadcrumb -->
+            <nav class="flex mb-6">
+                <ol class="inline-flex items-center space-x-1 text-sm">
+                    <li>
+                        <a href="{% url 'matrix_view' %}" class="text-gray-500 hover:text-gray-700">
+                            <i class="fas fa-home"></i>
+                        </a>
+                    </li>
+                    <li>
+                        <span class="mx-2 text-gray-400">/</span>
+                        <span class="text-gray-700">Historique des requalifications</span>
+                    </li>
+                </ol>
+            </nav>
+
+            <!-- Page Header -->
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+                <div>
+                    <h1 class="text-2xl font-semibold text-gray-900">
+                        <i class="fas fa-history text-gray-400 mr-2"></i>
+                        Historique des requalifications
+                    </h1>
+                    <p class="mt-1 text-sm text-gray-600">
+                        {% if is_rh %}
+                        Vue complète de toutes les requalifications
+                        {% else %}
+                        Vos requalifications effectuées
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <a href="{% url 'employees_to_requalify' %}" class="btn btn-secondary">
+                        <i class="fas fa-plus"></i>
+                        Nouvelle requalification
+                    </a>
+                </div>
+            </div>
+
+            <!-- Statistics Cards -->
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 mb-6">
+                <div class="stat-card" style="border-top: 3px solid var(--primary-color);">
+                    <div class="stat-value text-blue-700">{{ stats.total }}</div>
+                    <div class="stat-label">Total</div>
+                </div>
+                <div class="stat-card" style="border-top: 3px solid var(--success-color);">
+                    <div class="stat-value text-green-600">{{ stats.pass }}</div>
+                    <div class="stat-label">Réussis</div>
+                </div>
+                <div class="stat-card" style="border-top: 3px solid var(--info-color);">
+                    <div class="stat-value text-sky-600">{{ stats.upgrade }}</div>
+                    <div class="stat-label">Montées</div>
+                </div>
+                <div class="stat-card" style="border-top: 3px solid var(--warning-color);">
+                    <div class="stat-value text-orange-600">{{ stats.downgrade }}</div>
+                    <div class="stat-label">Descentes</div>
+                </div>
+                <div class="stat-card" style="border-top: 3px solid var(--danger-color);">
+                    <div class="stat-value text-red-600">{{ stats.retrain }}</div>
+                    <div class="stat-label">À reformer</div>
+                </div>
+            </div>
+
+            {% if is_rh and stats_by_line %}
+            <!-- RH Dashboard -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <!-- Par Ligne -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="font-semibold text-gray-900">
+                            <i class="fas fa-sitemap text-gray-400 mr-2"></i>
+                            Par ligne
+                        </h3>
+                    </div>
+                    <div class="p-4">
+                        {% for item in stats_by_line %}
+                        <div class="flex items-center justify-between py-2 {% if not forloop.last %}border-b border-gray-100{% endif %}">
+                            <span class="text-sm font-medium text-gray-700">{{ item.line__code|default:"Non défini" }}</span>
+                            <span class="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded">{{ item.count }}</span>
+                        </div>
+                        {% empty %}
+                        <p class="text-sm text-gray-500 text-center py-4">Aucune donnée</p>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Par Mois -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="font-semibold text-gray-900">
+                            <i class="fas fa-calendar-alt text-gray-400 mr-2"></i>
+                            Par mois
+                        </h3>
+                    </div>
+                    <div class="p-4">
+                        {% for item in stats_by_month %}
+                        <div class="flex items-center justify-between py-2 {% if not forloop.last %}border-b border-gray-100{% endif %}">
+                            <span class="text-sm font-medium text-gray-700">{{ item.month|date:"F Y" }}</span>
+                            <span class="px-2 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded">{{ item.count }}</span>
+                        </div>
+                        {% empty %}
+                        <p class="text-sm text-gray-500 text-center py-4">Aucune donnée</p>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Par Évaluateur -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="font-semibold text-gray-900">
+                            <i class="fas fa-user-check text-gray-400 mr-2"></i>
+                            Par évaluateur
+                        </h3>
+                    </div>
+                    <div class="p-4">
+                        {% for item in stats_by_evaluator %}
+                        <div class="flex items-center justify-between py-2 {% if not forloop.last %}border-b border-gray-100{% endif %}">
+                            <span class="text-sm font-medium text-gray-700">
+                                {{ item.evaluated_by__first_name }} {{ item.evaluated_by__last_name }}
+                            </span>
+                            <span class="px-2 py-1 bg-purple-100 text-purple-700 text-xs font-semibold rounded">{{ item.count }}</span>
+                        </div>
+                        {% empty %}
+                        <p class="text-sm text-gray-500 text-center py-4">Aucune donnée</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Filters -->
+            <div class="card mb-6">
+                <div class="p-4">
+                    <form method="GET" class="space-y-4">
+                        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                            <!-- Ligne -->
+                            <div class="form-field">
+                                <label><i class="fas fa-sitemap mr-1"></i> Ligne</label>
+                                <select name="line_id">
+                                    <option value="">Toutes</option>
+                                    {% for line in lines %}
+                                    <option value="{{ line.id }}" {% if selected_line_id == line.id %}selected{% endif %}>
+                                        {{ line.code }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <!-- Employé -->
+                            <div class="form-field">
+                                <label><i class="fas fa-user mr-1"></i> Employé</label>
+                                <select name="employee_id">
+                                    <option value="">Tous</option>
+                                    {% for emp in employees %}
+                                    <option value="{{ emp.id }}" {% if selected_employee == emp.id %}selected{% endif %}>
+                                        {{ emp.first_name }} {{ emp.last_name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <!-- Résultat -->
+                            <div class="form-field">
+                                <label><i class="fas fa-check-circle mr-1"></i> Résultat</label>
+                                <select name="result">
+                                    <option value="">Tous</option>
+                                    {% for code, label in result_choices %}
+                                    <option value="{{ code }}" {% if selected_result == code %}selected{% endif %}>
+                                        {{ label }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            {% if is_rh and evaluators %}
+                            <!-- Évaluateur (RH only) -->
+                            <div class="form-field">
+                                <label><i class="fas fa-user-check mr-1"></i> Évaluateur</label>
+                                <select name="evaluator_id">
+                                    <option value="">Tous</option>
+                                    {% for eval in evaluators %}
+                                    <option value="{{ eval.id }}" {% if selected_evaluator == eval.id %}selected{% endif %}>
+                                        {{ eval.first_name }} {{ eval.last_name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            {% endif %}
+                            
+                            <!-- Date Du -->
+                            <div class="form-field">
+                                <label><i class="fas fa-calendar mr-1"></i> Du</label>
+                                <input type="date" name="date_from" value="{{ date_from }}">
+                            </div>
+                            
+                            <!-- Date Au -->
+                            <div class="form-field">
+                                <label><i class="fas fa-calendar mr-1"></i> Au</label>
+                                <input type="date" name="date_to" value="{{ date_to }}">
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-filter"></i>
+                                Filtrer
+                            </button>
+                            <a href="{% url 'requalification_history' %}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i>
+                                Réinitialiser
+                            </a>
+                            <button type="button" onclick="exportCSV()" class="btn btn-secondary ml-auto">
+                                <i class="fas fa-download"></i>
+                                Exporter CSV
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Results Count -->
+            <div class="flex items-center justify-between mb-4">
+                <p class="text-sm text-gray-600">
+                    <i class="fas fa-list mr-1"></i>
+                    <span class="font-medium">{{ requalifications|length }}</span> requalification(s) trouvée(s)
+                </p>
+            </div>
+
+            <!-- Data Table -->
+            <div class="card overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Employé</th>
+                                <th>Ligne</th>
+                                <th>Tâche</th>
+                                <th class="text-center">Ancien</th>
+                                <th class="text-center">Résultat</th>
+                                <th class="text-center">Nouveau</th>
+                                <th>Jours</th>
+                                {% if is_rh %}
+                                <th>Évaluateur</th>
+                                {% endif %}
+                                <th class="text-center">Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for req in requalifications %}
+                            <tr>
+                                <td>
+                                    <span class="font-medium text-gray-900">{{ req.requalification_date|date:"d/m/Y" }}</span>
+                                </td>
+                                <td>
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
+                                            <i class="fas fa-user text-gray-500 text-xs"></i>
+                                        </div>
+                                        <div>
+                                            <div class="font-medium text-gray-900">
+                                                {{ req.employee.first_name }} {{ req.employee.last_name }}
+                                            </div>
+                                            <div class="text-xs text-gray-500">{{ req.employee.matricule }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="px-2 py-1 bg-gray-100 text-gray-700 text-xs font-medium rounded">
+                                        {{ req.line.code|default:"-" }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if req.task %}
+                                    <span class="text-gray-700" title="{{ req.task.title }}">
+                                        {{ req.task.title|truncatechars:25 }}
+                                    </span>
+                                    {% else %}
+                                    <span class="text-gray-400 italic">Général</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    {% if req.previous_level is not None %}
+                                    <span class="level-badge level-{{ req.get_previous_level_display }}">
+                                        {{ req.get_previous_level_display }}
+                                    </span>
+                                    {% else %}
+                                    <span class="text-gray-400">-</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    {% if req.result == 'PASS' %}
+                                    <span class="badge badge-success">
+                                        <i class="fas fa-check mr-1"></i>Maintien
+                                    </span>
+                                    {% elif req.result == 'UPGRADE' %}
+                                    <span class="badge badge-info">
+                                        <i class="fas fa-arrow-up mr-1"></i>Montée
+                                    </span>
+                                    {% elif req.result == 'DOWNGRADE' %}
+                                    <span class="badge badge-warning">
+                                        <i class="fas fa-arrow-down mr-1"></i>Descente
+                                    </span>
+                                    {% else %}
+                                    <span class="badge badge-danger">
+                                        <i class="fas fa-redo mr-1"></i>À reformer
+                                    </span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    {% if req.new_level is not None %}
+                                    <span class="level-badge level-{{ req.get_new_level_display }}">
+                                        {{ req.get_new_level_display }}
+                                    </span>
+                                    {% else %}
+                                    <span class="text-gray-400">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if req.days_since_training %}
+                                    <span class="text-sm text-gray-600">{{ req.days_since_training }}j</span>
+                                    {% else %}
+                                    <span class="text-gray-400">-</span>
+                                    {% endif %}
+                                </td>
+                                {% if is_rh %}
+                                <td>
+                                    {% if req.evaluated_by %}
+                                    <span class="text-sm text-gray-700">
+                                        {{ req.evaluated_by.first_name }} {{ req.evaluated_by.last_name }}
+                                    </span>
+                                    {% else %}
+                                    <span class="text-gray-400">-</span>
+                                    {% endif %}
+                                </td>
+                                {% endif %}
+                                <td class="text-center">
+                                    {% if req.notes %}
+                                    <button type="button" 
+                                            onclick="showNotes('{{ req.notes|escapejs }}')"
+                                            class="text-blue-500 hover:text-blue-700">
+                                        <i class="fas fa-comment"></i>
+                                    </button>
+                                    {% else %}
+                                    <span class="text-gray-300"><i class="fas fa-comment"></i></span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="{% if is_rh %}10{% else %}9{% endif %}" class="text-center py-12">
+                                    <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
+                                        <i class="fas fa-inbox text-2xl text-gray-400"></i>
+                                    </div>
+                                    <h3 class="font-semibold text-gray-900 mb-1">Aucune requalification trouvée</h3>
+                                    <p class="text-sm text-gray-500">Essayez de modifier vos filtres</p>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Legend -->
+            <div class="mt-6 p-4 bg-white border border-gray-200 rounded-md">
+                <h4 class="text-sm font-semibold text-gray-700 mb-3">
+                    <i class="fas fa-info-circle text-gray-400 mr-1"></i>
+                    Légende
+                </h4>
+                <div class="flex flex-wrap gap-6 text-sm">
+                    <div class="flex items-center gap-2">
+                        <span class="level-badge level-I">I</span>
+                        <span class="text-gray-600">En formation</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="level-badge level-L">L</span>
+                        <span class="text-gray-600">Autonome</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="level-badge level-U">U</span>
+                        <span class="text-gray-600">Formateur</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Notes Modal -->
+    <div id="notesModal" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-black bg-opacity-50" onclick="closeNotes()"></div>
+        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="font-semibold text-gray-900">
+                    <i class="fas fa-comment text-gray-400 mr-2"></i>Notes
+                </h3>
+                <button onclick="closeNotes()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <p id="notesContent" class="text-gray-700"></p>
+        </div>
+    </div>
+
+    <script>
+    function showNotes(notes) {
+        document.getElementById('notesContent').textContent = notes;
+        document.getElementById('notesModal').classList.remove('hidden');
+    }
+    
+    function closeNotes() {
+        document.getElementById('notesModal').classList.add('hidden');
+    }
+    
+    function exportCSV() {
+        const table = document.querySelector('.data-table');
+        const rows = table.querySelectorAll('tr');
+        let csv = [];
+        
+        rows.forEach(row => {
+            const cols = row.querySelectorAll('th, td');
+            const rowData = [];
+            cols.forEach(col => {
+                let text = col.innerText.replace(/"/g, '""').trim();
+                rowData.push('"' + text + '"');
+            });
+            csv.push(rowData.join(';'));
+        });
+        
+        const csvContent = csv.join('\n');
+        const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'historique_requalifications_' + new Date().toISOString().split('T')[0] + '.csv';
+        link.click();
+    }
+    
+    // Fermer modal avec Escape
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeNotes();
+    });
+    </script>
+
+</body>
+</html>

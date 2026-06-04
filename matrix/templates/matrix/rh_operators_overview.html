@@ -1,0 +1,1931 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Opérateurs & Chefs d'Équipe | HR Management</title>
+    <link rel="icon" type="image/png" href="{% static 'images/logo.png' %}">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-navy: #0A1F44;
+            --primary-blue: #1E3A8A;
+            --accent-blue: #2563EB;
+            --light-blue: #3B82F6;
+            --success-green: #10B981;
+            --warning-amber: #F59E0B;
+            --danger-red: #EF4444;
+            --purple: #7C3AED;
+            --gray-50: #F9FAFB;
+            --gray-100: #F3F4F6;
+            --gray-200: #E5E7EB;
+            --gray-300: #D1D5DB;
+            --gray-400: #9CA3AF;
+            --gray-500: #6B7280;
+            --gray-600: #4B5563;
+            --gray-700: #374151;
+            --gray-800: #1F2937;
+            --gray-900: #111827;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #F5F7FA;
+            color: var(--gray-800);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* CORPORATE HEADER */
+        .corporate-header {
+            background: linear-gradient(135deg, var(--primary-navy) 0%, var(--primary-blue) 100%);
+            border-bottom: 4px solid var(--accent-blue);
+            box-shadow: 0 2px 16px rgba(0, 0, 0, 0.08);
+        }
+
+        .header-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .sidebar-logo {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .company-logo {
+            max-width: 140px;
+            height: auto;
+            display: block;
+        }
+
+        .header-title {
+            color: white;
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+        }
+
+        .header-subtitle {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .header-nav {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-link:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .nav-link.active {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+        }
+
+        /* MAIN CONTAINER */
+        .main-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 32px;
+        }
+
+        /* BREADCRUMB */
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 24px;
+            font-size: 14px;
+            color: var(--gray-600);
+        }
+
+        .breadcrumb a {
+            color: var(--accent-blue);
+            text-decoration: none;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .breadcrumb a:hover {
+            text-decoration: underline;
+        }
+
+        /* PAGE HEADER */
+        .page-header {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            border: 1px solid var(--gray-200);
+            padding: 28px 32px;
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .page-title-section h1 {
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--gray-900);
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .page-title-section h1 i {
+            color: var(--accent-blue);
+        }
+
+        .page-title-section p {
+            color: var(--gray-600);
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        /* SECTION */
+        .section {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            border: 1px solid var(--gray-200);
+            margin-bottom: 24px;
+            overflow: hidden;
+        }
+
+        .section-header {
+            padding: 20px 28px;
+            border-bottom: 1px solid var(--gray-200);
+            background: var(--gray-50);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .section-header.blue-header {
+            background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
+            border-bottom: 2px solid var(--accent-blue);
+        }
+
+        .section-header.purple-header {
+            background: linear-gradient(135deg, #F5F3FF 0%, #EDE9FE 100%);
+            border-bottom: 2px solid var(--purple);
+        }
+
+        .section-header.green-header {
+            background: linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%);
+            border-bottom: 2px solid var(--success-green);
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--gray-900);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .section-title i {
+            font-size: 20px;
+        }
+
+        .section-title.blue i { color: var(--accent-blue); }
+        .section-title.purple i { color: var(--purple); }
+        .section-title.green i { color: var(--success-green); }
+        .section-title.amber i { color: var(--warning-amber); }
+
+        .section-body {
+            padding: 28px;
+        }
+
+        .section-body.no-padding {
+            padding: 0;
+        }
+
+        /* STATS CARDS */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            border: 1px solid var(--gray-200);
+            text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--accent-blue);
+        }
+
+        .stat-card.purple::before { background: var(--purple); }
+        .stat-card.green::before { background: var(--success-green); }
+        .stat-card.amber::before { background: var(--warning-amber); }
+        .stat-card.red::before { background: var(--danger-red); }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin: 0 auto 16px;
+        }
+
+        .stat-icon.blue { background: rgba(37, 99, 235, 0.1); color: var(--accent-blue); }
+        .stat-icon.purple { background: rgba(124, 58, 237, 0.1); color: var(--purple); }
+        .stat-icon.green { background: rgba(16, 185, 129, 0.1); color: var(--success-green); }
+        .stat-icon.amber { background: rgba(245, 158, 11, 0.1); color: var(--warning-amber); }
+        .stat-icon.red { background: rgba(239, 68, 68, 0.1); color: var(--danger-red); }
+
+        .stat-value {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--gray-900);
+            font-family: 'JetBrains Mono', monospace;
+            line-height: 1;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--gray-600);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-top: 8px;
+        }
+
+        /* FILTERS */
+        .filters-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            align-items: end;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-group label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--gray-700);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .form-group label i {
+            color: var(--accent-blue);
+            font-size: 14px;
+        }
+
+        .form-input,
+        .form-select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid var(--gray-200);
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+            transition: all 0.2s ease;
+            font-weight: 500;
+        }
+
+        .form-input:focus,
+        .form-select:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+        }
+
+        .form-select {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236B7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 18px;
+            padding-right: 44px;
+        }
+
+        /* HISTORY OPTION */
+        .history-option-box {
+            margin-top: 20px;
+            padding: 20px;
+            background: linear-gradient(135deg, #F5F3FF 0%, #EDE9FE 100%);
+            border-radius: 10px;
+            border: 2px solid #C4B5FD;
+        }
+
+        .history-option-box.hidden {
+            display: none;
+        }
+
+        .history-checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            cursor: pointer;
+            font-size: 15px;
+            color: #5B21B6;
+            font-weight: 600;
+        }
+
+        .history-checkbox-label input[type="checkbox"] {
+            width: 22px;
+            height: 22px;
+            accent-color: var(--purple);
+            cursor: pointer;
+        }
+
+        .history-info-banner {
+            margin-top: 14px;
+            padding: 14px 18px;
+            background: white;
+            border-radius: 8px;
+            font-size: 14px;
+            color: var(--purple);
+            border: 1px solid #DDD6FE;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* BUTTONS */
+        .btn {
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-blue) 0%, var(--light-blue) 100%);
+            color: white;
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 4px 16px rgba(37, 99, 235, 0.35);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: var(--gray-700);
+            border: 2px solid var(--gray-300);
+        }
+
+        .btn-secondary:hover {
+            background: var(--gray-50);
+            border-color: var(--gray-400);
+        }
+
+        .btn-sm {
+            padding: 8px 14px;
+            font-size: 13px;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        /* FILTER TABS */
+        .filter-tabs {
+            display: flex;
+            gap: 6px;
+            padding: 6px;
+            background: var(--gray-100);
+            border-radius: 10px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+
+        .filter-tab {
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: var(--gray-600);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: none;
+            background: transparent;
+        }
+
+        .filter-tab:hover {
+            background: rgba(255, 255, 255, 0.7);
+            color: var(--gray-800);
+        }
+
+        .filter-tab.active {
+            background: white;
+            color: var(--accent-blue);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .filter-tab-count {
+            background: var(--gray-200);
+            color: var(--gray-700);
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .filter-tab.active .filter-tab-count {
+            background: rgba(37, 99, 235, 0.15);
+            color: var(--accent-blue);
+        }
+
+        .filter-tab-divider {
+            width: 1px;
+            background: var(--gray-300);
+            margin: 4px 8px;
+            align-self: stretch;
+        }
+
+        .filter-tab-badge {
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .filter-tab-badge.green {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success-green);
+        }
+
+        .filter-tab-badge.purple {
+            background: rgba(124, 58, 237, 0.1);
+            color: var(--purple);
+        }
+
+        /* DATA TABLE */
+        .data-table-wrapper {
+            overflow-x: auto;
+            max-height: 65vh;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        .data-table thead {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .data-table thead th {
+            background: linear-gradient(135deg, var(--gray-50) 0%, var(--gray-100) 100%);
+            color: var(--gray-700);
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            padding: 16px 18px;
+            text-align: left;
+            border-bottom: 2px solid var(--gray-200);
+            white-space: nowrap;
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.2s ease;
+        }
+
+        .data-table thead th:hover {
+            background: var(--gray-100);
+        }
+
+        .data-table thead th i.sort-icon {
+            margin-left: 6px;
+            opacity: 0.4;
+            font-size: 10px;
+        }
+
+        .data-table tbody td {
+            padding: 18px;
+            border-bottom: 1px solid var(--gray-100);
+            font-size: 14px;
+            color: var(--gray-800);
+            vertical-align: middle;
+        }
+
+        .data-table tbody tr {
+            transition: all 0.2s ease;
+        }
+
+        .data-table tbody tr:hover {
+            background: linear-gradient(135deg, #F8FAFF 0%, #F0F7FF 100%);
+        }
+
+        .data-table tbody tr.historical-row {
+            background: linear-gradient(90deg, rgba(124, 58, 237, 0.03) 0%, transparent 100%);
+        }
+
+        .data-table tbody tr.historical-row:hover {
+            background: linear-gradient(90deg, rgba(124, 58, 237, 0.08) 0%, #F8FAFF 100%);
+        }
+
+        /* EMPLOYEE CELL */
+        .employee-cell {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .employee-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 15px;
+            color: white;
+            flex-shrink: 0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .employee-avatar.operator {
+            background: linear-gradient(135deg, var(--accent-blue) 0%, var(--light-blue) 100%);
+        }
+
+        .employee-avatar.leader {
+            background: linear-gradient(135deg, var(--purple) 0%, #A855F7 100%);
+        }
+
+        .employee-avatar.historical {
+            opacity: 0.8;
+            border: 3px dashed var(--purple);
+        }
+
+        .employee-info h4 {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--gray-900);
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .employee-info p {
+            font-size: 13px;
+            color: var(--gray-500);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* BADGES */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            gap: 4px;
+            white-space: nowrap;
+        }
+
+        .badge-sm {
+            padding: 2px 6px;
+            font-size: 9px;
+        }
+
+        .badge-leader {
+            background: linear-gradient(135deg, var(--purple) 0%, #A855F7 100%);
+            color: white;
+        }
+
+        .badge-historical {
+            background: linear-gradient(135deg, #A855F7 0%, var(--purple) 100%);
+            color: white;
+        }
+
+        .badge-current {
+            background: linear-gradient(135deg, #D1FAE5 0%, #A7F3D0 100%);
+            color: #065F46;
+            border: 1px solid #6EE7B7;
+        }
+
+        .badge-line {
+            background: rgba(37, 99, 235, 0.1);
+            color: var(--accent-blue);
+            border: 1px solid rgba(37, 99, 235, 0.2);
+        }
+
+        .badge-success {
+            background: linear-gradient(135deg, #D1FAE5 0%, #A7F3D0 100%);
+            color: #065F46;
+            border: 1px solid #6EE7B7;
+        }
+
+        .badge-warning {
+            background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
+            color: #92400E;
+            border: 1px solid #FCD34D;
+        }
+
+        .badge-danger {
+            background: linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%);
+            color: #991B1B;
+            border: 1px solid #FCA5A5;
+        }
+
+        .badge-primary {
+            background: linear-gradient(135deg, #DBEAFE 0%, #BFDBFE 100%);
+            color: #1E3A8A;
+            border: 1px solid #93C5FD;
+        }
+
+        .badge-gray {
+            background: var(--gray-100);
+            color: var(--gray-600);
+            border: 1px solid var(--gray-200);
+        }
+
+        /* LEVEL PILLS */
+        .level-pills {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .level-pill {
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .level-pill.level-i {
+            background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
+            color: #92400E;
+            border: 1px solid #FCD34D;
+        }
+
+        .level-pill.level-l {
+            background: linear-gradient(135deg, #DBEAFE 0%, #BFDBFE 100%);
+            color: #1E3A8A;
+            border: 1px solid #93C5FD;
+        }
+
+        .level-pill.level-u {
+            background: linear-gradient(135deg, #D1FAE5 0%, #A7F3D0 100%);
+            color: #065F46;
+            border: 1px solid #6EE7B7;
+        }
+
+        /* PROGRESS BAR */
+        .progress-container {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+        }
+
+        .progress-header span {
+            color: var(--gray-600);
+            font-weight: 500;
+        }
+
+        .progress-header strong {
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: var(--gray-200);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.4s ease;
+        }
+
+        .progress-fill.low {
+            background: linear-gradient(90deg, var(--danger-red) 0%, #F87171 100%);
+        }
+
+        .progress-fill.medium {
+            background: linear-gradient(90deg, var(--warning-amber) 0%, #FBBF24 100%);
+        }
+
+        .progress-fill.high {
+            background: linear-gradient(90deg, var(--success-green) 0%, #34D399 100%);
+        }
+
+        .progress-footer {
+            font-size: 11px;
+            color: var(--gray-500);
+        }
+
+        /* HISTORY INFO TAG */
+        .history-info-tag {
+            font-size: 11px;
+            color: var(--purple);
+            margin-top: 8px;
+            padding: 6px 10px;
+            background: rgba(124, 58, 237, 0.08);
+            border-radius: 6px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 600;
+        }
+
+        /* LINE INFO */
+        .line-info {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .line-name {
+            font-size: 13px;
+            color: var(--gray-600);
+            margin-top: 4px;
+        }
+
+        .managed-lines {
+            font-size: 11px;
+            color: var(--purple);
+            margin-top: 4px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* MANAGER INFO */
+        .manager-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .manager-info i {
+            color: var(--accent-blue);
+            font-size: 14px;
+        }
+
+        /* EMPTY STATE */
+        .empty-state {
+            text-align: center;
+            padding: 80px 40px;
+            color: var(--gray-400);
+        }
+
+        .empty-state i {
+            font-size: 72px;
+            opacity: 0.3;
+            margin-bottom: 20px;
+            display: block;
+        }
+
+        .empty-state h3 {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--gray-600);
+            margin-bottom: 10px;
+        }
+
+        .empty-state p {
+            font-size: 15px;
+            color: var(--gray-500);
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        /* TABLE FOOTER */
+        .table-footer {
+            padding: 18px 28px;
+            border-top: 2px solid var(--gray-200);
+            background: var(--gray-50);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .table-footer-info {
+            font-size: 14px;
+            color: var(--gray-600);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .table-footer-info i {
+            color: var(--accent-blue);
+        }
+
+        /* DISTRIBUTION GRID */
+        .distribution-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+        }
+
+        .distribution-card {
+            text-align: center;
+            padding: 28px 20px;
+            border-radius: 12px;
+            border: 2px solid;
+            transition: all 0.3s ease;
+        }
+
+        .distribution-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+        }
+
+        .distribution-card.green {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(16, 185, 129, 0.1) 100%);
+            border-color: rgba(16, 185, 129, 0.3);
+        }
+
+        .distribution-card.blue {
+            background: linear-gradient(135deg, rgba(37, 99, 235, 0.05) 0%, rgba(37, 99, 235, 0.1) 100%);
+            border-color: rgba(37, 99, 235, 0.3);
+        }
+
+        .distribution-card.amber {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.05) 0%, rgba(245, 158, 11, 0.1) 100%);
+            border-color: rgba(245, 158, 11, 0.3);
+        }
+
+        .distribution-card.red {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.05) 0%, rgba(239, 68, 68, 0.1) 100%);
+            border-color: rgba(239, 68, 68, 0.3);
+        }
+
+        .distribution-number {
+            font-size: 42px;
+            font-weight: 800;
+            font-family: 'JetBrains Mono', monospace;
+            line-height: 1;
+            margin-bottom: 8px;
+        }
+
+        .distribution-card.green .distribution-number { color: var(--success-green); }
+        .distribution-card.blue .distribution-number { color: var(--accent-blue); }
+        .distribution-card.amber .distribution-number { color: var(--warning-amber); }
+        .distribution-card.red .distribution-number { color: var(--danger-red); }
+
+        .distribution-label {
+            font-size: 13px;
+            color: var(--gray-600);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .distribution-percentage {
+            font-size: 12px;
+            color: var(--gray-500);
+            margin-top: 6px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* LEGEND */
+        .legend-card {
+            padding: 20px 28px;
+            display: flex;
+            align-items: center;
+            gap: 32px;
+            flex-wrap: wrap;
+        }
+
+        .legend-title {
+            font-weight: 700;
+            color: var(--gray-700);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            color: var(--gray-600);
+        }
+
+        /* ANIMATIONS */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 1200px) {
+            .distribution-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-container {
+                padding: 20px;
+            }
+
+            .header-container {
+                flex-direction: column;
+                gap: 16px;
+                text-align: center;
+            }
+
+            .header-nav {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .page-header {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .filters-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .filter-tabs {
+                overflow-x: auto;
+                flex-wrap: nowrap;
+                padding-bottom: 8px;
+            }
+
+            .distribution-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .legend-card {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 16px;
+            }
+        }
+
+        /* SCROLLBAR */
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--gray-100);
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--gray-300);
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--gray-400);
+        }
+
+        /* PRINT */
+        @media print {
+            .corporate-header, .filter-tabs, .btn, .history-option-box {
+                display: none !important;
+            }
+            .main-container {
+                padding: 0;
+                max-width: 100%;
+            }
+            .section {
+                box-shadow: none;
+                border: 1px solid #ddd;
+                break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- CORPORATE HEADER -->
+    <header class="corporate-header">
+        <div class="header-container">
+            <div class="sidebar-logo">
+                <img src="{% static 'images/logo.png' %}" alt="Logo" class="company-logo">
+                <div style="border-left: 1px solid rgba(255,255,255,0.3); padding-left: 16px; margin-left: 8px;">
+                    <div class="header-title">Training Matrix System</div>
+                    <div class="header-subtitle">Gestion des Ressources Humaines</div>
+                </div>
+            </div>
+           <div style="display: flex; gap: 12px;">
+                <a href="{% url 'employee_list_rh' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i>
+                    Retour à la liste
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-container">
+
+        <!-- BREADCRUMB -->
+        <nav class="breadcrumb fade-in">
+            <a href="{% url 'rh_dashboard' %}">
+                <i class="fas fa-home"></i>
+                Accueil
+            </a>
+            <i class="fas fa-chevron-right" style="font-size: 10px; color: var(--gray-400);"></i>
+            <span>Opérateurs & Chefs d'Équipe</span>
+            {% if selected_line %}
+            <i class="fas fa-chevron-right" style="font-size: 10px; color: var(--gray-400);"></i>
+            <span style="color: var(--accent-blue); font-weight: 600;">{{ selected_line.name }}</span>
+            {% endif %}
+        </nav>
+
+        <!-- PAGE HEADER -->
+        <div class="page-header fade-in">
+            <div class="page-title-section">
+                <h1>
+                    <i class="fas fa-user-friends"></i>
+                    Opérateurs & Chefs d'Équipe
+                </h1>
+                <p>
+                    Vue d'ensemble complète du personnel avec filtrage avancé
+                    {% if include_history and selected_line %}
+                    — <strong style="color: var(--purple);">Mode historique activé</strong>
+                    {% endif %}
+                </p>
+            </div>
+            <!-- <div class="btn-group">
+                <button class="btn btn-secondary" onclick="window.print()">
+                    <i class="fas fa-print"></i>
+                    Imprimer
+                </button>
+                <button class="btn btn-primary" onclick="exportData()">
+                    <i class="fas fa-download"></i>
+                    Exporter
+                </button>
+            </div> -->
+        </div>
+
+        <!-- STATISTICS CARDS -->
+        <div class="stats-grid fade-in">
+            <div class="stat-card">
+                <div class="stat-icon blue">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="stat-value">{{ stats.total_employees }}</div>
+                <div class="stat-label">Total Personnel</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon blue">
+                    <i class="fas fa-hard-hat"></i>
+                </div>
+                <div class="stat-value">{{ stats.total_operators }}</div>
+                <div class="stat-label">Opérateurs</div>
+            </div>
+
+            <div class="stat-card purple">
+                <div class="stat-icon purple">
+                    <i class="fas fa-user-tie"></i>
+                </div>
+                <div class="stat-value">{{ stats.total_leaders }}</div>
+                <div class="stat-label">Chefs d'Équipe</div>
+            </div>
+
+            <div class="stat-card green">
+                <div class="stat-icon green">
+                    <i class="fas fa-graduation-cap"></i>
+                </div>
+                <div class="stat-value">{{ stats.level_distribution.trainers }}</div>
+                <div class="stat-label">Formateurs (U)</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon blue">
+                    <i class="fas fa-user-check"></i>
+                </div>
+                <div class="stat-value">{{ stats.level_distribution.autonomous }}</div>
+                <div class="stat-label">Autonomes (L)</div>
+            </div>
+
+            <div class="stat-card amber">
+                <div class="stat-icon amber">
+                    <i class="fas fa-user-clock"></i>
+                </div>
+                <div class="stat-value">{{ stats.level_distribution.in_training }}</div>
+                <div class="stat-label">En Formation (I)</div>
+            </div>
+
+            {% if include_history and selected_line_id %}
+            <div class="stat-card green">
+                <div class="stat-icon green">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="stat-value">{{ stats.total_current }}</div>
+                <div class="stat-label">Actuels</div>
+            </div>
+
+            <div class="stat-card purple">
+                <div class="stat-icon purple">
+                    <i class="fas fa-clock-rotate-left"></i>
+                </div>
+                <div class="stat-value">{{ stats.total_historical }}</div>
+                <div class="stat-label">Anciens</div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- FILTERS SECTION -->
+        <div class="section fade-in">
+            <div class="section-header">
+                <h3 class="section-title blue">
+                    <i class="fas fa-filter"></i>
+                    Filtres de Recherche
+                </h3>
+            </div>
+            <div class="section-body">
+                <form method="get" id="filterForm">
+                    <div class="filters-grid">
+                        <!-- Search -->
+                        <div class="form-group" style="grid-column: span 2;">
+                            <label>
+                                <i class="fas fa-search"></i>
+                                Rechercher
+                            </label>
+                            <input type="text" name="q" value="{{ search_query }}" 
+                                   class="form-input"
+                                   placeholder="Nom, prénom ou matricule..."
+                                   id="searchInput">
+                        </div>
+
+                        <!-- Line Filter -->
+                        <div class="form-group">
+                            <label>
+                                <i class="fas fa-industry"></i>
+                                Ligne de Production
+                            </label>
+                            <select name="line" id="lineSelect" class="form-select">
+                                <option value="">Toutes les lignes</option>
+                                {% for line in all_lines %}
+                                <option value="{{ line.id }}" {% if selected_line_id == line.id|stringformat:"s" %}selected{% endif %}>
+                                    {{ line.code }} - {{ line.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Manager Filter -->
+                        <div class="form-group">
+                            <label>
+                                <i class="fas fa-user-tie"></i>
+                                Chef d'Équipe
+                            </label>
+                            <select name="manager" class="form-select">
+                                <option value="">Tous les chefs</option>
+                                {% for manager in all_managers %}
+                                <option value="{{ manager.id }}" {% if selected_manager_id == manager.id|stringformat:"s" %}selected{% endif %}>
+                                    {{ manager.first_name }} {{ manager.last_name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Level Filter -->
+                        <div class="form-group">
+                            <label>
+                                <i class="fas fa-layer-group"></i>
+                                Niveau de Formation
+                            </label>
+                            <select name="level" class="form-select">
+                                <option value="">Tous les niveaux</option>
+                                {% for level in level_choices %}
+                                <option value="{{ level.value }}" {% if selected_level == level.value %}selected{% endif %}>
+                                    {{ level.label }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="form-group btn-group" style="flex-direction: row; align-items: flex-end;">
+                            <button type="submit" class="btn btn-primary" style="flex: 1;">
+                                <i class="fas fa-search"></i>
+                                Filtrer
+                            </button>
+                            <a href="{% url 'rh_operators_overview' %}" class="btn btn-secondary" style="flex: 1;">
+                                <i class="fas fa-redo"></i>
+                                Réinitialiser
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- History Option -->
+                    <div id="historyOptionBox" class="history-option-box {% if not selected_line_id %}hidden{% endif %}">
+                        <label class="history-checkbox-label">
+                            <input type="checkbox" name="history" value="1" 
+                                   {% if include_history %}checked{% endif %}
+                                   id="historyCheckbox">
+                            <span>
+                                <i class="fas fa-history"></i>
+                                <strong>Inclure l'historique</strong> — Afficher tous les employés ayant travaillé sur cette ligne (anciens + actuels)
+                            </span>
+                        </label>
+                        
+                        {% if include_history and selected_line %}
+                        <div class="history-info-banner">
+                            <i class="fas fa-info-circle"></i>
+                            <span>
+                                Affichage de <strong>{{ stats.total_current }}</strong> employé(s) actuel(s) et 
+                                <strong>{{ stats.total_historical }}</strong> ancien(s) employé(s) de la ligne 
+                                <strong>{{ selected_line.name }}</strong>
+                            </span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- FILTER TABS -->
+        <div class="filter-tabs fade-in">
+            <a href="?{% if search_query %}q={{ search_query }}&{% endif %}{% if selected_line_id %}line={{ selected_line_id }}&{% endif %}{% if selected_manager_id %}manager={{ selected_manager_id }}&{% endif %}{% if selected_level %}level={{ selected_level }}&{% endif %}{% if include_history %}history=1{% endif %}" 
+               class="filter-tab {% if not employee_type %}active{% endif %}">
+                <i class="fas fa-users"></i>
+                Tous
+                <span class="filter-tab-count">{{ stats.total_employees }}</span>
+            </a>
+            <a href="?type=operator{% if search_query %}&q={{ search_query }}{% endif %}{% if selected_line_id %}&line={{ selected_line_id }}{% endif %}{% if selected_manager_id %}&manager={{ selected_manager_id }}{% endif %}{% if selected_level %}&level={{ selected_level }}{% endif %}{% if include_history %}&history=1{% endif %}" 
+               class="filter-tab {% if employee_type == 'operator' %}active{% endif %}">
+                <i class="fas fa-hard-hat"></i>
+                Opérateurs
+                <span class="filter-tab-count">{{ stats.total_operators }}</span>
+            </a>
+            <a href="?type=leader{% if search_query %}&q={{ search_query }}{% endif %}{% if selected_line_id %}&line={{ selected_line_id }}{% endif %}{% if selected_manager_id %}&manager={{ selected_manager_id }}{% endif %}{% if selected_level %}&level={{ selected_level }}{% endif %}{% if include_history %}&history=1{% endif %}" 
+               class="filter-tab {% if employee_type == 'leader' %}active{% endif %}">
+                <i class="fas fa-user-tie"></i>
+                Chefs d'Équipe
+                <span class="filter-tab-count">{{ stats.total_leaders }}</span>
+            </a>
+            
+            {% if include_history and selected_line_id %}
+            <div class="filter-tab-divider"></div>
+            <div class="filter-tab-badge green">
+                <i class="fas fa-check-circle"></i>
+                Actuels: <strong>{{ stats.total_current }}</strong>
+            </div>
+            <div class="filter-tab-badge purple">
+                <i class="fas fa-clock-rotate-left"></i>
+                Anciens: <strong>{{ stats.total_historical }}</strong>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- DATA TABLE -->
+        <div class="section fade-in">
+            <div class="section-header blue-header">
+                <h3 class="section-title blue">
+                    <i class="fas fa-list"></i>
+                    Liste du Personnel
+                    {% if selected_line %}
+                    <span style="font-weight: 400; color: var(--gray-600); font-size: 14px;">
+                        — Ligne {{ selected_line.code }}
+                    </span>
+                    {% endif %}
+                </h3>
+                <div style="display: flex; align-items: center; gap: 16px;">
+                    <span style="font-size: 14px; color: var(--gray-600);">
+                        <strong>{{ employees|length }}</strong> résultat(s)
+                    </span>
+                    <span style="font-size: 13px; color: var(--gray-500);">
+                        Progression moyenne: 
+                        <strong style="color: {% if stats.avg_progress >= 70 %}var(--success-green){% elif stats.avg_progress >= 40 %}var(--warning-amber){% else %}var(--danger-red){% endif %};">
+                            {{ stats.avg_progress }}%
+                        </strong>
+                    </span>
+                </div>
+            </div>
+            
+            <div class="section-body no-padding">
+                <div class="data-table-wrapper">
+                    <table class="data-table" id="personnelTable">
+                        <thead>
+                            <tr>
+                                <th style="min-width: 280px;" onclick="sortTable(0)">
+                                    <i class="fas fa-user"></i> Employé
+                                    <i class="fas fa-sort sort-icon"></i>
+                                </th>
+                                <th style="min-width: 180px;" onclick="sortTable(1)">
+                                    <i class="fas fa-industry"></i> Ligne
+                                    <i class="fas fa-sort sort-icon"></i>
+                                </th>
+                                <th style="min-width: 160px;">
+                                    <i class="fas fa-user-shield"></i> Responsable
+                                </th>
+                                <!-- <th style="text-align: center; min-width: 160px;">
+                                    <i class="fas fa-layer-group"></i> Formations
+                                </th>
+                                <th style="min-width: 180px;" onclick="sortTable(4)">
+                                    <i class="fas fa-chart-line"></i> Progression
+                                    <i class="fas fa-sort sort-icon"></i>
+                                </th>
+                                <th style="min-width: 130px;">
+                                    <i class="fas fa-tag"></i> Statut
+                                </th> -->
+                                <th style="text-align: center; width: 90px;">
+                                    <i class="fas fa-cog"></i>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in employees %}
+                            <tr class="{% if item.is_historical %}historical-row{% endif %}">
+                                <!-- EMPLOYÉ -->
+                                <td>
+                                    <div class="employee-cell">
+                                        <div class="employee-avatar {% if item.is_team_leader %}leader{% else %}operator{% endif %} {% if item.is_historical %}historical{% endif %}">
+                                            {{ item.employee.first_name|first }}{{ item.employee.last_name|first }}
+                                        </div>
+                                        <div class="employee-info">
+                                            <h4>
+                                                {{ item.employee.first_name }} {{ item.employee.last_name }}
+                                                
+                                                {% if item.is_team_leader %}
+                                                <span class="badge badge-leader badge-sm">
+                                                    <i class="fas fa-star"></i> CHEF
+                                                </span>
+                                                {% endif %}
+                                                
+                                                {% if item.is_historical %}
+                                                <span class="badge badge-historical badge-sm">
+                                                    <i class="fas fa-clock-rotate-left"></i> ANCIEN
+                                                </span>
+                                                {% elif item.is_current_on_line %}
+                                                <span class="badge badge-current badge-sm">
+                                                    <i class="fas fa-check"></i> ACTUEL
+                                                </span>
+                                                {% endif %}
+                                            </h4>
+                                            <p>
+                                                <i class="fas fa-id-badge" style="margin-right: 4px;"></i>
+                                                {{ item.employee.matricule }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </td>
+                                
+                                <!-- LIGNE -->
+                                <td>
+                                    <div class="line-info">
+                                        {% if item.employee.line %}
+                                        <span class="badge badge-line">
+                                            <i class="fas fa-industry"></i>
+                                            {{ item.employee.line.code }}
+                                        </span>
+                                        <span class="line-name">{{ item.employee.line.name }}</span>
+                                        
+                                        {% if item.is_historical and selected_line %}
+                                        <div class="history-info-tag">
+                                            <i class="fas fa-history"></i>
+                                            Était sur {{ selected_line.code }}
+                                            {% if item.history_info.training_count %}
+                                            • {{ item.history_info.training_count }} formation(s)
+                                            {% endif %}
+                                        </div>
+                                        {% endif %}
+                                        
+                                        {% if item.managed_lines %}
+                                        <div class="managed-lines">
+                                            <i class="fas fa-crown"></i>
+                                            Gère: {{ item.managed_lines|join:", " }}
+                                        </div>
+                                        {% endif %}
+                                        {% else %}
+                                        <span class="badge badge-gray">Non assigné</span>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                
+                                <!-- RESPONSABLE -->
+                                <td>
+                                    {% if item.employee.manager %}
+                                    <div class="manager-info">
+                                        <i class="fas fa-user-shield"></i>
+                                        <span>{{ item.employee.manager.first_name }} {{ item.employee.manager.last_name }}</span>
+                                    </div>
+                                    {% else %}
+                                    <span style="color: var(--gray-400);">—</span>
+                                    {% endif %}
+                                </td>
+                                
+                                <!-- FORMATIONS -->
+                                <!-- <td style="text-align: center;">
+                                    {% if include_history and selected_line_id %}
+                                    <div class="level-pills">
+                                        {% if item.line_level_counts.0 > 0 %}
+                                        <span class="level-pill level-i" title="En formation sur {{ selected_line.code }}">
+                                            I: {{ item.line_level_counts.0 }}
+                                        </span>
+                                        {% endif %}
+                                        {% if item.line_level_counts.1 > 0 %}
+                                        <span class="level-pill level-l" title="Autonome sur {{ selected_line.code }}">
+                                            L: {{ item.line_level_counts.1 }}
+                                        </span>
+                                        {% endif %}
+                                        {% if item.line_level_counts.3 > 0 %}
+                                        <span class="level-pill level-u" title="Formateur sur {{ selected_line.code }}">
+                                            U: {{ item.line_level_counts.3 }}
+                                        </span>
+                                        {% endif %}
+                                        {% if item.line_total_tasks == 0 %}
+                                        <span class="badge badge-gray">Aucune</span>
+                                        {% endif %}
+                                    </div>
+                                    <div style="font-size: 11px; color: var(--gray-500); margin-top: 6px;">
+                                        {{ item.line_total_tasks }} tâche(s) sur {{ selected_line.code }}
+                                    </div>
+                                    {% else %}
+                                    <div class="level-pills">
+                                        {% if item.level_counts.0 > 0 %}
+                                        <span class="level-pill level-i" title="En formation">
+                                            I: {{ item.level_counts.0 }}
+                                        </span>
+                                        {% endif %}
+                                        {% if item.level_counts.1 > 0 %}
+                                        <span class="level-pill level-l" title="Autonome">
+                                            L: {{ item.level_counts.1 }}
+                                        </span>
+                                        {% endif %}
+                                        {% if item.level_counts.3 > 0 %}
+                                        <span class="level-pill level-u" title="Formateur">
+                                            U: {{ item.level_counts.3 }}
+                                        </span>
+                                        {% endif %}
+                                        {% if item.total_tasks == 0 %}
+                                        <span class="badge badge-gray">Aucune</span>
+                                        {% endif %}
+                                    </div>
+                                    <div style="font-size: 11px; color: var(--gray-500); margin-top: 6px;">
+                                        {{ item.total_tasks }} / {{ item.line_tasks_count }} tâches
+                                    </div>
+                                    {% endif %}
+                                </td> -->
+                                
+                                <!-- PROGRESSION -->
+                                <!-- <td>
+                                    <div class="progress-container">
+                                        <div class="progress-header">
+                                            <span>Progression</span>
+                                            <strong style="color: {% if item.progress_score >= 70 %}var(--success-green){% elif item.progress_score >= 40 %}var(--warning-amber){% else %}var(--danger-red){% endif %};">
+                                                {{ item.progress_score }}%
+                                            </strong>
+                                        </div>
+                                        <div class="progress-bar">
+                                            <div class="progress-fill {% if item.progress_score >= 70 %}high{% elif item.progress_score >= 40 %}medium{% else %}low{% endif %}" 
+                                                 style="width: {{ item.progress_score }}%;"></div>
+                                        </div>
+                                        <div class="progress-footer">
+                                            Couverture: {{ item.coverage }}%
+                                        </div>
+                                    </div>
+                                </td>
+                                 -->
+                                <!-- STATUT -->
+                                <!-- <td>
+                                    {% if item.dominant_level == 3 %}
+                                    <span class="badge badge-success">
+                                        <i class="fas fa-star"></i>
+                                        Formateur
+                                    </span>
+                                    {% elif item.dominant_level == 1 %}
+                                    <span class="badge badge-primary">
+                                        <i class="fas fa-check"></i>
+                                        Autonome
+                                    </span>
+                                    {% elif item.dominant_level == 0 %}
+                                    <span class="badge badge-warning">
+                                        <i class="fas fa-clock"></i>
+                                        En formation
+                                    </span>
+                                    {% else %}
+                                    <span class="badge badge-danger">
+                                        <i class="fas fa-exclamation"></i>
+                                        Non formé
+                                    </span>
+                                    {% endif %}
+                                </td> -->
+                                
+                                <!-- ACTIONS -->
+                                <td style="text-align: center;">
+                                    <a href="{% url 'employee_history' item.employee.id %}" 
+                                       class="btn btn-secondary btn-sm"
+                                       title="Voir l'historique complet">
+                                        <i class="fas fa-history"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="7">
+                                    <div class="empty-state">
+                                        <i class="fas fa-search"></i>
+                                        <h3>Aucun résultat trouvé</h3>
+                                        <p>
+                                            Aucun employé ne correspond aux critères de recherche.
+                                            Essayez d'ajuster vos filtres ou 
+                                            <a href="{% url 'rh_operators_overview' %}" style="color: var(--accent-blue);">réinitialisez</a>.
+                                        </p>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Table Footer -->
+            {% if employees %}
+            <div class="table-footer">
+                <div class="table-footer-info">
+                    <i class="fas fa-info-circle"></i>
+                    <span>
+                        Affichage de <strong>{{ employees|length }}</strong> employé(s)
+                        {% if include_history and selected_line %}
+                        — dont <strong style="color: var(--success-green);">{{ stats.total_current }}</strong> actuel(s) 
+                        et <strong style="color: var(--purple);">{{ stats.total_historical }}</strong> ancien(s)
+                        {% endif %}
+                    </span>
+                </div>
+                <!-- <div class="btn-group">
+                    <button class="btn btn-secondary btn-sm" onclick="window.print()">
+                        <i class="fas fa-print"></i>
+                        Imprimer
+                    </button>
+                </div> -->
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- DISTRIBUTION CHART -->
+        {% if employees %}
+        <div class="section fade-in">
+            <div class="section-header green-header">
+                <h3 class="section-title green">
+                    <i class="fas fa-chart-pie"></i>
+                    Distribution par Niveau de Formation
+                </h3>
+            </div>
+            <div class="section-body">
+                <div class="distribution-grid">
+                    <div class="distribution-card green">
+                        <div class="distribution-number">{{ stats.level_distribution.trainers }}</div>
+                        <div class="distribution-label">
+                            <i class="fas fa-star"></i>
+                            Formateurs (U)
+                        </div>
+                        <div class="distribution-percentage">
+                            {% if stats.total_employees > 0 %}
+                            {% widthratio stats.level_distribution.trainers stats.total_employees 100 %}%
+                            {% else %}0%{% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="distribution-card blue">
+                        <div class="distribution-number">{{ stats.level_distribution.autonomous }}</div>
+                        <div class="distribution-label">
+                            <i class="fas fa-check"></i>
+                            Autonomes (L)
+                        </div>
+                        <div class="distribution-percentage">
+                            {% if stats.total_employees > 0 %}
+                            {% widthratio stats.level_distribution.autonomous stats.total_employees 100 %}%
+                            {% else %}0%{% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="distribution-card amber">
+                        <div class="distribution-number">{{ stats.level_distribution.in_training }}</div>
+                        <div class="distribution-label">
+                            <i class="fas fa-clock"></i>
+                            En Formation (I)
+                        </div>
+                        <div class="distribution-percentage">
+                            {% if stats.total_employees > 0 %}
+                            {% widthratio stats.level_distribution.in_training stats.total_employees 100 %}%
+                            {% else %}0%{% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="distribution-card red">
+                        <div class="distribution-number">{{ stats.level_distribution.not_trained }}</div>
+                        <div class="distribution-label">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            Non Formés
+                        </div>
+                        <div class="distribution-percentage">
+                            {% if stats.total_employees > 0 %}
+                            {% widthratio stats.level_distribution.not_trained stats.total_employees 100 %}%
+                            {% else %}0%{% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- LEGEND (when history is enabled) -->
+        {% if include_history and selected_line %}
+        <div class="section fade-in" style="border-color: var(--purple);">
+            <div class="legend-card">
+                <div class="legend-title">
+                    <i class="fas fa-info-circle" style="color: var(--purple);"></i>
+                    Légende
+                </div>
+                <div class="legend-item">
+                    <span class="badge badge-current badge-sm">
+                        <i class="fas fa-check"></i> ACTUEL
+                    </span>
+                    <span>Employé actuellement sur la ligne {{ selected_line.code }}</span>
+                </div>
+                <div class="legend-item">
+                    <span class="badge badge-historical badge-sm">
+                        <i class="fas fa-clock-rotate-left"></i> ANCIEN
+                    </span>
+                    <span>Employé ayant travaillé sur la ligne {{ selected_line.code }} par le passé</span>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+    </div>
+
+    <!-- SCRIPTS -->
+    <script>
+        // ═══════════════════════════════════════════════════════════════════
+        // Toggle history option visibility
+        // ═══════════════════════════════════════════════════════════════════
+        function toggleHistoryOption() {
+            const lineSelect = document.getElementById('lineSelect');
+            const historyOptionBox = document.getElementById('historyOptionBox');
+            
+            if (lineSelect && historyOptionBox) {
+                if (lineSelect.value) {
+                    historyOptionBox.classList.remove('hidden');
+                } else {
+                    historyOptionBox.classList.add('hidden');
+                }
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════════
+        // Initialize on page load
+        // ═══════════════════════════════════════════════════════════════════
+        document.addEventListener('DOMContentLoaded', function() {
+            toggleHistoryOption();
+            
+            const lineSelect = document.getElementById('lineSelect');
+            if (lineSelect) {
+                lineSelect.addEventListener('change', toggleHistoryOption);
+            }
+            
+            const historyCheckbox = document.getElementById('historyCheckbox');
+            if (historyCheckbox) {
+                historyCheckbox.addEventListener('change', function() {
+                    document.getElementById('filterForm').submit();
+                });
+            }
+            
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                searchInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        document.getElementById('filterForm').submit();
+                    }
+                });
+            }
+
+            // Fade-in animation
+            const elements = document.querySelectorAll('.fade-in');
+            elements.forEach((el, index) => {
+                el.style.opacity = '0';
+                el.style.transform = 'translateY(12px)';
+                setTimeout(() => {
+                    el.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+                    el.style.opacity = '1';
+                    el.style.transform = 'translateY(0)';
+                }, index * 80);
+            });
+        });
+
+        // ═══════════════════════════════════════════════════════════════════
+        // Table sorting
+        // ═══════════════════════════════════════════════════════════════════
+        function sortTable(columnIndex) {
+            const table = document.getElementById('personnelTable');
+            if (!table) return;
+            
+            const tbody = table.querySelector('tbody');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            
+            if (rows.length === 0 || (rows.length === 1 && rows[0].querySelector('.empty-state'))) {
+                return;
+            }
+            
+            const isAscending = table.dataset.sortDir !== 'asc' || table.dataset.sortCol !== String(columnIndex);
+            table.dataset.sortDir = isAscending ? 'asc' : 'desc';
+            table.dataset.sortCol = columnIndex;
+            
+            rows.sort((a, b) => {
+                const aCell = a.children[columnIndex];
+                const bCell = b.children[columnIndex];
+                
+                if (!aCell || !bCell) return 0;
+                
+                const aText = aCell.textContent.trim();
+                const bText = bCell.textContent.trim();
+                
+                const aNum = parseFloat(aText.replace(/[^0-9.-]/g, ''));
+                const bNum = parseFloat(bText.replace(/[^0-9.-]/g, ''));
+                
+                if (!isNaN(aNum) && !isNaN(bNum)) {
+                    return isAscending ? aNum - bNum : bNum - aNum;
+                }
+                
+                return isAscending ? aText.localeCompare(bText, 'fr') : bText.localeCompare(aText, 'fr');
+            });
+            
+            rows.forEach(row => tbody.appendChild(row));
+            
+            // Update sort icons
+            const headers = table.querySelectorAll('thead th');
+            headers.forEach((th, index) => {
+                const icon = th.querySelector('.sort-icon');
+                if (icon) {
+                    icon.classList.remove('fa-sort-up', 'fa-sort-down');
+                    icon.classList.add('fa-sort');
+                    icon.style.opacity = '0.4';
+                    
+                    if (index === columnIndex) {
+                        icon.classList.remove('fa-sort');
+                        icon.classList.add(isAscending ? 'fa-sort-up' : 'fa-sort-down');
+                        icon.style.opacity = '1';
+                    }
+                }
+            });
+        }
+
+        // ═══════════════════════════════════════════════════════════════════
+        // Export function
+        // ═══════════════════════════════════════════════════════════════════
+        function exportData() {
+            alert('Fonctionnalité d\'export en cours de développement.\n\nUtilisez la fonction d\'impression (Ctrl+P) pour le moment.');
+        }
+
+        // ═══════════════════════════════════════════════════════════════════
+        // Keyboard shortcuts
+        // ═══════════════════════════════════════════════════════════════════
+        document.addEventListener('keydown', function(e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+                e.preventDefault();
+                const searchInput = document.getElementById('searchInput');
+                if (searchInput) {
+                    searchInput.focus();
+                    searchInput.select();
+                }
+            }
+        });
+    </script>
+
+</body>
+</html>

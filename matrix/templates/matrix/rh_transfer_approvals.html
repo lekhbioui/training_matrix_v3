@@ -1,0 +1,1168 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Validation des Transferts | HR Management</title>
+    <link rel="icon" type="image/png" href="{% static 'images/logo.png' %}">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Fonts professionnelles -->
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-color: #0F172A;
+            --secondary-color: #1E40AF;
+            --accent-color: #3B82F6;
+            --success-color: #059669;
+            --warning-color: #D97706;
+            --danger-color: #DC2626;
+            --gray-50: #F8FAFC;
+            --gray-100: #F1F5F9;
+            --gray-200: #E2E8F0;
+            --gray-300: #CBD5E1;
+            --gray-400: #94A3B8;
+            --gray-500: #64748B;
+            --gray-600: #475569;
+            --gray-700: #334155;
+            --gray-800: #1E293B;
+            --gray-900: #0F172A;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background-attachment: fixed;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .main-container {
+            background: var(--gray-50);
+            min-height: 100vh;
+        }
+
+        /* SIDEBAR */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: 280px;
+            background: linear-gradient(180deg, #0F172A 0%, #1E293B 100%);
+            color: white;
+            padding: 0;
+            z-index: 1000;
+            box-shadow: 4px 0 24px rgba(0, 0, 0, 0.12);
+            overflow-y: auto;
+        }
+
+        .sidebar-header {
+            padding: 28px 24px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar-logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 0;
+        }
+
+        .company-logo {
+            max-width: 140px;
+            height: auto;
+            display: block;
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 24px;
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            transition: all 0.2s ease;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .menu-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+        }
+
+        .menu-item.active {
+            background: rgba(59, 130, 246, 0.15);
+            color: white;
+            border-left: 3px solid #3B82F6;
+        }
+
+        .menu-item i {
+            width: 20px;
+            text-align: center;
+        }
+
+        /* MAIN CONTENT */
+        .main-content {
+            margin-left: 280px;
+            min-height: 100vh;
+        }
+
+        /* HEADER */
+        .top-header {
+            background: white;
+            border-bottom: 1px solid var(--gray-200);
+            padding: 20px 40px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+        }
+
+        .page-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--gray-900);
+            letter-spacing: -0.02em;
+            margin-bottom: 4px;
+        }
+
+        .breadcrumb {
+            display: flex;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--gray-500);
+            align-items: center;
+        }
+
+        /* CARDS */
+        .card {
+            background: white;
+            border-radius: 12px;
+            border: 1px solid var(--gray-200);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--gray-200);
+            background: var(--gray-50);
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--gray-900);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-title i {
+            color: var(--accent-color);
+            font-size: 20px;
+        }
+
+        .card-body {
+            padding: 24px;
+        }
+
+        /* BUTTONS */
+        .btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            justify-content: center;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #059669 0%, #10B981 100%);
+            color: white;
+            box-shadow: 0 2px 8px rgba(5, 150, 105, 0.2);
+        }
+
+        .btn-success:hover {
+            box-shadow: 0 4px 16px rgba(5, 150, 105, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .btn-danger {
+            background: rgba(220, 38, 38, 0.1);
+            color: var(--danger-color);
+            border: 1px solid rgba(220, 38, 38, 0.2);
+        }
+
+        .btn-danger:hover {
+            background: rgba(220, 38, 38, 0.15);
+            border-color: rgba(220, 38, 38, 0.3);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: var(--gray-700);
+            border: 1px solid var(--gray-300);
+        }
+
+        .btn-secondary:hover {
+            background: var(--gray-50);
+        }
+
+        /* TABLES */
+        .data-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        .data-table thead th {
+            background: var(--gray-50);
+            color: var(--gray-700);
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 14px 16px;
+            text-align: left;
+            border-bottom: 2px solid var(--gray-200);
+            white-space: nowrap;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .data-table tbody td {
+            padding: 16px;
+            border-bottom: 1px solid var(--gray-100);
+            font-size: 14px;
+            color: var(--gray-800);
+        }
+
+        .data-table tbody tr {
+            transition: all 0.2s ease;
+        }
+
+        .data-table tbody tr:hover {
+            background: var(--gray-50);
+        }
+
+        /* BADGES */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            gap: 6px;
+        }
+
+        .badge-warning {
+            background: rgba(217, 119, 6, 0.1);
+            color: var(--warning-color);
+            border: 1px solid rgba(217, 119, 6, 0.2);
+        }
+
+        .badge-success {
+            background: rgba(5, 150, 105, 0.1);
+            color: var(--success-color);
+            border: 1px solid rgba(5, 150, 105, 0.2);
+        }
+
+        .badge-danger {
+            background: rgba(220, 38, 38, 0.1);
+            color: var(--danger-color);
+            border: 1px solid rgba(220, 38, 38, 0.2);
+        }
+
+        .badge-primary {
+            background: rgba(59, 130, 246, 0.1);
+            color: var(--secondary-color);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+        }
+
+        .badge-gray {
+            background: var(--gray-100);
+            color: var(--gray-700);
+        }
+
+        /* STATS CARDS */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            border: 1px solid var(--gray-200);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+        }
+
+        .stat-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .stat-content h3 {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--gray-600);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .stat-content p {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--gray-900);
+            margin-top: 4px;
+        }
+
+        /* SEARCH BOX */
+        .search-box {
+            position: relative;
+            flex: 1;
+            max-width: 400px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 10px 14px 10px 42px;
+            border: 1px solid var(--gray-300);
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray-400);
+        }
+
+        /* TRANSFER VISUAL */
+        .transfer-visual {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .line-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            gap: 6px;
+        }
+
+        .line-from {
+            background: rgba(220, 38, 38, 0.1);
+            color: var(--danger-color);
+            border: 1px solid rgba(220, 38, 38, 0.2);
+        }
+
+        .line-to {
+            background: rgba(5, 150, 105, 0.1);
+            color: var(--success-color);
+            border: 1px solid rgba(5, 150, 105, 0.2);
+        }
+
+        .arrow-transfer {
+            color: var(--gray-400);
+            font-size: 16px;
+        }
+
+        /* ANIMATIONS */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 1024px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            .main-content {
+                margin-left: 0;
+            }
+        }
+
+        /* SCROLLBAR */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--gray-100);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--gray-300);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--gray-400);
+        }
+
+        /* AVATAR */
+        .avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 13px;
+            color: white;
+            background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .status-dot.pending {
+            background: var(--warning-color);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* FILTER TABS */
+        .filter-tabs {
+            display: flex;
+            gap: 8px;
+            padding: 4px;
+            background: var(--gray-100);
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .filter-tab {
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: var(--gray-600);
+        }
+
+        .filter-tab:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        .filter-tab.active {
+            background: white;
+            color: var(--accent-color);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        /* MODAL */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+        }
+
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--gray-200);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h3 {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--gray-900);
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: var(--gray-400);
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .modal-close:hover {
+            color: var(--gray-600);
+        }
+
+        .modal-body {
+            padding: 24px;
+        }
+
+        .modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid var(--gray-200);
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--gray-700);
+            margin-bottom: 8px;
+        }
+
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid var(--gray-300);
+            border-radius: 8px;
+            font-size: 14px;
+            resize: vertical;
+            min-height: 100px;
+            font-family: inherit;
+        }
+
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .info-box {
+            background: var(--gray-50);
+            border: 1px solid var(--gray-200);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+
+        .info-box p {
+            margin: 4px 0;
+            font-size: 14px;
+            color: var(--gray-700);
+        }
+
+        .info-box strong {
+            color: var(--gray-900);
+        }
+        .sidebar-footer-compact {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.logout-item {
+  color: #FCA5A5 !important;
+  background: rgba(220, 38, 38, 0.1);
+}
+
+.logout-item:hover {
+  background: rgba(220, 38, 38, 0.2) !important;
+  color: #FEE2E2 !important;
+}
+    </style>
+</head>
+<body>
+
+<div class="main-container">
+    
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+                <img src="{% static 'images/logo.png' %}" alt="Logo de l'entreprise" class="company-logo">
+            </div>
+        </div>
+
+        <nav style="padding: 16px 0;">
+            <div style="margin-bottom: 24px;">
+                <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255, 255, 255, 0.5); padding: 0 24px 12px;">Principal</div>
+                <a href="{% url 'rh_dashboard' %}" class="menu-item">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Tableau de bord</span>
+                </a>
+                <a href="{% url 'employee_list_rh' %}" class="menu-item">
+                    <i class="fas fa-users"></i>
+                    <span>Employés</span>
+                </a>
+                <a href="{% url 'rh_manage_tasks_lines' %}" class="menu-item">
+                    <i class="fas fa-tasks"></i>
+                    <span>Tâches & Lignes</span>
+                </a>
+            </div>
+
+            <div style="margin-bottom: 24px;">
+                <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255, 255, 255, 0.5); padding: 0 24px 12px;">Gestion</div>
+                <a href="{% url 'rh_training_approvals' %}" class="menu-item">
+                    <i class="fas fa-clock"></i>
+                    <span>Demandes Formations</span>
+                </a>
+                <a href="{% url 'rh_requalification_approvals' %}" class="menu-item">
+                    <i class="fas fa-clipboard-check"></i>
+                    <span>Demandes Requalifications</span>
+                </a>
+                <a href="{% url 'rh_employees_to_requalify' %}" class="menu-item">
+                    <i class="fas fa-history"></i>
+                    <span>Historique requalifications</span>
+                </a>
+                <a href="{% url 'transfer_employee' %}" class="menu-item">
+                    <i class="fas fa-exchange-alt"></i>
+                    <span>Transferts RH</span>
+                </a>
+                <a href="{% url 'rh_transfer_approvals' %}" class="menu-item active">
+                    <i class="fas fa-user-check"></i>
+                    <span>Valider Transferts</span>
+                    {% if pending.count > 0 %}
+                    <span style="background: var(--warning-color); color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px; margin-left: auto;">{{ pending.count }}</span>
+                    {% endif %}
+                </a>
+            </div>
+        </nav>
+              <!-- Version compacte -->
+<div class="sidebar-footer-compact">
+  <a href="{% url 'login' %}" class="menu-item logout-item">
+    <i class="fas fa-sign-out-alt"></i>
+    <span>Déconnexion</span>
+    <span style="margin-left: auto; font-size: 11px; opacity: 0.7;">
+      {{ request.user.username }}
+    </span>
+  </a>
+</div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-content">
+        
+        <!-- HEADER -->
+        <header class="top-header">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h1 class="page-title">Validation des Demandes de Transfert</h1>
+                    <div class="breadcrumb">
+                        <a href="{% url 'rh_dashboard' %}" style="color: var(--accent-color); text-decoration: none;">
+                            <i class="fas fa-home"></i> Accueil
+                        </a>
+                        <span>/</span>
+                        <span>Demandes de Transfert</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- CONTENT -->
+        <div style="padding: 32px 40px; max-width: 1800px;">
+
+            <!-- STATS -->
+            <div class="stats-grid fade-in">
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: rgba(217, 119, 6, 0.1); color: var(--warning-color);">
+                        <i class="fas fa-hourglass-half"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>En attente</h3>
+                        <p>{{ pending|length }}</p>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: rgba(5, 150, 105, 0.1); color: var(--success-color);">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>Approuvés</h3>
+                        <p>{{ approved_count|default:0 }}</p>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: rgba(220, 38, 38, 0.1); color: var(--danger-color);">
+                        <i class="fas fa-times-circle"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>Refusés</h3>
+                        <p>{{ rejected_count|default:0 }}</p>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: rgba(59, 130, 246, 0.1); color: var(--accent-color);">
+                        <i class="fas fa-exchange-alt"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>Total Transferts</h3>
+                        <p>{{ total_count|default:pending|length }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FILTER TABS -->
+            <div class="fade-in">
+                <div class="filter-tabs">
+                    <div class="filter-tab active">
+                        <i class="fas fa-clock" style="margin-right: 6px;"></i>
+                        En attente ({{ pending|length }})
+                    </div>
+                    <div class="filter-tab">
+                        <i class="fas fa-check" style="margin-right: 6px;"></i>
+                        Approuvés ({{ approved_count|default:0 }})
+                    </div>
+                    <div class="filter-tab">
+                        <i class="fas fa-times" style="margin-right: 6px;"></i>
+                        Refusés ({{ rejected_count|default:0 }})
+                    </div>
+                </div>
+            </div>
+
+            <!-- REQUESTS TABLE -->
+            <div class="card fade-in">
+                <div class="card-header">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+                        <h2 class="card-title">
+                            <i class="fas fa-exchange-alt"></i>
+                            Demandes de Transfert en attente ({{ pending|length }})
+                        </h2>
+                        
+                        <!-- SEARCH -->
+                        <div class="search-box">
+                            <i class="fas fa-search"></i>
+                            <input 
+                                type="text" 
+                                id="searchInput"
+                                placeholder="Rechercher par employé, ligne..." 
+                                onkeyup="filterTable()"
+                            />
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body" style="padding: 0;">
+                    <div style="overflow-x: auto;">
+                        <table class="data-table" id="requestsTable">
+                            <thead>
+                                <tr>
+                                    <th style="width: 60px;"><i class="fas fa-hashtag"></i></th>
+                                    <th><i class="fas fa-user" style="margin-right: 8px;"></i>Employé</th>
+                                    <th><i class="fas fa-exchange-alt" style="margin-right: 8px;"></i>Transfert</th>
+                                    <th><i class="fas fa-user-tie" style="margin-right: 8px;"></i>Nouveau Chef</th>
+                                    <th><i class="fas fa-user-shield" style="margin-right: 8px;"></i>Demandé par</th>
+                                    <th><i class="fas fa-comment" style="margin-right: 8px;"></i>Raison</th>
+                                    <th><i class="far fa-calendar" style="margin-right: 8px;"></i>Date</th>
+                                    <th style="text-align: center;"><i class="fas fa-cog" style="margin-right: 8px;"></i>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for req in pending %}
+                                <tr>
+                                    <td style="text-align: center;">
+                                        <span class="status-dot pending"></span>
+                                    </td>
+                                    <td>
+                                        <div style="display: flex; align-items: center; gap: 10px;">
+                                            <div class="avatar">
+                                                {{ req.employee.first_name|first }}{{ req.employee.last_name|first }}
+                                            </div>
+                                            <div>
+                                                <strong style="font-size: 14px; color: var(--gray-900);">
+                                                    {{ req.employee.first_name }} {{ req.employee.last_name }}
+                                                </strong>
+                                                <div style="font-size: 12px; color: var(--gray-500); margin-top: 2px;">
+                                                    <i class="fas fa-id-badge" style="margin-right: 4px;"></i>
+                                                    {{ req.employee.matricule|default:"N/A" }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="transfer-visual">
+                                            <span class="line-badge line-from">
+                                                <i class="fas fa-industry"></i>
+                                                {% if req.from_line %}{{ req.from_line.name }}{% else %}Aucune{% endif %}
+                                            </span>
+                                            <i class="fas fa-arrow-right arrow-transfer"></i>
+                                            <span class="line-badge line-to">
+                                                <i class="fas fa-industry"></i>
+                                                {{ req.to_line.name }}
+                                            </span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div style="display: flex; align-items: center; gap: 8px;">
+                                            <i class="fas fa-user-tie" style="color: var(--accent-color);"></i>
+                                            <span>{{ req.new_manager.get_full_name|default:req.new_manager.username|default:"Non défini" }}</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div style="display: flex; align-items: center; gap: 8px;">
+                                            <i class="fas fa-user-shield" style="color: var(--secondary-color);"></i>
+                                            <strong>{{ req.requested_by.get_full_name|default:req.requested_by.username }}</strong>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if req.reason %}
+                                        <span style="font-size: 13px; color: var(--gray-600);" title="{{ req.reason }}">
+                                            {{ req.reason|truncatewords:8 }}
+                                        </span>
+                                        {% else %}
+                                        <span style="font-size: 13px; color: var(--gray-400); font-style: italic;">
+                                            Aucune raison
+                                        </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div style="font-size: 14px; color: var(--gray-700);">
+                                            {{ req.date_requested|date:"d/m/Y" }}
+                                        </div>
+                                        <div style="font-size: 12px; color: var(--gray-500); margin-top: 2px;">
+                                            {{ req.date_requested|date:"H:i" }}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div style="display: flex; gap: 8px; justify-content: center;">
+                                            <!-- Bouton Approuver -->
+                                            <form method="post" style="display: inline;">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="request_id" value="{{ req.id }}" />
+                                                <button type="submit" name="action" value="approve" class="btn btn-success" title="Approuver ce transfert">
+                                                    <i class="fas fa-check"></i>
+                                                    Approuver
+                                                </button>
+                                            </form>
+                                            
+                                            <!-- Bouton Refuser (ouvre modal) -->
+                                            <button type="button" class="btn btn-danger" title="Refuser ce transfert" onclick="openRejectModal({{ req.id }}, '{{ req.employee.first_name }} {{ req.employee.last_name }}', '{{ req.from_line.name|default:"Aucune" }}', '{{ req.to_line.name }}')">
+                                                <i class="fas fa-times"></i>
+                                                Refuser
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="8" style="text-align: center; padding: 60px 20px; color: var(--gray-400);">
+                                        <i class="fas fa-check-double" style="font-size: 48px; margin-bottom: 16px; display: block; opacity: 0.3; color: var(--success-color);"></i>
+                                        <p style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">Aucune demande de transfert en attente</p>
+                                        <p style="font-size: 14px; opacity: 0.8;">
+                                            Toutes les demandes ont été traitées
+                                        </p>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- TABLE FOOTER -->
+                {% if pending %}
+                <div style="padding: 16px 24px; border-top: 1px solid var(--gray-200); background: var(--gray-50); display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 13px; color: var(--gray-600);">
+                        <i class="fas fa-info-circle" style="margin-right: 4px;"></i>
+                        Affichage de <strong>{{ pending|length }}</strong> demande(s) en attente
+                    </span>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <button class="btn btn-secondary" style="padding: 6px 16px; font-size: 12px;" onclick="window.print()">
+                            <i class="fas fa-print"></i>
+                            Imprimer
+                        </button>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- HISTORIQUE -->
+            {% if history %}
+            <div class="card fade-in" style="margin-top: 24px;">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <i class="fas fa-history"></i>
+                        Historique des décisions récentes
+                    </h2>
+                </div>
+                <div class="card-body" style="padding: 0;">
+                    <div style="overflow-x: auto;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Employé</th>
+                                    <th>Transfert</th>
+                                    <th>Demandé par</th>
+                                    <th>Décision</th>
+                                    <th>Date</th>
+                                    <th>Notes</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for req in history %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ req.employee.first_name }} {{ req.employee.last_name }}</strong>
+                                        <br>
+                                        <small style="color: var(--gray-500);">{{ req.employee.matricule }}</small>
+                                    </td>
+                                    <td>
+                                        <div class="transfer-visual">
+                                            <span class="line-badge line-from" style="padding: 4px 8px; font-size: 11px;">
+                                                {% if req.from_line %}{{ req.from_line.code }}{% else %}—{% endif %}
+                                            </span>
+                                            <i class="fas fa-arrow-right arrow-transfer" style="font-size: 12px;"></i>
+                                            <span class="line-badge line-to" style="padding: 4px 8px; font-size: 11px;">
+                                                {{ req.to_line.code }}
+                                            </span>
+                                        </div>
+                                    </td>
+                                    <td>{{ req.requested_by.get_full_name|default:req.requested_by.username }}</td>
+                                    <td>
+                                        {% if req.approved %}
+                                        <span class="badge badge-success">
+                                            <i class="fas fa-check"></i> Approuvé
+                                        </span>
+                                        {% else %}
+                                        <span class="badge badge-danger">
+                                            <i class="fas fa-times"></i> Refusé
+                                        </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ req.decision_date|date:"d/m/Y H:i" }}</td>
+                                    <td>
+                                        {% if req.decision_notes %}
+                                        <span style="font-size: 12px; color: var(--gray-600);">{{ req.decision_notes|truncatewords:10 }}</span>
+                                        {% else %}
+                                        <span style="color: var(--gray-400);">—</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+
+<!-- MODAL DE REFUS -->
+<div class="modal-overlay" id="rejectModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-times-circle" style="color: var(--danger-color); margin-right: 8px;"></i>Refuser le transfert</h3>
+            <button class="modal-close" onclick="closeRejectModal()">&times;</button>
+        </div>
+        <form method="post" id="rejectForm">
+            {% csrf_token %}
+            <input type="hidden" name="request_id" id="rejectRequestId" value="" />
+            <input type="hidden" name="action" value="reject" />
+            
+            <div class="modal-body">
+                <div class="info-box">
+                    <p><strong>Employé :</strong> <span id="rejectEmployeeName"></span></p>
+                    <p><strong>Transfert :</strong> <span id="rejectFromLine"></span> → <span id="rejectToLine"></span></p>
+                </div>
+                
+                <div class="form-group">
+                    <label for="decision_notes">
+                        <i class="fas fa-comment-alt" style="margin-right: 6px;"></i>
+                        Motif du refus (optionnel)
+                    </label>
+                    <textarea 
+                        name="decision_notes" 
+                        id="decision_notes" 
+                        placeholder="Expliquez pourquoi ce transfert ne peut pas être approuvé..."
+                    ></textarea>
+                    <small style="color: var(--gray-500); font-size: 12px;">
+                        Ce motif sera transmis au chef d'équipe qui a fait la demande.
+                    </small>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeRejectModal()">
+                    Annuler
+                </button>
+                <button type="submit" class="btn btn-danger">
+                    <i class="fas fa-times"></i>
+                    Confirmer le refus
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Fonction de filtrage du tableau
+    function filterTable() {
+        const input = document.getElementById('searchInput');
+        const filter = input.value.toLowerCase();
+        const table = document.getElementById('requestsTable');
+        const rows = table.getElementsByTagName('tr');
+        
+        for (let i = 1; i < rows.length; i++) {
+            const row = rows[i];
+            const text = row.textContent.toLowerCase();
+            
+            if (text.includes(filter)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        }
+    }
+
+    // Modal de refus
+    function openRejectModal(requestId, employeeName, fromLine, toLine) {
+        document.getElementById('rejectRequestId').value = requestId;
+        document.getElementById('rejectEmployeeName').textContent = employeeName;
+        document.getElementById('rejectFromLine').textContent = fromLine;
+        document.getElementById('rejectToLine').textContent = toLine;
+        document.getElementById('rejectModal').classList.add('active');
+    }
+
+    function closeRejectModal() {
+        document.getElementById('rejectModal').classList.remove('active');
+        document.getElementById('decision_notes').value = '';
+    }
+
+    // Fermer modal en cliquant à l'extérieur
+    document.getElementById('rejectModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeRejectModal();
+        }
+    });
+
+    // Confirmation avant approbation
+    document.querySelectorAll('form button[value="approve"]').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            if (!confirm('Êtes-vous sûr de vouloir approuver ce transfert ?')) {
+                e.preventDefault();
+            }
+        });
+    });
+
+    // Animation au scroll
+    const observerOptions = {
+        threshold: 0.05,
+        rootMargin: '0px 0px -50px 0px'
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry, index) => {
+            if (entry.isIntersecting) {
+                setTimeout(() => {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }, index * 50);
+                observer.unobserve(entry.target);
+            }
+        });
+    }, observerOptions);
+
+    document.querySelectorAll('.fade-in').forEach(el => {
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(15px)';
+        el.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+        observer.observe(el);
+    });
+</script>
+
+</body>
+</html>

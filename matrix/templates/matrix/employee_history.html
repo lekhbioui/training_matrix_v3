@@ -1,0 +1,965 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee History | {{ employee.first_name }} {{ employee.last_name }}</title>
+    <link rel="icon" type="image/png" href="{% static 'images/logo.png' %}">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-navy: #0A1F44;
+            --primary-blue: #1E3A8A;
+            --accent-blue: #2563EB;
+            --light-blue: #3B82F6;
+            --success-green: #10B981;
+            --warning-amber: #F59E0B;
+            --danger-red: #EF4444;
+            --gray-50: #F9FAFB;
+            --gray-100: #F3F4F6;
+            --gray-200: #E5E7EB;
+            --gray-300: #D1D5DB;
+            --gray-400: #9CA3AF;
+            --gray-500: #6B7280;
+            --gray-600: #4B5563;
+            --gray-700: #374151;
+            --gray-800: #1F2937;
+            --gray-900: #111827;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #F5F7FA;
+            color: var(--gray-800);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* CORPORATE HEADER */
+        .corporate-header {
+            background: linear-gradient(135deg, var(--primary-navy) 0%, var(--primary-blue) 100%);
+            border-bottom: 4px solid var(--accent-blue);
+            box-shadow: 0 2px 16px rgba(0, 0, 0, 0.08);
+        }
+
+        .header-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .sidebar-logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .company-logo {
+            max-width: 140px;
+            height: auto;
+            display: block;
+        }
+
+        /* MAIN CONTAINER */
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 32px;
+        }
+
+        /* BREADCRUMB */
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 24px;
+            font-size: 14px;
+            color: var(--gray-600);
+        }
+
+        .breadcrumb a {
+            color: var(--accent-blue);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .breadcrumb a:hover {
+            text-decoration: underline;
+        }
+
+        /* EMPLOYEE PROFILE CARD */
+        .profile-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            border: 1px solid var(--gray-200);
+            padding: 32px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 32px;
+        }
+
+        .employee-avatar-large {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent-blue) 0%, var(--light-blue) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 800;
+            font-size: 48px;
+            box-shadow: 0 4px 16px rgba(37, 99, 235, 0.3);
+            flex-shrink: 0;
+        }
+
+        .employee-details h2 {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--gray-900);
+            margin-bottom: 12px;
+        }
+
+        .employee-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 24px;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+
+        .meta-item i {
+            color: var(--accent-blue);
+            width: 20px;
+        }
+
+        .meta-item strong {
+            color: var(--gray-600);
+            font-weight: 600;
+        }
+
+        .meta-item span {
+            color: var(--gray-900);
+            font-weight: 500;
+        }
+
+        /* SECTION */
+        .section {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            border: 1px solid var(--gray-200);
+            margin-bottom: 24px;
+        }
+
+        .section-header {
+            padding: 20px 28px;
+            border-bottom: 1px solid var(--gray-200);
+            background: var(--gray-50);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .section-header.formation-header {
+            background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
+            border-bottom: 2px solid var(--accent-blue);
+        }
+
+        .section-header.transfer-header {
+            background: linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%);
+            border-bottom: 2px solid var(--warning-amber);
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--gray-900);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .section-title i {
+            color: var(--accent-blue);
+            font-size: 20px;
+        }
+
+        .section-title.transfer-title i {
+            color: var(--warning-amber);
+        }
+
+        .section-body {
+            padding: 28px;
+        }
+
+        /* FILTERS */
+        .filters-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            align-items: end;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--gray-700);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .form-select {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid var(--gray-300);
+            border-radius: 6px;
+            font-size: 14px;
+            background: white;
+            transition: all 0.2s ease;
+        }
+
+        .form-select:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        /* BUTTONS */
+        .btn {
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-blue) 0%, var(--light-blue) 100%);
+            color: white;
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2);
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: var(--gray-700);
+            border: 1px solid var(--gray-300);
+        }
+
+        .btn-secondary:hover {
+            background: var(--gray-50);
+        }
+
+        /* TIMELINE */
+        .timeline {
+            position: relative;
+            padding-left: 40px;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 16px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(to bottom, var(--accent-blue), var(--light-blue));
+        }
+
+        .timeline.transfer-timeline::before {
+            background: linear-gradient(to bottom, var(--warning-amber), #FBBF24);
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 32px;
+            padding-bottom: 32px;
+            border-bottom: 1px solid var(--gray-100);
+        }
+
+        .timeline-item:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .timeline-marker {
+            position: absolute;
+            left: -28px;
+            top: 8px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: 3px solid var(--accent-blue);
+            background: white;
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+        }
+
+        .timeline-marker.formation {
+            background: var(--accent-blue);
+        }
+
+        .timeline-marker.transfert {
+            background: var(--warning-amber);
+            border-color: var(--warning-amber);
+            box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.1);
+        }
+
+        .timeline-content {
+            background: var(--gray-50);
+            border-radius: 8px;
+            padding: 20px;
+            border: 1px solid var(--gray-200);
+        }
+
+        .timeline-content.formation-content {
+            background: linear-gradient(135deg, #F0F9FF 0%, #E0F2FE 100%);
+            border: 1px solid #BAE6FD;
+        }
+
+        .timeline-content.transfer-content {
+            background: linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%);
+            border: 1px solid #FDE68A;
+        }
+
+        .timeline-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+
+        .timeline-type {
+            font-size: 14px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .timeline-type.formation {
+            color: var(--accent-blue);
+        }
+
+        .timeline-type.transfert {
+            color: var(--warning-amber);
+        }
+
+        .timeline-date {
+            font-size: 13px;
+            color: var(--gray-500);
+            font-weight: 600;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .timeline-details {
+            display: grid;
+            gap: 12px;
+        }
+
+        .timeline-detail-row {
+            display: flex;
+            gap: 8px;
+            font-size: 14px;
+            align-items: flex-start;
+        }
+
+        .timeline-detail-row strong {
+            color: var(--gray-600);
+            min-width: 120px;
+            flex-shrink: 0;
+        }
+
+        .timeline-detail-row span {
+            color: var(--gray-900);
+            flex: 1;
+        }
+
+        /* STYLES POUR LES TRANSFERTS */
+        .transfer-arrow-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .badge-from-line {
+            background: linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%);
+            color: #991B1B;
+            border: 1px solid #FCA5A5;
+        }
+
+        .badge-to-line {
+            background: linear-gradient(135deg, #D1FAE5 0%, #A7F3D0 100%);
+            color: #065F46;
+            border: 1px solid #6EE7B7;
+        }
+
+        /* BADGES */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.01em;
+        }
+
+        .badge-level-i, .badge-level-1 {
+            background: linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%);
+            color: #991B1B;
+            border: 1px solid #FCA5A5;
+        }
+
+        .badge-level-l, .badge-level-2 {
+            background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
+            color: #92400E;
+            border: 1px solid #FCD34D;
+        }
+
+        .badge-level-u, .badge-level-3 {
+            background: linear-gradient(135deg, #D1FAE5 0%, #A7F3D0 100%);
+            color: #065F46;
+            border: 1px solid #6EE7B7;
+        }
+
+        .badge-level-t, .badge-level-4 {
+            background: linear-gradient(135deg, #DBEAFE 0%, #BFDBFE 100%);
+            color: #1E3A8A;
+            border: 1px solid #93C5FD;
+        }
+
+        .badge-line {
+            background: rgba(37, 99, 235, 0.1);
+            color: var(--accent-blue);
+            border: 1px solid rgba(37, 99, 235, 0.2);
+            margin-right: 4px;
+            margin-bottom: 4px;
+        }
+
+        /* STATS CARDS */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            border: 1px solid var(--gray-200);
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 800;
+            color: var(--gray-900);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--gray-600);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-top: 8px;
+        }
+
+        /* EMPTY STATE */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--gray-400);
+        }
+
+        .empty-state i {
+            font-size: 64px;
+            opacity: 0.3;
+            margin-bottom: 16px;
+        }
+
+        /* ANIMATIONS */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 768px) {
+            .profile-card {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .employee-meta {
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .filters-container {
+                grid-template-columns: 1fr;
+            }
+
+            .main-container {
+                padding: 20px;
+            }
+
+            .timeline {
+                padding-left: 30px;
+            }
+
+            .timeline::before {
+                left: 12px;
+            }
+
+            .timeline-marker {
+                left: -22px;
+            }
+
+            .timeline-detail-row {
+                flex-direction: column;
+            }
+
+            .timeline-detail-row strong {
+                min-width: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- CORPORATE HEADER -->
+    <header class="corporate-header">
+        <div class="header-container">
+            <div class="sidebar-logo">
+                <img src="{% static 'images/logo.png' %}" alt="Logo de l'entreprise" class="company-logo">
+            </div>
+            <div style="display: flex; gap: 12px;">
+                <a href="{% url 'employee_list_rh' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i>
+                    Retour à la liste
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-container">
+
+        <!-- BREADCRUMB -->
+        <nav class="breadcrumb fade-in">
+            <a href="{% url 'employee_list_rh' %}">
+                <i class="fas fa-home"></i>
+                Employees
+            </a>
+            <i class="fas fa-chevron-right" style="font-size: 10px; color: var(--gray-400);"></i>
+            <span>{{ employee.first_name }} {{ employee.last_name }}</span>
+        </nav>
+
+        <!-- EMPLOYEE PROFILE CARD -->
+        <div class="profile-card fade-in">
+            <div class="employee-avatar-large">
+                {{ employee.first_name|first }}{{ employee.last_name|first }}
+            </div>
+            <div class="employee-details" style="flex: 1;">
+                <h2>{{ employee.first_name }} {{ employee.last_name }}</h2>
+                <div class="employee-meta">
+                    <div class="meta-item">
+                        <i class="fas fa-id-card"></i>
+                        <strong>ID:</strong>
+                        <span style="font-family: 'JetBrains Mono', monospace;">{{ employee.matricule }}</span>
+                    </div>
+                    <div class="meta-item">
+                        <i class="fas fa-industry"></i>
+                        <strong>Ligne actuelle :</strong>
+                        <span>
+                            {% if employee.line %}
+                                {{ employee.line.name }}
+                            {% else %}
+                                <span style="color: var(--gray-400);">Unassigned</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="meta-item">
+                        <i class="fas fa-history"></i>
+                        <strong>Total Events:</strong>
+                        <span>{{ history|length }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- STATISTICS -->
+        {% if stats %}
+        <div class="stats-grid fade-in">
+            <div class="stat-card">
+                <div class="stat-value" style="color: var(--accent-blue);">
+                    {{ stats.total_formations }}
+                </div>
+                <div class="stat-label">Total des Formations</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" style="color: var(--warning-amber);">
+                    {{ stats.total_transferts }}
+                </div>
+                <div class="stat-label">Total Transferts</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" style="color: var(--success-green);">
+                    {{ stats.lignes_formees }}
+                </div>
+                <div class="stat-label">Lignes de Production</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" style="color: var(--gray-900);">
+                    {{ history|length }}
+                </div>
+                <div class="stat-label">Total des événements</div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- FILTERS SECTION -->
+        <div class="section fade-in">
+            <div class="section-header">
+                <h3 class="section-title">
+                    <i class="fas fa-filter"></i>
+                    Filters
+                </h3>
+            </div>
+            <div class="section-body">
+                <form method="get">
+                    <div class="filters-container">
+                        <div class="form-group">
+                            <label for="line">
+                                <i class="fas fa-industry"></i>
+                                Production Line
+                            </label>
+                            <select name="line" id="line" class="form-select">
+                                <option value="">All Lines</option>
+                                {% for line in all_lines %}
+                                    <option value="{{ line.id }}" {% if selected_line == line.id|stringformat:"s" %}selected{% endif %}>
+                                        {{ line.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="level">
+                                <i class="fas fa-layer-group"></i>
+                                Skill Level
+                            </label>
+                            <select name="level" id="level" class="form-select">
+                                <option value="">All Levels</option>
+                                {% for value, label in all_levels %}
+                                    <option value="{{ value }}" {% if selected_level == value|stringformat:"s" %}selected{% endif %}>
+                                        {{ label }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="form-group" style="display: flex; gap: 8px;">
+                            <button type="submit" class="btn btn-primary" style="flex: 1;">
+                                <i class="fas fa-search"></i>
+                                Appliquer des filtres
+                            </button>
+                            <a href="{% url 'employee_history' employee.id %}" class="btn btn-secondary" style="flex: 1;">
+                                <i class="fas fa-redo"></i>
+                                Réinitialiser
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- 📚 SECTION 1 : HISTORIQUE DES FORMATIONS -->
+        <!-- ========================================== -->
+        <div class="section fade-in">
+            <div class="section-header formation-header">
+                <h3 class="section-title">
+                    <i class="fas fa-graduation-cap"></i>
+                    Historique des Formations
+                </h3>
+                <span style="font-size: 14px; font-weight: 500; color: var(--gray-600);">
+                    {{ formations|length }} formation{{ formations|length|pluralize }}
+                </span>
+            </div>
+            <div class="section-body">
+                {% if formations %}
+                    <div class="timeline">
+                        {% for item in formations %}
+                            <div class="timeline-item">
+                                <div class="timeline-marker formation"></div>
+                                <div class="timeline-content formation-content">
+                                    <div class="timeline-header">
+                                        <div class="timeline-type formation">
+                                            <i class="fas fa-graduation-cap"></i>
+                                            Formation
+                                        </div>
+                                        <div class="timeline-date">
+                                            {{ item.date|date:"d/m/Y" }}
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="timeline-details">
+                                        <!-- Tâche -->
+                                        {% if item.task %}
+                                            <div class="timeline-detail-row">
+                                                <strong><i class="fas fa-tasks"></i> Tâche:</strong>
+                                                <span>{{ item.task }}</span>
+                                            </div>
+                                        {% endif %}
+
+                                        <!-- Lignes -->
+                                        {% if item.lines %}
+                                            <div class="timeline-detail-row">
+                                                <strong><i class="fas fa-industry"></i> Lines:</strong>
+                                                <div>
+                                                    {% for line in item.lines %}
+                                                        <span class="badge badge-line">{{ line }}</span>
+                                                    {% endfor %}
+                                                </div>
+                                            </div>
+                                        {% endif %}
+
+                                        <!-- Niveau -->
+                                        {% if item.level %}
+                                            <div class="timeline-detail-row">
+                                                <strong><i class="fas fa-layer-group"></i> Niveau:</strong>
+                                                <span>
+                                                    {% if "I" in item.level or "0" in item.level|stringformat:"s" %}
+                                                        <span class="badge badge-level-i">{{ item.level }}</span>
+                                                    {% elif "L" in item.level or "1" in item.level|stringformat:"s" %}
+                                                        <span class="badge badge-level-l">{{ item.level }}</span>
+                                                    {% elif "U" in item.level or "3" in item.level|stringformat:"s" %}
+                                                        <span class="badge badge-level-u">{{ item.level }}</span>
+                                                    {% else %}
+                                                        <span class="badge badge-level-t">{{ item.level }}</span>
+                                                    {% endif %}
+                                                </span>
+                                            </div>
+                                        {% endif %}
+
+                                        {% if item.chef_equipe_name %}
+    <div class="timeline-detail-row">
+        <strong>
+            <i class="fas fa-crown" style="color: #f59e0b;"></i>
+            Chef d'équipe :
+        </strong>
+        <span style="display: inline-flex; align-items: center; gap: 6px;">
+            <!-- <span style="
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 24px; height: 24px;
+                border-radius: 50%;
+                background: #fef3c7;
+                color: #92400e;
+                font-size: 10px;
+                font-weight: 700;
+            ">
+                {{ item.chef_equipe_name|first|upper }}
+            </span> -->
+            {{ item.chef_equipe_name }}
+        </span>
+    </div>
+    {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        <i class="fas fa-graduation-cap"></i>
+                        <p style="font-size: 16px; font-weight: 500;">Aucune Formation trouvée</p>
+                        <p style="font-size: 14px; margin-top: 8px;">
+                            {% if selected_line or selected_level %}
+                                Essayez d'ajuster vos filtres.
+                            {% else %}
+                                Cet employé n'a encore suivi aucune formation.
+                            {% endif %}
+                        </p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- 🔄 SECTION 2 : HISTORIQUE DES TRANSFERTS -->
+        <!-- ========================================== -->
+        <div class="section fade-in">
+            <div class="section-header transfer-header">
+                <h3 class="section-title transfer-title">
+                    <i class="fas fa-exchange-alt"></i>
+                    Historique des Transferts
+                </h3>
+                <span style="font-size: 14px; font-weight: 500; color: var(--gray-600);">
+                    {{ transfers|length }} transfer{{ transfers|length|pluralize }}
+                </span>
+            </div>
+            <div class="section-body">
+                {% if transfers %}
+                    <div class="timeline transfer-timeline">
+                        {% for item in transfers %}
+                            <div class="timeline-item">
+                                <div class="timeline-marker transfert"></div>
+                                <div class="timeline-content transfer-content">
+                                    <div class="timeline-header">
+                                        <div class="timeline-type transfert">
+                                            <i class="fas fa-exchange-alt"></i>
+                                            Transfert de Ligne
+                                        </div>
+                                        <div class="timeline-date">
+                                            {{ item.date|date:"d/m/Y" }}
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="timeline-details">
+                                        <!-- Changement de ligne -->
+                                        <div class="timeline-detail-row">
+                                            <strong><i class="fas fa-route"></i> Changement de Ligne:</strong>
+                                            <div class="transfer-arrow-container">
+                                                <span class="badge badge-from-line">
+                                                    <i class="fas fa-industry" style="font-size: 10px; margin-right: 4px;"></i>
+                                                    {{ item.from_line }}
+                                                </span>
+                                                <i class="fas fa-arrow-right" style="color: var(--gray-400); font-size: 16px;"></i>
+                                                <span class="badge badge-to-line">
+                                                    <i class="fas fa-industry" style="font-size: 10px; margin-right: 4px;"></i>
+                                                    {{ item.to_line }}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <!-- Période -->
+                                        <div class="timeline-detail-row">
+                                            <strong><i class="fas fa-calendar-alt"></i> Période :</strong>
+                                            <span>
+                                                {{ item.entry_date|date:"d/m/Y" }}
+                                                <i class="fas fa-arrow-right" style="margin: 0 8px; color: var(--gray-400);"></i>
+                                                {% if item.exit_date %}
+                                                    {{ item.exit_date|date:"d/m/Y" }}
+                                                {% else %}
+                                                    <span style="color: var(--success-green); font-weight: 600;">
+                                                        <i class="fas fa-check-circle"></i> Actuellement
+                                                    </span>
+                                                {% endif %}
+                                            </span>
+                                        </div>
+
+                                        <!-- Raison -->
+                                        {% if item.reason %}
+                                            <div class="timeline-detail-row">
+                                                <strong><i class="fas fa-comment"></i> Reason:</strong>
+                                                <span>{{ item.reason }}</span>
+                                            </div>
+                                        {% endif %}
+
+                                        <!-- Transféré par -->
+                                        <!-- {% if item.transferred_by %}
+                                            <div class="timeline-detail-row">
+                                                <strong><i class="fas fa-user-shield"></i> Transferred by:</strong>
+                                                <span>
+                                                    {% if item.transferred_by.get_full_name %}
+                                                        {{ item.transferred_by.get_full_name }}
+                                                    {% else %}
+                                                        {{ item.transferred_by.username }}
+                                                    {% endif %}
+                                                </span>
+                                            </div>
+                                        {% endif %} -->
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        <i class="fas fa-exchange-alt"></i>
+                        <p style="font-size: 16px; font-weight: 500;">Aucun enregistrement de transfert trouvé</p>
+                        <p style="font-size: 14px; margin-top: 8px;">Cet employé n'a encore aucun historique de transfert.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+    </div>
+
+    <!-- SCRIPTS -->
+    <script>
+        // Animation au chargement
+        document.addEventListener('DOMContentLoaded', () => {
+            const elements = document.querySelectorAll('.fade-in');
+            elements.forEach((el, index) => {
+                el.style.opacity = '0';
+                el.style.transform = 'translateY(8px)';
+                setTimeout(() => {
+                    el.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+                    el.style.opacity = '1';
+                    el.style.transform = 'translateY(0)';
+                }, index * 100);
+            });
+        });
+    </script>
+
+</body>
+</html>

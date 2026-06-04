@@ -1,0 +1,1215 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }} - RH</title>
+    <link rel="icon" type="image/png" href="{% static 'images/logo.png' %}">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+        
+        :root {
+            --primary-color: #1e40af;
+            --secondary-color: #64748b;
+            --success-color: #16a34a;
+            --danger-color: #dc2626;
+            --warning-color: #ea580c;
+            --background: #f8fafc;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --border-color: #e2e8f0;
+        }
+        
+        body {
+            background-color: var(--background);
+            color: var(--text-primary);
+        }
+        
+        .form-container {
+            background: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--border-color);
+        }
+        
+        .form-field {
+            margin-bottom: 1.25rem;
+        }
+        
+        .form-field label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+        
+        .form-field.required label::after {
+            content: "*";
+            color: var(--danger-color);
+            margin-left: 0.25rem;
+            font-weight: 400;
+        }
+        
+        .form-field input[type="text"],
+        .form-field input[type="email"],
+        .form-field input[type="password"],
+        .form-field select,
+        .form-field textarea {
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            color: var(--text-primary);
+            background-color: white;
+            transition: all 0.15s ease;
+        }
+        
+        .form-field input:focus,
+        .form-field select:focus,
+        .form-field textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+        }
+        
+        .form-field input.error,
+        .form-field select.error {
+            border-color: var(--danger-color);
+        }
+        
+        .form-field .helptext {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+        }
+        
+        .form-field .errorlist {
+            color: var(--danger-color);
+            font-size: 0.75rem;
+            margin-top: 0.25rem;
+            list-style: none;
+            padding: 0;
+        }
+        
+        .form-field .errorlist li::before {
+            content: "⚠ ";
+        }
+        
+        .btn {
+            padding: 0.5rem 1.25rem;
+            font-weight: 500;
+            font-size: 0.875rem;
+            border-radius: 0.375rem;
+            transition: all 0.15s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            border: 1px solid transparent;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+        
+        .btn-primary:hover {
+            background-color: #1e3a8a;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn-secondary {
+            background-color: white;
+            color: var(--text-secondary);
+            border-color: var(--border-color);
+        }
+        
+        .btn-secondary:hover {
+            background-color: #f8fafc;
+            border-color: var(--text-secondary);
+        }
+        
+        .section-card {
+            background: white;
+            border-radius: 0.5rem;
+            border: 1px solid var(--border-color);
+            margin-bottom: 1.5rem;
+        }
+        
+        .section-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            background: #f8fafc;
+            border-radius: 0.5rem 0.5rem 0 0;
+        }
+        
+        .section-header h2 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .section-body {
+            padding: 1.5rem;
+        }
+        
+        .user-type-option {
+            position: relative;
+            cursor: pointer;
+        }
+        
+        .user-type-option input[type="radio"] {
+            position: absolute;
+            opacity: 0;
+        }
+        
+        .user-type-card {
+            padding: 1rem;
+            border: 2px solid var(--border-color);
+            border-radius: 0.5rem;
+            transition: all 0.15s ease;
+        }
+        
+        .user-type-option input:checked + .user-type-card {
+            border-color: var(--primary-color);
+            background-color: #eff6ff;
+        }
+        
+        .user-type-option input:checked + .user-type-card.type-admin {
+            border-color: var(--danger-color);
+            background-color: #fef2f2;
+        }
+        
+        .user-type-card:hover {
+            border-color: var(--primary-color);
+        }
+        
+        .user-type-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            color: white;
+        }
+        
+        .user-type-icon.leader {
+            background: linear-gradient(135deg, #1e40af, #60a5fa);
+        }
+        
+        .user-type-icon.admin {
+            background: linear-gradient(135deg, #dc2626, #f87171);
+        }
+        
+        .check-indicator {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: white;
+        }
+        
+        .user-type-option input:checked + .user-type-card .check-indicator {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        
+        .user-type-option input:checked + .user-type-card.type-admin .check-indicator {
+            background: var(--danger-color);
+            border-color: var(--danger-color);
+        }
+        
+        .line-checkbox {
+            position: relative;
+            cursor: pointer;
+        }
+        
+        .line-checkbox input[type="checkbox"] {
+            position: absolute;
+            opacity: 0;
+        }
+        
+        .line-card {
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 0.375rem;
+            text-align: center;
+            transition: all 0.15s ease;
+        }
+        
+        .line-checkbox input:checked + .line-card {
+            border-color: var(--primary-color);
+            background-color: #eff6ff;
+        }
+        
+        .line-card:hover {
+            border-color: var(--primary-color);
+        }
+        
+        .line-icon {
+            width: 36px;
+            height: 36px;
+            margin: 0 auto 0.5rem;
+            background: #f1f5f9;
+            border-radius: 0.375rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+        }
+        
+        .line-checkbox input:checked + .line-card .line-icon {
+            background: var(--primary-color);
+            color: white;
+        }
+        
+        .profile-option {
+            padding: 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 0.375rem;
+            margin-bottom: 0.75rem;
+            background: #f8fafc;
+        }
+        
+        .profile-option label {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            cursor: pointer;
+        }
+        
+        .profile-option input[type="radio"] {
+            margin-top: 0.125rem;
+        }
+        
+        .required-note {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            margin-bottom: 1rem;
+        }
+        
+        .required-note span {
+            color: var(--danger-color);
+        }
+        
+        .password-toggle {
+            position: absolute;
+            right: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+        }
+        
+        .password-toggle:hover {
+            color: var(--text-primary);
+        }
+        
+        #lines-section {
+            transition: all 0.3s ease;
+        }
+        
+        #lines-section.hidden {
+            display: none;
+        }
+
+        /* ═══════════════════════════════════════════════════════════════ */
+        /* STYLES POUR LA RECHERCHE D'EMPLOYÉS */
+        /* ═══════════════════════════════════════════════════════════════ */
+        .employee-search-container {
+            position: relative;
+            margin-top: 0.75rem;
+        }
+
+        .employee-search-input {
+            width: 100%;
+            padding: 0.5rem 0.75rem 0.5rem 2.5rem;
+            border: 1px solid var(--border-color);
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            color: var(--text-primary);
+            background-color: white;
+            transition: all 0.15s ease;
+        }
+
+        .employee-search-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+            pointer-events: none;
+        }
+
+        .clear-search {
+            position: absolute;
+            right: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: none;
+        }
+
+        .clear-search:hover {
+            color: var(--danger-color);
+        }
+
+        .clear-search.visible {
+            display: block;
+        }
+
+        .employee-results {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            border-top: none;
+            border-radius: 0 0 0.375rem 0.375rem;
+            background: white;
+            display: none;
+        }
+
+        .employee-results.active {
+            display: block;
+        }
+
+        .employee-result-item {
+            padding: 0.75rem;
+            cursor: pointer;
+            border-bottom: 1px solid var(--border-color);
+            transition: background 0.15s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .employee-result-item:last-child {
+            border-bottom: none;
+        }
+
+        .employee-result-item:hover {
+            background-color: #f1f5f9;
+        }
+
+        .employee-result-item.selected {
+            background-color: #eff6ff;
+            border-left: 3px solid var(--primary-color);
+        }
+
+        .employee-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #1e40af, #60a5fa);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 0.75rem;
+            flex-shrink: 0;
+        }
+
+        .employee-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .employee-name {
+            font-weight: 500;
+            color: var(--text-primary);
+            font-size: 0.875rem;
+        }
+
+        .employee-matricule {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .employee-no-results {
+            padding: 1rem;
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+
+        .selected-employee-badge {
+            display: none;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            background: #eff6ff;
+            border: 1px solid var(--primary-color);
+            border-radius: 0.375rem;
+            margin-top: 0.5rem;
+        }
+
+        .selected-employee-badge.visible {
+            display: flex;
+        }
+
+        .selected-employee-badge .employee-avatar {
+            width: 28px;
+            height: 28px;
+            font-size: 0.65rem;
+        }
+
+        .selected-employee-badge .remove-selection {
+            margin-left: auto;
+            background: none;
+            border: none;
+            color: var(--danger-color);
+            cursor: pointer;
+            padding: 0.25rem;
+        }
+
+        .selected-employee-badge .remove-selection:hover {
+            color: #991b1b;
+        }
+
+        .search-stats {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            padding: 0.5rem 0.75rem;
+            background: #f8fafc;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        /* Highlight du texte recherché */
+        .highlight {
+            background-color: #fef08a;
+            padding: 0 2px;
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body>
+    
+    <!-- Navigation -->
+    <nav class="bg-white border-b border-gray-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <span class="text-xl font-semibold text-gray-900">
+                        Training Matrix System
+                    </span>
+                </div>
+                <div class="flex items-center gap-6">
+                    <span class="text-sm text-gray-600">
+                        <i class="fas fa-user-shield mr-2 text-red-500"></i>
+                        {{ request.user.first_name }} {{ request.user.last_name }}
+                    </span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="min-h-screen py-8 px-4">
+        <div class="max-w-3xl mx-auto">
+            
+            <!-- Breadcrumb -->
+            <nav class="flex mb-6" aria-label="Breadcrumb">
+                <ol class="inline-flex items-center space-x-1 text-sm">
+                    <li>
+                        <a href="{% url 'employee_list_rh' %}" class="text-gray-500 hover:text-gray-700">
+                            <i class="fas fa-home"></i>
+                        </a>
+                    </li>
+                    <li>
+                        <span class="mx-2 text-gray-400">/</span>
+                        <a href="{% url 'rh_manage_users' %}" class="text-gray-500 hover:text-gray-700">Utilisateurs</a>
+                    </li>
+                    <li>
+                        <span class="mx-2 text-gray-400">/</span>
+                        <span class="text-gray-700">{{ title }}</span>
+                    </li>
+                </ol>
+            </nav>
+
+            <form method="post">
+                {% csrf_token %}
+
+                <!-- Error Messages -->
+                {% if form.non_field_errors %}
+                <div class="bg-red-50 border border-red-200 text-red-700 text-sm rounded p-4 mb-6" role="alert">
+                    <div class="flex">
+                        <i class="fas fa-exclamation-triangle mr-2 mt-0.5"></i>
+                        <div>
+                            <p class="font-medium">Erreur(s) dans le formulaire :</p>
+                            <ul class="list-disc pl-5 mt-2">
+                                {% for error in form.non_field_errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- ═══════════════════════════════════════════════════════════════ -->
+                <!-- TYPE D'UTILISATEUR -->
+                <!-- ═══════════════════════════════════════════════════════════════ -->
+                <div class="section-card">
+                    <div class="section-header">
+                        <h2>
+                            <i class="fas fa-user-tag text-gray-400"></i>
+                            Type d'utilisateur
+                        </h2>
+                    </div>
+                    <div class="section-body">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- Chef d'équipe -->
+                            <label class="user-type-option">
+                                <input type="radio" name="user_type" value="team_leader" 
+                                       {% if form.user_type.value == 'team_leader' or not form.user_type.value %}checked{% endif %}>
+                                <div class="user-type-card">
+                                    <div class="check-indicator">
+                                        <i class="fas fa-check text-white text-xs"></i>
+                                    </div>
+                                    <div class="flex items-start gap-3">
+                                        <div class="user-type-icon leader">
+                                            <i class="fas fa-user-tie"></i>
+                                        </div>
+                                        <div>
+                                            <h3 class="font-semibold text-gray-900">Chef d'équipe</h3>
+                                            <p class="text-xs text-gray-500 mt-1">
+                                                Gère une ou plusieurs lignes de production et peut former ses opérateurs.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </label>
+                            
+                            <!-- Super Admin -->
+                            <label class="user-type-option">
+                                <input type="radio" name="user_type" value="superuser" 
+                                       {% if form.user_type.value == 'superuser' %}checked{% endif %}>
+                                <div class="user-type-card type-admin">
+                                    <div class="check-indicator">
+                                        <i class="fas fa-check text-white text-xs"></i>
+                                    </div>
+                                    <div class="flex items-start gap-3">
+                                        <div class="user-type-icon admin">
+                                            <i class="fas fa-crown"></i>
+                                        </div>
+                                        <div>
+                                            <h3 class="font-semibold text-gray-900">Super Admin</h3>
+                                            <p class="text-xs text-gray-500 mt-1">
+                                                Accès RH complet. Peut gérer tous les utilisateurs, employés et formations.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ═══════════════════════════════════════════════════════════════ -->
+                <!-- INFORMATIONS DU COMPTE -->
+                <!-- ═══════════════════════════════════════════════════════════════ -->
+                <div class="section-card">
+                    <div class="section-header">
+                        <h2>
+                            <i class="fas fa-user text-gray-400"></i>
+                            Informations du compte
+                        </h2>
+                    </div>
+                    <div class="section-body">
+                        <div class="required-note">
+                            <span>*</span> Champs obligatoires
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- Prénom -->
+                            <div class="form-field required">
+                                <label for="id_first_name">
+                                    <i class="fas fa-user text-gray-400 mr-1"></i>
+                                    Prénom
+                                </label>
+                                <input type="text" name="first_name" id="id_first_name"
+                                       value="{{ form.first_name.value|default:'' }}"
+                                       placeholder="Jean"
+                                       class="{% if form.first_name.errors %}error{% endif %}">
+                                {% if form.first_name.errors %}
+                                <ul class="errorlist">
+                                    {% for error in form.first_name.errors %}<li>{{ error }}</li>{% endfor %}
+                                </ul>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Nom -->
+                            <div class="form-field required">
+                                <label for="id_last_name">
+                                    <i class="fas fa-user text-gray-400 mr-1"></i>
+                                    Nom
+                                </label>
+                                <input type="text" name="last_name" id="id_last_name"
+                                       value="{{ form.last_name.value|default:'' }}"
+                                       placeholder="Dupont"
+                                       class="{% if form.last_name.errors %}error{% endif %}">
+                                {% if form.last_name.errors %}
+                                <ul class="errorlist">
+                                    {% for error in form.last_name.errors %}<li>{{ error }}</li>{% endfor %}
+                                </ul>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Username -->
+                            <div class="form-field required">
+                                <label for="id_username">
+                                    <i class="fas fa-at text-gray-400 mr-1"></i>
+                                    Nom d'utilisateur
+                                </label>
+                                <input type="text" name="username" id="id_username"
+                                       value="{{ form.username.value|default:'' }}"
+                                       placeholder="jean.dupont"
+                                       class="{% if form.username.errors %}error{% endif %}">
+                                {% if form.username.errors %}
+                                <ul class="errorlist">
+                                    {% for error in form.username.errors %}<li>{{ error }}</li>{% endfor %}
+                                </ul>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Email -->
+                            <div class="form-field required">
+                                <label for="id_email">
+                                    <i class="fas fa-envelope text-gray-400 mr-1"></i>
+                                    Email
+                                </label>
+                                <input type="email" name="email" id="id_email"
+                                       value="{{ form.email.value|default:'' }}"
+                                       placeholder="jean.dupont@entreprise.com"
+                                       class="{% if form.email.errors %}error{% endif %}">
+                                {% if form.email.errors %}
+                                <ul class="errorlist">
+                                    {% for error in form.email.errors %}<li>{{ error }}</li>{% endfor %}
+                                </ul>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Mot de passe (seulement pour création) -->
+                        {% if not user_to_edit %}
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 pt-4 border-t border-gray-200">
+                            <div class="form-field required">
+                                <label for="id_password1">
+                                    <i class="fas fa-lock text-gray-400 mr-1"></i>
+                                    Mot de passe
+                                </label>
+                                <div class="relative">
+                                    <input type="password" name="password1" id="id_password1"
+                                           placeholder="••••••••"
+                                           class="{% if form.password1.errors %}error{% endif %}">
+                                    <button type="button" class="password-toggle" onclick="togglePassword('id_password1')">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                                {% if form.password1.errors %}
+                                <ul class="errorlist">
+                                    {% for error in form.password1.errors %}<li>{{ error }}</li>{% endfor %}
+                                </ul>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="form-field required">
+                                <label for="id_password2">
+                                    <i class="fas fa-lock text-gray-400 mr-1"></i>
+                                    Confirmer le mot de passe
+                                </label>
+                                <div class="relative">
+                                    <input type="password" name="password2" id="id_password2"
+                                           placeholder="••••••••"
+                                           class="{% if form.password2.errors %}error{% endif %}">
+                                    <button type="button" class="password-toggle" onclick="togglePassword('id_password2')">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                                {% if form.password2.errors %}
+                                <ul class="errorlist">
+                                    {% for error in form.password2.errors %}<li>{{ error }}</li>{% endfor %}
+                                </ul>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- ═══════════════════════════════════════════════════════════════ -->
+                <!-- LIGNES DE PRODUCTION (pour chef d'équipe) -->
+                <!-- ═══════════════════════════════════════════════════════════════ -->
+                <div class="section-card" id="lines-section">
+                    <div class="section-header">
+                        <h2>
+                            <i class="fas fa-industry text-gray-400"></i>
+                            Lignes de production à gérer
+                        </h2>
+                    </div>
+                    <div class="section-body">
+                        <p class="text-sm text-gray-600 mb-4">
+                            Sélectionnez les lignes que ce chef d'équipe supervisera.
+                        </p>
+                        
+                        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                            {% for line in all_lines %}
+                            <label class="line-checkbox">
+                                <input type="checkbox" name="managed_lines" value="{{ line.pk }}"
+                                       {% if line.pk in selected_lines %}checked{% endif %}>
+                                <div class="line-card">
+                                    <div class="line-icon">
+                                        <i class="fas fa-boxes"></i>
+                                    </div>
+                                    <p class="font-semibold text-gray-900 text-sm">{{ line.code }}</p>
+                                    <p class="text-xs text-gray-500 truncate">{{ line.name }}</p>
+                                </div>
+                            </label>
+                            {% empty %}
+                            <div class="col-span-full text-center py-6 text-gray-500">
+                                <i class="fas fa-info-circle text-2xl mb-2"></i>
+                                <p>Aucune ligne de production disponible</p>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        {% if form.managed_lines.errors %}
+                        <div class="mt-3 p-3 bg-red-50 border border-red-200 rounded text-sm text-red-700">
+                            <i class="fas fa-exclamation-triangle mr-1"></i>
+                            {{ form.managed_lines.errors.0 }}
+                        </div>
+                        {% endif %}
+                        
+                        <div class="mt-4 p-3 bg-amber-50 border border-amber-200 rounded text-sm text-amber-800">
+                            <i class="fas fa-exclamation-triangle mr-2"></i>
+                            Un chef d'équipe doit gérer au moins une ligne de production.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ═══════════════════════════════════════════════════════════════ -->
+                <!-- PROFIL EMPLOYÉ -->
+                <!-- ═══════════════════════════════════════════════════════════════ -->
+                <div class="section-card">
+                    <div class="section-header">
+                        <h2>
+                            <i class="fas fa-id-badge text-gray-400"></i>
+                            Profil Employé
+                        </h2>
+                    </div>
+                    <div class="section-body">
+                        <p class="text-sm text-gray-600 mb-4">
+                            Liez ce compte à un profil employé pour qu'il apparaisse dans les matrices.
+                        </p>
+                        
+                        <!-- Option 1 : Lier à un existant (AVEC RECHERCHE) -->
+                        <div class="profile-option" id="link-employee-option">
+                            <label>
+                                <input type="radio" name="profile_option" value="link" class="text-blue-600" id="profile_option_link">
+                                <div class="flex-1">
+                                    <p class="font-medium text-gray-900">Lier à un employé existant</p>
+                                    <p class="text-xs text-gray-500 mt-1">
+                                        Associer ce compte à un profil employé déjà dans la base.
+                                    </p>
+                                    
+                                    <!-- Conteneur de recherche -->
+                                    <div class="employee-search-container" id="employee-search-container">
+                                        <i class="fas fa-search search-icon"></i>
+                                        <input type="text" 
+                                               class="employee-search-input" 
+                                               id="employee-search-input"
+                                               placeholder="Rechercher par nom, prénom ou matricule..."
+                                               autocomplete="off">
+                                        <button type="button" class="clear-search" id="clear-search">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                        
+                                        <!-- Résultats de recherche -->
+                                        <div class="employee-results" id="employee-results">
+                                            <div class="search-stats" id="search-stats"></div>
+                                            <div id="employee-results-list"></div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Badge de l'employé sélectionné -->
+                                    <div class="selected-employee-badge" id="selected-employee-badge">
+                                        <div class="employee-avatar" id="selected-avatar">JD</div>
+                                        <div class="employee-info">
+                                            <div class="employee-name" id="selected-name">Jean Dupont</div>
+                                            <div class="employee-matricule" id="selected-matricule">MAT-001</div>
+                                        </div>
+                                        <button type="button" class="remove-selection" id="remove-selection">
+                                            <i class="fas fa-times-circle"></i>
+                                        </button>
+                                    </div>
+                                    
+                                    <!-- Input caché pour stocker l'ID de l'employé sélectionné -->
+                                    <input type="hidden" name="link_to_employee" id="link_to_employee" value="">
+                                </div>
+                            </label>
+                        </div>
+                        
+                        <!-- Option 2 : Créer automatiquement -->
+                        <div class="profile-option">
+                            <label>
+                                <input type="radio" name="profile_option" value="create" class="text-blue-600" checked>
+                                <div class="flex-1">
+                                    <p class="font-medium text-gray-900">Créer un nouveau profil employé</p>
+                                    <p class="text-xs text-gray-500 mt-1">
+                                        Un profil employé sera créé automatiquement avec les informations ci-dessus.
+                                    </p>
+                                    <input type="text" name="matricule" 
+                                           value="{{ form.matricule.value|default:'' }}"
+                                           class="mt-3 w-full text-sm"
+                                           placeholder="Matricule (ex: MAT-001)">
+                                </div>
+                            </label>
+                        </div>
+                        
+                        <!-- Option 3 : Ne pas lier -->
+                        <div class="profile-option">
+                            <label>
+                                <input type="radio" name="profile_option" value="none" class="text-blue-600">
+                                <div>
+                                    <p class="font-medium text-gray-900">Ne pas lier de profil</p>
+                                    <p class="text-xs text-gray-500 mt-1">
+                                        L'utilisateur pourra se connecter mais n'apparaîtra pas dans les matrices.
+                                    </p>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ═══════════════════════════════════════════════════════════════ -->
+                <!-- BOUTONS D'ACTION -->
+                <!-- ═══════════════════════════════════════════════════════════════ -->
+                <div class="flex items-center justify-between pt-4">
+                    <a href="{% url 'rh_manage_users' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i>
+                        Annuler
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-check"></i>
+                        {{ submit_text }}
+                    </button>
+                </div>
+            </form>
+
+            <!-- Info Section -->
+            <div class="mt-6 p-4 bg-blue-50 border border-blue-200 rounded">
+                <div class="flex">
+                    <i class="fas fa-info-circle text-blue-600 mt-0.5 mr-3"></i>
+                    <div class="text-sm text-blue-800">
+                        <p class="font-medium mb-1">Information</p>
+                        <ul class="list-disc pl-5 space-y-1">
+                            <li><strong>Super Admin :</strong> Accès complet à l'espace RH</li>
+                            <li><strong>Chef d'équipe :</strong> Doit être affecté à au moins une ligne</li>
+                            <li>Un profil employé permet d'apparaître dans les matrices de compétences</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+
+<!-- JavaScript -->
+<script>
+    // Toggle password visibility
+    function togglePassword(inputId) {
+        const input = document.getElementById(inputId);
+        const icon = input.nextElementSibling.querySelector('i');
+        
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+        } else {
+            input.type = 'password';
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+        }
+    }
+    
+    // Show/hide lines section based on user type
+    document.addEventListener('DOMContentLoaded', function() {
+        const userTypeInputs = document.querySelectorAll('input[name="user_type"]');
+        const linesSection = document.getElementById('lines-section');
+        
+        function updateLinesVisibility() {
+            const selectedType = document.querySelector('input[name="user_type"]:checked');
+            if (selectedType && selectedType.value === 'superuser') {
+                linesSection.classList.add('hidden');
+            } else {
+                linesSection.classList.remove('hidden');
+            }
+        }
+        
+        userTypeInputs.forEach(input => {
+            input.addEventListener('change', updateLinesVisibility);
+        });
+        
+        // Initial check
+        updateLinesVisibility();
+
+        // ═══════════════════════════════════════════════════════════════
+        // RECHERCHE D'EMPLOYÉS
+        // ═══════════════════════════════════════════════════════════════
+        
+        // Liste des employés disponibles (injectée depuis Django)
+        const availableEmployees = [
+            {% for emp in available_employees %}
+            {
+                id: {{ emp.pk }},
+                firstName: "{{ emp.first_name|escapejs }}",
+                lastName: "{{ emp.last_name|escapejs }}",
+                matricule: "{{ emp.matricule|escapejs }}",
+                fullName: "{{ emp.first_name|escapejs }} {{ emp.last_name|escapejs }}"
+            }{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ];
+        
+        const searchInput = document.getElementById('employee-search-input');
+        const searchResults = document.getElementById('employee-results');
+        const resultsList = document.getElementById('employee-results-list');
+        const searchStats = document.getElementById('search-stats');
+        const clearSearchBtn = document.getElementById('clear-search');
+        const selectedBadge = document.getElementById('selected-employee-badge');
+        const hiddenInput = document.getElementById('link_to_employee');
+        const profileOptionLink = document.getElementById('profile_option_link');
+        
+        let selectedEmployee = null;
+        
+        // Fonction pour obtenir les initiales
+        function getInitials(firstName, lastName) {
+            return (firstName.charAt(0) + lastName.charAt(0)).toUpperCase();
+        }
+        
+        // Fonction pour échapper HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // Fonction pour highlight le texte recherché
+        function highlightText(text, search) {
+            if (!search) return escapeHtml(text);
+            const regex = new RegExp(`(${search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+            return escapeHtml(text).replace(regex, '<span class="highlight">$1</span>');
+        }
+        
+        // Fonction de recherche
+        function searchEmployees(query) {
+            if (!query || query.length < 1) {
+                searchResults.classList.remove('active');
+                return [];
+            }
+            
+            const lowerQuery = query.toLowerCase();
+            return availableEmployees.filter(emp => 
+                emp.firstName.toLowerCase().includes(lowerQuery) ||
+                emp.lastName.toLowerCase().includes(lowerQuery) ||
+                emp.matricule.toLowerCase().includes(lowerQuery) ||
+                emp.fullName.toLowerCase().includes(lowerQuery)
+            );
+        }
+        
+        // Afficher les résultats
+        function displayResults(results, query) {
+            if (results.length === 0) {
+                resultsList.innerHTML = `
+                    <div class="employee-no-results">
+                        <i class="fas fa-search text-gray-400 mb-2"></i>
+                        <p>Aucun employé trouvé pour "${escapeHtml(query)}"</p>
+                    </div>
+                `;
+                searchStats.innerHTML = `<i class="fas fa-info-circle mr-1"></i> 0 résultat`;
+            } else {
+                searchStats.innerHTML = `<i class="fas fa-users mr-1"></i> ${results.length} employé${results.length > 1 ? 's' : ''} trouvé${results.length > 1 ? 's' : ''}`;
+                
+                resultsList.innerHTML = results.map(emp => `
+                    <div class="employee-result-item ${selectedEmployee && selectedEmployee.id === emp.id ? 'selected' : ''}" 
+                         data-id="${emp.id}"
+                         data-firstname="${escapeHtml(emp.firstName)}"
+                         data-lastname="${escapeHtml(emp.lastName)}"
+                         data-matricule="${escapeHtml(emp.matricule)}">
+                        <div class="employee-avatar">${getInitials(emp.firstName, emp.lastName)}</div>
+                        <div class="employee-info">
+                            <div class="employee-name">${highlightText(emp.fullName, query)}</div>
+                            <div class="employee-matricule">${highlightText(emp.matricule, query)}</div>
+                        </div>
+                        <i class="fas fa-chevron-right text-gray-400"></i>
+                    </div>
+                `).join('');
+            }
+            
+            searchResults.classList.add('active');
+        }
+        
+        // Sélectionner un employé
+        function selectEmployee(id, firstName, lastName, matricule) {
+            selectedEmployee = { id, firstName, lastName, matricule };
+            hiddenInput.value = id;
+            
+            // Mettre à jour le badge
+            document.getElementById('selected-avatar').textContent = getInitials(firstName, lastName);
+            document.getElementById('selected-name').textContent = `${firstName} ${lastName}`;
+            document.getElementById('selected-matricule').textContent = matricule;
+            selectedBadge.classList.add('visible');
+            
+            // Cacher les résultats et vider la recherche
+            searchResults.classList.remove('active');
+            searchInput.value = '';
+            clearSearchBtn.classList.remove('visible');
+            
+            // Sélectionner automatiquement l'option "Lier"
+            profileOptionLink.checked = true;
+        }
+        
+        // Désélectionner l'employé
+        function deselectEmployee() {
+            selectedEmployee = null;
+            hiddenInput.value = '';
+            selectedBadge.classList.remove('visible');
+        }
+        
+        // Événement de saisie
+        searchInput.addEventListener('input', function(e) {
+            const query = e.target.value.trim();
+            
+            // Afficher/cacher le bouton clear
+            if (query.length > 0) {
+                clearSearchBtn.classList.add('visible');
+            } else {
+                clearSearchBtn.classList.remove('visible');
+            }
+            
+            const results = searchEmployees(query);
+            if (query.length >= 1) {
+                displayResults(results, query);
+            } else {
+                searchResults.classList.remove('active');
+            }
+        });
+        
+        // Focus sur le champ de recherche
+        searchInput.addEventListener('focus', function() {
+            const query = this.value.trim();
+            if (query.length >= 1) {
+                const results = searchEmployees(query);
+                displayResults(results, query);
+            }
+            // Sélectionner automatiquement l'option "Lier"
+            profileOptionLink.checked = true;
+        });
+        
+        // Clic sur un résultat
+        resultsList.addEventListener('click', function(e) {
+            const item = e.target.closest('.employee-result-item');
+            if (item) {
+                selectEmployee(
+                    parseInt(item.dataset.id),
+                    item.dataset.firstname,
+                    item.dataset.lastname,
+                    item.dataset.matricule
+                );
+            }
+        });
+        
+        // Bouton clear
+        clearSearchBtn.addEventListener('click', function() {
+            searchInput.value = '';
+            searchResults.classList.remove('active');
+            this.classList.remove('visible');
+            searchInput.focus();
+        });
+        
+        // Bouton supprimer la sélection
+        document.getElementById('remove-selection').addEventListener('click', function(e) {
+            e.preventDefault();
+            deselectEmployee();
+        });
+        
+        // Fermer les résultats en cliquant ailleurs
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('#employee-search-container') && !e.target.closest('#selected-employee-badge')) {
+                searchResults.classList.remove('active');
+            }
+        });
+        
+        // Navigation au clavier dans les résultats
+        searchInput.addEventListener('keydown', function(e) {
+            const items = resultsList.querySelectorAll('.employee-result-item');
+            const activeItem = resultsList.querySelector('.employee-result-item:hover, .employee-result-item.keyboard-focus');
+            
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (!searchResults.classList.contains('active')) {
+                    const query = this.value.trim();
+                    if (query.length >= 1) {
+                        const results = searchEmployees(query);
+                        displayResults(results, query);
+                    }
+                }
+                // Focus sur le premier élément
+                if (items.length > 0) {
+                    items[0].classList.add('keyboard-focus');
+                    items[0].scrollIntoView({ block: 'nearest' });
+                }
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                const focusedItem = resultsList.querySelector('.employee-result-item.keyboard-focus');
+                if (focusedItem) {
+                    selectEmployee(
+                        parseInt(focusedItem.dataset.id),
+                        focusedItem.dataset.firstname,
+                        focusedItem.dataset.lastname,
+                        focusedItem.dataset.matricule
+                    );
+                }
+            } else if (e.key === 'Escape') {
+                searchResults.classList.remove('active');
+            }
+        });
+    });
+</script>
+
+</body>
+</html>

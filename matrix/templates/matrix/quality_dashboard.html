@@ -1,0 +1,247 @@
+<!-- matrix/templates/matrix/quality_dashboard.html -->
+{% extends 'matrix/quality_base.html' %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Tableau de Bord{% endblock %}
+
+{% block breadcrumb %}
+<li>Dashboard</li>
+{% endblock %}
+
+{% block content %}
+
+<!-- KPIs -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="kpi-card">
+            <div class="kpi-icon" style="background:rgba(59,130,246,.1); color:var(--accent-color);">
+                <i class="fas fa-users"></i>
+            </div>
+            <div>
+                <div class="kpi-value">{{ total_employees }}</div>
+                <div class="kpi-label">Opérateurs</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="kpi-card">
+            <div class="kpi-icon" style="background:rgba(5,150,105,.1); color:var(--success-color);">
+                <i class="fas fa-sitemap"></i>
+            </div>
+            <div>
+                <div class="kpi-value">{{ total_lines }}</div>
+                <div class="kpi-label">Lignes</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="kpi-card">
+            <div class="kpi-icon" style="background:rgba(217,119,6,.1); color:var(--warning-color);">
+                <i class="fas fa-tasks"></i>
+            </div>
+            <div>
+                <div class="kpi-value">{{ total_tasks }}</div>
+                <div class="kpi-label">Tâches</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Niveaux + Lignes -->
+<div class="row g-4 mb-4">
+
+    <!-- Niveaux -->
+    <div class="col-md-4">
+        <div class="card-modern h-100">
+            <div class="card-header-modern">
+                <h3 class="card-title-modern">
+                    <i class="fas fa-layer-group"></i>Niveaux de Compétence
+                </h3>
+            </div>
+            <div class="card-body-modern">
+                <div class="d-flex justify-content-between align-items-center p-3 rounded mb-2"
+                     style="background:#fff7ed;">
+                    <span>
+                        <span class="lvl-I me-2">I</span>En formation
+                    </span>
+                    <strong style="color:#c2410c;">{{ level_stats.in_training }}</strong>
+                </div>
+                <div class="d-flex justify-content-between align-items-center p-3 rounded mb-2"
+                     style="background:#f0fdf4;">
+                    <span>
+                        <span class="lvl-L me-2">L</span>Approuvé
+                    </span>
+                    <strong style="color:#15803d;">{{ level_stats.supervised }}</strong>
+                </div>
+                <div class="d-flex justify-content-between align-items-center p-3 rounded"
+                     style="background:#eff6ff;">
+                    <span>
+                        <span class="lvl-U me-2">U</span>Formateur
+                    </span>
+                    <strong style="color:#1d4ed8;">{{ level_stats.trainer }}</strong>
+                </div>
+
+                <hr style="border-color:var(--gray-200);">
+
+                <div style="font-size:.78rem; color:var(--gray-500); font-weight:600; margin-bottom:10px;">
+                    Demandes en attente
+                </div>
+                <div class="d-flex flex-wrap gap-2">
+                    <span class="menu-badge" style="background:var(--warning-color);">
+                        <i class="fas fa-graduation-cap me-1"></i>{{ pending_training }}
+                    </span>
+                    <span class="menu-badge" style="background:var(--info-color);">
+                        <i class="fas fa-redo me-1"></i>{{ pending_requalif }}
+                    </span>
+                    <span class="menu-badge" style="background:var(--gray-500);">
+                        <i class="fas fa-exchange-alt me-1"></i>{{ pending_transfers }}
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lignes -->
+    <div class="col-md-8">
+        <div class="card-modern h-100">
+            <div class="card-header-modern">
+                <h3 class="card-title-modern">
+                    <i class="fas fa-industry"></i>Opérateurs par Ligne
+                </h3>
+            </div>
+            <div class="card-body-modern p-0">
+                <table class="table table-modern mb-0">
+                    <thead>
+                        <tr>
+                            <th>Ligne</th>
+                            <th class="text-center">Opérateurs</th>
+                            <th class="text-center">Tâches</th>
+                            <th>Matrice</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for line in lines_stats %}
+                    <tr>
+                        <td class="fw-semibold">{{ line.name }}</td>
+                        <td class="text-center">
+                            <span class="menu-badge" style="background:var(--accent-color);">
+                                {{ line.nb_employees }}
+                            </span>
+                        </td>
+                        <td class="text-center">
+                            <span class="menu-badge" style="background:var(--gray-400);">
+                                {{ line.nb_tasks }}
+                            </span>
+                        </td>
+                        <td>
+                            <a href="{% url 'quality_line_detail' line.pk %}"
+                               style="color:var(--accent-color); text-decoration:none;
+                                      font-weight:600; font-size:.85rem;">
+                                <i class="fas fa-table me-1"></i>Voir
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="text-center py-4"
+                            style="color:var(--gray-400);">
+                            Aucune ligne
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Activités récentes -->
+<div class="row g-4">
+    <div class="col-md-6">
+        <div class="card-modern">
+            <div class="card-header-modern">
+                <h3 class="card-title-modern">
+                    <i class="fas fa-exchange-alt" style="color:var(--gray-500);"></i>
+                    Derniers Transferts
+                </h3>
+            </div>
+            <div class="card-body-modern p-0">
+                <table class="table table-modern mb-0">
+                    <tbody>
+                    {% for t in recent_transfers %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'quality_operator_detail' t.employee.pk %}"
+                               style="color:var(--gray-800); text-decoration:none; font-weight:600;">
+                                {{ t.employee.last_name }} {{ t.employee.first_name }}
+                            </a>
+                        </td>
+                        <td style="color:var(--gray-500); font-size:.82rem;">
+                            {{ t.from_line.name|default:"—" }}
+                            <i class="fas fa-arrow-right mx-1"></i>
+                            {{ t.to_line.name }}
+                        </td>
+                        <td style="color:var(--gray-400); font-size:.82rem;">
+                            {{ t.transfer_date|date:"d/m/y" }}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td class="text-center py-3" style="color:var(--gray-400);" colspan="3">
+                            Aucun transfert récent
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card-modern">
+            <div class="card-header-modern">
+                <h3 class="card-title-modern">
+                    <i class="fas fa-redo" style="color:var(--info-color);"></i>
+                    Dernières Requalifications
+                </h3>
+            </div>
+            <div class="card-body-modern p-0">
+                <table class="table table-modern mb-0">
+                    <tbody>
+                    {% for r in recent_requalifs %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'quality_operator_detail' r.employee.pk %}"
+                               style="color:var(--gray-800); text-decoration:none; font-weight:600;">
+                                {{ r.employee.last_name }} {{ r.employee.first_name }}
+                            </a>
+                        </td>
+                        <td>
+                            <span class="menu-badge"
+                                  style="background:
+                                  {% if r.result == 'PASS' %}var(--success-color)
+                                  {% elif r.result == 'UPGRADE' %}var(--info-color)
+                                  {% elif r.result == 'DOWNGRADE' %}var(--warning-color)
+                                  {% else %}var(--danger-color){% endif %};">
+                                {{ r.get_result_display }}
+                            </span>
+                        </td>
+                        <td style="color:var(--gray-400); font-size:.82rem;">
+                            {{ r.requalification_date|date:"d/m/y" }}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td class="text-center py-3" style="color:var(--gray-400);" colspan="3">
+                            Aucune requalification
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,1201 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Production Line Details | {{ line.name }}</title>
+    <link rel="icon" type="image/png" href="{% static 'images/logo.png' %}">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-navy: #0A1F44;
+            --primary-blue: #1E3A8A;
+            --accent-blue: #2563EB;
+            --light-blue: #3B82F6;
+            --success-green: #10B981;
+            --warning-amber: #F59E0B;
+            --danger-red: #EF4444;
+            --gray-50: #F9FAFB;
+            --gray-100: #F3F4F6;
+            --gray-200: #E5E7EB;
+            --gray-300: #D1D5DB;
+            --gray-400: #9CA3AF;
+            --gray-500: #6B7280;
+            --gray-600: #4B5563;
+            --gray-700: #374151;
+            --gray-800: #1F2937;
+            --gray-900: #111827;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #F5F7FA;
+            color: var(--gray-800);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* CORPORATE HEADER */
+        .corporate-header {
+            background: linear-gradient(135deg, var(--primary-navy) 0%, var(--primary-blue) 100%);
+            border-bottom: 4px solid var(--accent-blue);
+            box-shadow: 0 2px 16px rgba(0, 0, 0, 0.08);
+        }
+
+        .header-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 24px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .company-logo {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            background: white;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary-navy);
+            font-weight: 800;
+            font-size: 24px;
+        }
+
+        .company-info h1 {
+            font-size: 22px;
+            font-weight: 700;
+            color: white;
+            letter-spacing: -0.02em;
+            margin-bottom: 2px;
+        }
+
+        .company-info p {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: 500;
+        }
+
+        /* MAIN CONTAINER */
+        .main-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 32px;
+        }
+
+        /* BREADCRUMB */
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 24px;
+            font-size: 14px;
+            color: var(--gray-600);
+        }
+
+        .breadcrumb a {
+            color: var(--accent-blue);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .breadcrumb a:hover {
+            text-decoration: underline;
+        }
+
+        /* LINE HEADER CARD */
+        .line-header-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            border: 1px solid var(--gray-200);
+            padding: 32px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 32px;
+        }
+
+        .line-icon-large {
+            width: 120px;
+            height: 120px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--accent-blue) 0%, var(--light-blue) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 800;
+            font-size: 48px;
+            box-shadow: 0 4px 16px rgba(37, 99, 235, 0.3);
+            flex-shrink: 0;
+        }
+
+        .line-details h2 {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--gray-900);
+            margin-bottom: 16px;
+        }
+
+        .line-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 24px;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+
+        .meta-item i {
+            color: var(--accent-blue);
+            width: 20px;
+        }
+
+        .meta-item strong {
+            color: var(--gray-600);
+            font-weight: 600;
+        }
+
+        .meta-item span {
+            color: var(--gray-900);
+            font-weight: 500;
+        }
+
+        /* SECTION */
+        .section {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            border: 1px solid var(--gray-200);
+            margin-bottom: 24px;
+        }
+
+        .section-header {
+            padding: 20px 28px;
+            border-bottom: 1px solid var(--gray-200);
+            background: var(--gray-50);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--gray-900);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .section-title i {
+            color: var(--accent-blue);
+            font-size: 20px;
+        }
+
+        .section-body {
+            padding: 28px;
+        }
+
+        /* TEAM MEMBERS */
+        .team-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 16px;
+        }
+
+        .team-member-card {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px;
+            border: 1px solid var(--gray-200);
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .team-member-card:hover {
+            border-color: var(--accent-blue);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.1);
+        }
+
+        .member-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent-blue) 0%, var(--light-blue) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .member-avatar.leader {
+            background: linear-gradient(135deg, var(--warning-amber) 0%, #FCD34D 100%);
+        }
+
+        .member-info h4 {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--gray-900);
+            margin-bottom: 2px;
+        }
+
+        .member-info p {
+            font-size: 12px;
+            color: var(--gray-600);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* BUTTONS */
+        .btn {
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-blue) 0%, var(--light-blue) 100%);
+            color: white;
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2);
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: var(--gray-700);
+            border: 1px solid var(--gray-300);
+        }
+
+        .btn-secondary:hover {
+            background: var(--gray-50);
+        }
+
+        /* TABS */
+        .tabs-container {
+            margin-bottom: 24px;
+        }
+
+        .tabs-nav {
+            display: flex;
+            gap: 4px;
+            background: var(--gray-100);
+            padding: 6px;
+            border-radius: 12px;
+            overflow-x: auto;
+        }
+
+        .tab-btn {
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            color: var(--gray-600);
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            white-space: nowrap;
+        }
+
+        .tab-btn:hover {
+            background: white;
+            color: var(--gray-900);
+        }
+
+        .tab-btn.active {
+            background: white;
+            color: var(--accent-blue);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .tab-btn .tab-count {
+            background: var(--gray-200);
+            color: var(--gray-700);
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .tab-btn.active .tab-count {
+            background: rgba(37, 99, 235, 0.1);
+            color: var(--accent-blue);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .leader-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            background: linear-gradient(135deg, var(--warning-amber) 0%, #FCD34D 100%);
+            color: #78350F;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .completion-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            background: var(--gray-100);
+            color: var(--gray-700);
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .completion-badge.good {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success-green);
+        }
+
+        .completion-badge.warning {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--warning-amber);
+        }
+
+        .completion-badge.danger {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger-red);
+        }
+
+        /* MATRIX TABLE */
+        .matrix-wrapper {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--gray-200);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .matrix-scroll {
+            overflow-x: auto;
+        }
+
+        .matrix-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        .matrix-table thead th {
+            background: linear-gradient(135deg, var(--gray-900) 0%, var(--gray-800) 100%);
+            color: white;
+            padding: 16px 14px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-size: 11px;
+            border-bottom: 2px solid var(--accent-blue);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .matrix-table thead th:first-child {
+            position: sticky;
+            left: 0;
+            z-index: 20;
+            text-align: left;
+        }
+
+        .matrix-table thead th.leader-column {
+            background: linear-gradient(135deg, #92400E 0%, #B45309 100%);
+        }
+
+        .matrix-table tbody tr.task-header {
+            background: linear-gradient(135deg, var(--gray-50) 0%, white 100%);
+        }
+
+        .matrix-table tbody tr.task-header td {
+            padding: 14px 16px;
+            font-weight: 700;
+            color: var(--gray-900);
+            border-top: 1px solid var(--gray-300);
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        .matrix-table tbody td {
+            padding: 12px 14px;
+            text-align: center;
+            vertical-align: middle;
+            font-size: 13px;
+            border-bottom: 1px solid var(--gray-100);
+            transition: background 0.2s ease;
+        }
+
+        .matrix-table tbody td:first-child {
+            position: sticky;
+            left: 0;
+            background: white;
+            font-weight: 600;
+            text-align: left;
+            z-index: 5;
+            border-right: 1px solid var(--gray-200);
+        }
+
+        .matrix-table tbody tr:hover td {
+            background: var(--gray-50);
+        }
+
+        .matrix-table tbody tr:hover td:first-child {
+            background: var(--gray-50);
+        }
+
+        .matrix-table tbody td.leader-cell {
+            background: rgba(245, 158, 11, 0.05);
+        }
+
+        .matrix-table tbody tr:hover td.leader-cell {
+            background: rgba(245, 158, 11, 0.1);
+        }
+
+        /* LEVEL CELLS */
+        .matrix-cell {
+            min-height: 80px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            border-radius: 6px;
+            padding: 10px 8px;
+            margin: 2px;
+        }
+
+        .level-I {
+            background: linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%);
+            color: #991B1B;
+            border: 2px solid #FCA5A5;
+        }
+
+        .level-L {
+            background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
+            color: #92400E;
+            border: 2px solid #FCD34D;
+        }
+
+        .level-U {
+            background: linear-gradient(135deg, #D1FAE5 0%, #A7F3D0 100%);
+            color: #065F46;
+            border: 2px solid #6EE7B7;
+        }
+
+        .level-default {
+            background: var(--gray-50);
+            color: var(--gray-400);
+            border: 1px dashed var(--gray-300);
+        }
+
+        .cell-level {
+            font-size: 16px;
+            font-weight: 900;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .cell-info {
+            display: block;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        /* BADGE */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge-leader {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--warning-amber);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+        }
+
+        .badge-employee {
+            background: rgba(37, 99, 235, 0.1);
+            color: var(--accent-blue);
+            border: 1px solid rgba(37, 99, 235, 0.2);
+        }
+
+        /* EMPTY STATE */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--gray-400);
+        }
+
+        .empty-state i {
+            font-size: 64px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+
+        .empty-state p {
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        /* PRINT STYLES */
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+
+            body {
+                background: white;
+            }
+
+            .section {
+                box-shadow: none;
+                border: 1px solid var(--gray-300);
+                page-break-inside: avoid;
+            }
+
+            @page {
+                size: A4 landscape;
+                margin: 12mm;
+            }
+
+            thead {
+                display: table-header-group;
+            }
+
+            body {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+        }
+
+        /* ANIMATIONS */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        .header-logo-img {
+            height: 80px;
+            width: auto;
+            object-fit: contain;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- CORPORATE HEADER -->
+    <header class="corporate-header">
+        <div class="header-container">
+            <div class="company-logo">
+                <img src="{% static 'images/logo.png' %}" 
+                     alt="Company Logo" 
+                     class="header-logo-img">
+                <div class="company-info">
+                    <h1>Gestion des lignes</h1>
+                </div>
+            </div>
+            <div class="no-print" style="display: flex; gap: 12px;">
+                <a href="{% url 'rh_manage_tasks_lines' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i>
+                    Retour aux Lignes
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-container">
+
+        <!-- BREADCRUMB -->
+        <nav class="breadcrumb no-print fade-in">
+            <a href="{% url 'rh_manage_tasks_lines' %}">
+                <i class="fas fa-industry"></i>
+                Lignes de Production
+            </a>
+            <i class="fas fa-chevron-right" style="font-size: 10px; color: var(--gray-400);"></i>
+            <span>{{ line.name }}</span>
+        </nav>
+
+        <!-- LINE HEADER CARD -->
+        <div class="line-header-card fade-in">
+            <div class="line-icon-large">
+                {{ line.code|default:line.name|slice:":2"|upper }}
+            </div>
+            <div class="line-details" style="flex: 1;">
+                <h2>{{ line.name }}</h2>
+                <div class="line-meta">
+                    <div class="meta-item">
+                        <i class="fas fa-user-tie"></i>
+                        <strong>Chef(s) d'équipe:</strong>
+                        <span>{{ team_leaders|length }}</span>
+                    </div>
+                    <div class="meta-item">
+                        <i class="fas fa-users"></i>
+                        <strong>Employés:</strong>
+                        <span>{{ employees|length }}</span>
+                    </div>
+                    <div class="meta-item">
+                        <i class="fas fa-tasks"></i>
+                        <strong>Tâches:</strong>
+                        <span>{{ tasks|length }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TEAM LEADERS SECTION -->
+        <div class="section fade-in">
+            <div class="section-header">
+                <h3 class="section-title">
+                    <i class="fas fa-user-shield"></i>
+                    Chefs d'équipe
+                </h3>
+                <span class="badge badge-leader">
+                    {{ team_leaders|length }} leader{{ team_leaders|length|pluralize }}
+                </span>
+            </div>
+            <div class="section-body">
+                {% if team_leaders %}
+                    <div class="team-grid">
+                        {% for leader in team_leaders %}
+                        <div class="team-member-card">
+                            <div class="member-avatar leader">
+                                {{ leader.first_name|first }}{{ leader.last_name|first }}
+                            </div>
+                            <div class="member-info">
+                                <h4>{{ leader.first_name }} {{ leader.last_name }}</h4>
+                                <p>@{{ leader.username }}</p>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        <i class="fas fa-user-slash"></i>
+                        <p>No team leaders assigned</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════ -->
+        <!-- SKILLS MATRIX -->
+        <!-- ═══════════════════════════════════════════════════════════════════ -->
+        <div class="section fade-in">
+            <div class="section-header">
+                <h3 class="section-title">
+                    <i class="fas fa-th"></i>
+                    Matrice des Compétences
+                </h3>
+            </div>
+            <div class="section-body" style="padding: 0;">
+                
+                {% if has_multiple_leaders %}
+                <!-- ═══════════════════════════════════════════════════════════ -->
+                <!-- PLUSIEURS CHEFS : AFFICHAGE AVEC ONGLETS -->
+                <!-- ═══════════════════════════════════════════════════════════ -->
+                
+                <!-- Navigation par onglets -->
+                <div class="tabs-container" style="padding: 20px 28px 0;">
+                    <div class="tabs-nav">
+                        <!-- Onglet Vue Globale -->
+                        <button type="button" class="tab-btn active" data-tab="global">
+                            <i class="fas fa-globe"></i>
+                            Vue Globale
+                            <span class="tab-count">{{ employees|length }}</span>
+                        </button>
+                        
+                        <!-- Onglets par chef d'équipe -->
+                        {% for item in matrices_by_leader %}
+                        <button type="button" class="tab-btn" data-tab="leader-{{ item.leader.id }}">
+                            <i class="fas fa-user-tie"></i>
+                            {{ item.leader_name }}
+                            <span class="tab-count">{{ item.employee_count }}</span>
+                        </button>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Contenu des onglets -->
+                <div style="padding: 20px 28px 28px;">
+                    
+                    <!-- ═══════════════════════════════════════════════════════ -->
+                    <!-- Onglet : Vue Globale -->
+                    <!-- ═══════════════════════════════════════════════════════ -->
+                    <div class="tab-content active" id="tab-global">
+                        <div style="margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between;">
+                            <div>
+                                <h4 style="font-size: 16px; font-weight: 700; color: var(--gray-900); margin-bottom: 4px;">
+                                    <i class="fas fa-users" style="color: var(--accent-blue); margin-right: 8px;"></i>
+                                    Tous les employés
+                                </h4>
+                                <p style="font-size: 13px; color: var(--gray-500);">
+                                    {{ employees|length }} employé{{ employees|length|pluralize }} • {{ tasks|length }} tâche{{ tasks|length|pluralize }}
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <!-- MATRICE GLOBALE -->
+                        <div class="matrix-wrapper">
+                            <div class="matrix-scroll">
+                                <table class="matrix-table">
+                                    <thead>
+                                        <tr>
+                                            <th style="min-width: 220px;">Task / Level</th>
+                                            {% for emp in employees %}
+                                            <th style="min-width: 140px;" {% if emp.id in leader_employee_ids %}class="leader-column"{% endif %}>
+                                                <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;">
+                                                    <div style="width: 36px; height: 36px; border-radius: 50%; background: {% if emp.id in leader_employee_ids %}linear-gradient(135deg, var(--warning-amber) 0%, #FCD34D 100%){% else %}rgba(255, 255, 255, 0.2){% endif %}; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700;">
+                                                        {{ emp.first_name|first }}{{ emp.last_name|first }}
+                                                    </div>
+                                                    <div style="text-align: center; line-height: 1.2;">
+                                                        <div style="font-size: 12px; font-weight: 700;">
+                                                            {{ emp.first_name }} {{ emp.last_name }}
+                                                        </div>
+                                                        <div style="font-size: 10px; opacity: 0.8; font-family: 'JetBrains Mono', monospace;">
+                                                            {{ emp.matricule }}
+                                                        </div>
+                                                        {% if emp.id in leader_employee_ids %}
+                                                        <div style="margin-top: 4px;">
+                                                            <span style="background: rgba(255,255,255,0.3); padding: 2px 6px; border-radius: 10px; font-size: 9px;">
+                                                                <i class="fas fa-crown"></i> Chef
+                                                            </span>
+                                                        </div>
+                                                        {% else %}
+                                                        <div style="font-size: 9px; opacity: 0.6; margin-top: 2px;">
+                                                            <i class="fas fa-user-tie"></i> {{ emp.manager.last_name|default:"N/A" }}
+                                                        </div>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            </th>
+                                            {% endfor %}
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for row in matrix %}
+                                        <!-- Task Header -->
+                                        <tr class="task-header">
+                                            <td colspan="{{ employees|length|add:'1' }}">
+                                                <div style="display: flex; align-items: center; gap: 12px;">
+                                                    <span class="badge" style="background: rgba(37, 99, 235, 0.1); color: var(--accent-blue); border: 1px solid rgba(37, 99, 235, 0.2); font-family: 'JetBrains Mono', monospace;">
+                                                        #{{ row.task.code }}
+                                                    </span>
+                                                    <strong style="font-size: 14px;">{{ row.task.title }}</strong>
+                                                </div>
+                                            </td>
+                                        </tr>
+
+                                        <!-- Levels I, L, U -->
+                                        {% for level_item in levels %}
+                                        <tr>
+                                            <td>
+                                                <span class="badge" style="
+                                                    {% if level_item.level == 0 %}background: #FEE2E2; color: #991B1B; border: 1px solid #FCA5A5;
+                                                    {% elif level_item.level == 1 %}background: #FEF3C7; color: #92400E; border: 1px solid #FCD34D;
+                                                    {% else %}background: #D1FAE5; color: #065F46; border: 1px solid #6EE7B7;{% endif %}">
+                                                    Level {{ level_item.label }}
+                                                </span>
+                                            </td>
+                                            {% for cell in row.cells %}
+                                            <td {% if cell.is_team_leader %}class="leader-cell"{% endif %}>
+                                                {% with has_level=False %}
+                                                {% for r in cell.records %}
+                                                    {% if r.level == level_item.level %}
+                                                    <div class="matrix-cell {% if level_item.level == 0 %}level-I{% elif level_item.level == 1 %}level-L{% else %}level-U{% endif %}">
+                                                        <span class="cell-level">{{ level_item.label }}</span>
+                                                        {% if r.trainer %}<span class="cell-info">{{ r.trainer.last_name }}</span>{% endif %}
+                                                        {% if r.date %}<span class="cell-info">{{ r.date|date:"Y-m-d" }}</span>{% endif %}
+                                                    </div>
+                                                    {% endif %}
+                                                {% empty %}
+                                                    <div class="matrix-cell level-default">
+                                                        <i class="fas fa-minus" style="opacity: 0.2; font-size: 16px;"></i>
+                                                    </div>
+                                                {% endfor %}
+                                                {% endwith %}
+                                            </td>
+                                            {% endfor %}
+                                        </tr>
+                                        {% endfor %}
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ═══════════════════════════════════════════════════════ -->
+                    <!-- Onglets : Un par chef d'équipe -->
+                    <!-- ═══════════════════════════════════════════════════════ -->
+                    {% for item in matrices_by_leader %}
+                    <div class="tab-content" id="tab-leader-{{ item.leader.id }}">
+                        <div style="margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between;">
+                            <div>
+                                <h4 style="font-size: 16px; font-weight: 700; color: var(--gray-900); margin-bottom: 4px;">
+                                    <span class="leader-badge">
+                                        <i class="fas fa-user-tie"></i>
+                                        {{ item.leader_name }}
+                                    </span>
+                                </h4>
+                                <p style="font-size: 13px; color: var(--gray-500); margin-top: 8px;">
+                                    {{ item.employee_count }} employé{{ item.employee_count|pluralize }} • {{ tasks|length }} tâche{{ tasks|length|pluralize }}
+                                </p>
+                            </div>
+                            <div class="completion-badge {% if item.completion_rate >= 70 %}good{% elif item.completion_rate >= 40 %}warning{% else %}danger{% endif %}">
+                                <i class="fas fa-chart-pie"></i>
+                                {{ item.completion_rate }}% Complétion
+                            </div>
+                        </div>
+                        
+                        {% if item.employees %}
+                        <!-- MATRICE PAR CHEF -->
+                        <div class="matrix-wrapper">
+                            <div class="matrix-scroll">
+                                <table class="matrix-table">
+                                    <thead>
+                                        <tr>
+                                            <th style="min-width: 220px;">Task / Level</th>
+                                            {% for emp in item.employees %}
+                                            <th style="min-width: 140px;" {% if item.leader_as_employee and emp.id == item.leader_as_employee.id %}class="leader-column"{% endif %}>
+                                                <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;">
+                                                    <div style="width: 36px; height: 36px; border-radius: 50%; background: {% if item.leader_as_employee and emp.id == item.leader_as_employee.id %}linear-gradient(135deg, var(--warning-amber) 0%, #FCD34D 100%){% else %}rgba(255, 255, 255, 0.2){% endif %}; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700;">
+                                                        {{ emp.first_name|first }}{{ emp.last_name|first }}
+                                                    </div>
+                                                    <div style="text-align: center; line-height: 1.2;">
+                                                        <div style="font-size: 12px; font-weight: 700;">
+                                                            {{ emp.first_name }} {{ emp.last_name }}
+                                                        </div>
+                                                        <div style="font-size: 10px; opacity: 0.8; font-family: 'JetBrains Mono', monospace;">
+                                                            {{ emp.matricule }}
+                                                        </div>
+                                                        {% if item.leader_as_employee and emp.id == item.leader_as_employee.id %}
+                                                        <div style="margin-top: 4px;">
+                                                            <span style="background: rgba(255,255,255,0.3); padding: 2px 6px; border-radius: 10px; font-size: 9px;">
+                                                                <i class="fas fa-crown"></i> Chef
+                                                            </span>
+                                                        </div>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            </th>
+                                            {% endfor %}
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for row in item.matrix %}
+                                        <!-- Task Header -->
+                                        <tr class="task-header">
+                                            <td colspan="{{ item.employees|length|add:'1' }}">
+                                                <div style="display: flex; align-items: center; gap: 12px;">
+                                                    <span class="badge" style="background: rgba(37, 99, 235, 0.1); color: var(--accent-blue); border: 1px solid rgba(37, 99, 235, 0.2); font-family: 'JetBrains Mono', monospace;">
+                                                        #{{ row.task.code }}
+                                                    </span>
+                                                    <strong style="font-size: 14px;">{{ row.task.title }}</strong>
+                                                </div>
+                                            </td>
+                                        </tr>
+
+                                        <!-- Levels I, L, U -->
+                                        {% for level_item in levels %}
+                                        <tr>
+                                            <td>
+                                                <span class="badge" style="
+                                                    {% if level_item.level == 0 %}background: #FEE2E2; color: #991B1B; border: 1px solid #FCA5A5;
+                                                    {% elif level_item.level == 1 %}background: #FEF3C7; color: #92400E; border: 1px solid #FCD34D;
+                                                    {% else %}background: #D1FAE5; color: #065F46; border: 1px solid #6EE7B7;{% endif %}">
+                                                    Level {{ level_item.label }}
+                                                </span>
+                                            </td>
+                                            {% for cell in row.cells %}
+                                            <td {% if cell.is_team_leader %}class="leader-cell"{% endif %}>
+                                                {% for r in cell.records %}
+                                                    {% if r.level == level_item.level %}
+                                                    <div class="matrix-cell {% if level_item.level == 0 %}level-I{% elif level_item.level == 1 %}level-L{% else %}level-U{% endif %}">
+                                                        <span class="cell-level">{{ level_item.label }}</span>
+                                                        {% if r.trainer %}<span class="cell-info">{{ r.trainer.last_name }}</span>{% endif %}
+                                                        {% if r.date %}<span class="cell-info">{{ r.date|date:"Y-m-d" }}</span>{% endif %}
+                                                    </div>
+                                                    {% endif %}
+                                                {% empty %}
+                                                    <div class="matrix-cell level-default">
+                                                        <i class="fas fa-minus" style="opacity: 0.2; font-size: 16px;"></i>
+                                                    </div>
+                                                {% endfor %}
+                                            </td>
+                                            {% endfor %}
+                                        </tr>
+                                        {% endfor %}
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="empty-state">
+                            <i class="fas fa-users-slash"></i>
+                            <p>Aucun employé assigné à ce chef d'équipe</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+
+                {% else %}
+                <!-- ═══════════════════════════════════════════════════════════ -->
+                <!-- UN SEUL CHEF : AFFICHAGE SIMPLE -->
+                <!-- ═══════════════════════════════════════════════════════════ -->
+                <div style="padding: 28px;">
+                    {% if team_leaders %}
+                    <div style="margin-bottom: 16px;">
+                        <span class="leader-badge">
+                            <i class="fas fa-user-tie"></i>
+                            {{ team_leaders.first.first_name }} {{ team_leaders.first.last_name }}
+                        </span>
+                        <span style="margin-left: 12px; font-size: 13px; color: var(--gray-500);">
+                            {{ employees|length }} employé{{ employees|length|pluralize }} • {{ tasks|length }} tâche{{ tasks|length|pluralize }}
+                        </span>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- MATRICE SIMPLE -->
+                    <div class="matrix-wrapper">
+                        <div class="matrix-scroll">
+                            <table class="matrix-table">
+                                <thead>
+                                    <tr>
+                                        <th style="min-width: 220px;">Task / Level</th>
+                                        {% for emp in employees %}
+                                        <th style="min-width: 140px;" {% if emp.id in leader_employee_ids %}class="leader-column"{% endif %}>
+                                            <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;">
+                                                <div style="width: 36px; height: 36px; border-radius: 50%; background: {% if emp.id in leader_employee_ids %}linear-gradient(135deg, var(--warning-amber) 0%, #FCD34D 100%){% else %}rgba(255, 255, 255, 0.2){% endif %}; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700;">
+                                                    {{ emp.first_name|first }}{{ emp.last_name|first }}
+                                                </div>
+                                                <div style="text-align: center; line-height: 1.2;">
+                                                    <div style="font-size: 12px; font-weight: 700;">
+                                                        {{ emp.first_name }} {{ emp.last_name }}
+                                                    </div>
+                                                    <div style="font-size: 10px; opacity: 0.8; font-family: 'JetBrains Mono', monospace;">
+                                                        {{ emp.matricule }}
+                                                    </div>
+                                                    {% if emp.id in leader_employee_ids %}
+                                                    <div style="margin-top: 4px;">
+                                                        <span style="background: rgba(255,255,255,0.3); padding: 2px 6px; border-radius: 10px; font-size: 9px;">
+                                                            <i class="fas fa-crown"></i> Chef
+                                                        </span>
+                                                    </div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </th>
+                                        {% endfor %}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for row in matrix %}
+                                    <!-- Task Header -->
+                                    <tr class="task-header">
+                                        <td colspan="{{ employees|length|add:'1' }}">
+                                            <div style="display: flex; align-items: center; gap: 12px;">
+                                                <span class="badge" style="background: rgba(37, 99, 235, 0.1); color: var(--accent-blue); border: 1px solid rgba(37, 99, 235, 0.2); font-family: 'JetBrains Mono', monospace;">
+                                                    #{{ row.task.code }}
+                                                </span>
+                                                <strong style="font-size: 14px;">{{ row.task.title }}</strong>
+                                            </div>
+                                        </td>
+                                    </tr>
+
+                                    <!-- Levels I, L, U -->
+                                    {% for level_item in levels %}
+                                    <tr>
+                                        <td>
+                                            <span class="badge" style="
+                                                {% if level_item.level == 0 %}background: #FEE2E2; color: #991B1B; border: 1px solid #FCA5A5;
+                                                {% elif level_item.level == 1 %}background: #FEF3C7; color: #92400E; border: 1px solid #FCD34D;
+                                                {% else %}background: #D1FAE5; color: #065F46; border: 1px solid #6EE7B7;{% endif %}">
+                                                Level {{ level_item.label }}
+                                            </span>
+                                        </td>
+                                        {% for cell in row.cells %}
+                                        <td {% if cell.is_team_leader %}class="leader-cell"{% endif %}>
+                                            {% for r in cell.records %}
+                                                {% if r.level == level_item.level %}
+                                                <div class="matrix-cell {% if level_item.level == 0 %}level-I{% elif level_item.level == 1 %}level-L{% else %}level-U{% endif %}">
+                                                    <span class="cell-level">{{ level_item.label }}</span>
+                                                    {% if r.trainer %}<span class="cell-info">{{ r.trainer.last_name }}</span>{% endif %}
+                                                    {% if r.date %}<span class="cell-info">{{ r.date|date:"Y-m-d" }}</span>{% endif %}
+                                                </div>
+                                                {% endif %}
+                                            {% empty %}
+                                                <div class="matrix-cell level-default">
+                                                    <i class="fas fa-minus" style="opacity: 0.2; font-size: 16px;"></i>
+                                                </div>
+                                            {% endfor %}
+                                        </td>
+                                        {% endfor %}
+                                    </tr>
+                                    {% endfor %}
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+            </div>
+        </div>
+
+        <!-- LÉGENDE -->
+        <div class="section fade-in no-print">
+            <div class="section-header">
+                <h3 class="section-title">
+                    <i class="fas fa-info-circle"></i>
+                    Légende des Niveaux
+                </h3>
+            </div>
+            <div class="section-body">
+                <div style="display: flex; flex-wrap: wrap; gap: 24px;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div class="matrix-cell level-I" style="min-height: auto; padding: 8px 16px;">
+                            <span class="cell-level">I</span>
+                        </div>
+                        <div>
+                            <strong style="color: var(--gray-900);">En formation</strong>
+                            <p style="font-size: 12px; color: var(--gray-500);">En cours de formation</p>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div class="matrix-cell level-L" style="min-height: auto; padding: 8px 16px;">
+                            <span class="cell-level">L</span>
+                        </div>
+                        <div>
+                            <strong style="color: var(--gray-900);">Autorisé</strong>
+                            <p style="font-size: 12px; color: var(--gray-500);">Autonome supervisé</p>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div class="matrix-cell level-U" style="min-height: auto; padding: 8px 16px;">
+                            <span class="cell-level">U</span>
+                        </div>
+                        <div>
+                            <strong style="color: var(--gray-900);">Formateur Universel</strong>
+                            <p style="font-size: 12px; color: var(--gray-500);">Peut former les autres</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- SCRIPTS -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Animation au chargement
+            const elements = document.querySelectorAll('.fade-in');
+            elements.forEach((el, index) => {
+                el.style.opacity = '0';
+                el.style.transform = 'translateY(8px)';
+                setTimeout(() => {
+                    el.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+                    el.style.opacity = '1';
+                    el.style.transform = 'translateY(0)';
+                }, index * 100);
+            });
+
+            // Gestion des onglets
+            const tabButtons = document.querySelectorAll('.tab-btn');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            tabButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const tabId = this.getAttribute('data-tab');
+
+                    // Désactiver tous les onglets
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    tabContents.forEach(content => content.classList.remove('active'));
+
+                    // Activer l'onglet cliqué
+                    this.classList.add('active');
+                    const targetContent = document.getElementById('tab-' + tabId);
+                    if (targetContent) {
+                        targetContent.classList.add('active');
+                    }
+                });
+            });
+        });
+    </script>
+
+</body>
+</html>

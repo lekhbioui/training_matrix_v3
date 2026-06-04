@@ -1,0 +1,442 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Employés - {{ request.user.company }}</title>
+    <link rel="icon" type="image/png" href="{% static 'images/logo.png' %}">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+        
+        /* Palette de couleurs corporate */
+        :root {
+            --primary-color: #1e40af; /* Bleu corporate */
+            --secondary-color: #64748b; /* Gris ardoise */
+            --success-color: #16a34a; /* Vert */
+            --danger-color: #dc2626; /* Rouge */
+            --warning-color: #ea580c; /* Orange */
+            --background: #f8fafc; /* Gris très clair */
+            --text-primary: #1e293b; /* Gris foncé */
+            --text-secondary: #64748b; /* Gris moyen */
+            --border-color: #e2e8f0; /* Gris clair */
+        }
+        
+        body {
+            background-color: var(--background);
+            color: var(--text-primary);
+        }
+        
+        /* En-tête de tableau professionnel */
+        .table-header {
+            background-color: #f1f5f9;
+            color: var(--text-primary);
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 0.875rem 1.5rem;
+            border-bottom: 2px solid var(--border-color);
+        }
+        
+        /* Lignes du tableau */
+        .table-row {
+            transition: background-color 0.15s ease;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .table-row:hover {
+            background-color: #f8fafc;
+        }
+        
+        /* Boutons corporate */
+        .btn {
+            padding: 0.5rem 1.25rem;
+            font-weight: 500;
+            border-radius: 0.375rem;
+            transition: all 0.15s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            border: 1px solid transparent;
+            font-size: 0.875rem;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+        
+        .btn-primary:hover {
+            background-color: #1e3a8a;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn-outline {
+            background-color: white;
+            color: var(--primary-color);
+            border-color: var(--border-color);
+        }
+        
+        .btn-outline:hover {
+            background-color: #f8fafc;
+            border-color: var(--primary-color);
+        }
+        
+        /* Badges simples */
+        .badge {
+            padding: 0.25rem 0.625rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+        
+        .badge-primary {
+            background-color: #dbeafe;
+            color: var(--primary-color);
+        }
+        
+        .badge-success {
+            background-color: #dcfce7;
+            color: var(--success-color);
+        }
+        
+        .badge-secondary {
+            background-color: #f1f5f9;
+            color: var(--text-secondary);
+        }
+        
+        /* Champ de recherche */
+        .search-input {
+            border: 1px solid var(--border-color);
+            border-radius: 0.375rem;
+            padding: 0.5rem 1rem 0.5rem 2.5rem;
+            width: 100%;
+            font-size: 0.875rem;
+            transition: all 0.15s ease;
+        }
+        
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+        }
+        
+        /* Card professionnelle */
+        .card {
+            background: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--border-color);
+        }
+        
+        /* Actions buttons */
+        .action-btn {
+            padding: 0.375rem 0.625rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.15s ease;
+            border: 1px solid transparent;
+        }
+        
+        .action-btn-edit {
+            color: var(--primary-color);
+            background-color: #eff6ff;
+            border-color: #dbeafe;
+        }
+        
+        .action-btn-edit:hover {
+            background-color: #dbeafe;
+        }
+        
+        .action-btn-view {
+            color: var(--success-color);
+            background-color: #f0fdf4;
+            border-color: #dcfce7;
+        }
+        
+        .action-btn-view:hover {
+            background-color: #dcfce7;
+        }
+        
+        .action-btn-delete {
+            color: var(--danger-color);
+            background-color: #fef2f2;
+            border-color: #fee2e2;
+        }
+        
+        .action-btn-delete:hover {
+            background-color: #fee2e2;
+        }
+        
+        /* Statistiques */
+        .stat-card {
+            border-left: 4px solid var(--primary-color);
+            padding: 1rem;
+            background: white;
+            border-radius: 0.375rem;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        }
+    </style>
+</head>
+<body>
+    
+    <!-- Navigation -->
+    <nav class="bg-white border-b border-gray-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <span class="text-xl font-semibold text-gray-900">
+                        Système de gestion des formations
+                    </span>
+                </div>
+                <div class="flex items-center gap-6">
+                    <span class="text-sm text-gray-600">
+                        <i class="fas fa-user-circle mr-2 text-gray-400"></i>
+                        {{ request.user.first_name }} {{ request.user.last_name }}
+                    </span>
+                    <div class="h-6 w-px bg-gray-300"></div>
+                    <a href="{% url 'login' %}" class="text-sm text-gray-600 hover:text-gray-900 transition">
+                        <i class="fas fa-sign-out-alt mr-1"></i>
+                        Déconnexion
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- Page Header -->
+        <div class="mb-8">
+            <div class="flex justify-between items-start">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900">
+                        Gestion des Employés
+                    </h1>
+                    <p class="mt-1 text-sm text-gray-600">
+                        Gérez les informations et les formations de votre équipe
+                    </p>
+                </div>
+                <div class="flex gap-3">
+                    <a href="{% url 'matrix_view' %}" class="btn btn-outline">
+                        <i class="fas fa-arrow-left"></i>
+                        Retour
+                    </a>
+                    <a href="{% url 'employee_create' %}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i>
+                        Nouvel Employé
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div class="stat-card">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-xs text-gray-600 uppercase tracking-wide">Total Employés</p>
+                        <p class="mt-1 text-2xl font-semibold text-gray-900">{{ employees|length }}</p>
+                    </div>
+                    <div class="p-2 bg-blue-50 rounded">
+                        <i class="fas fa-users text-blue-600"></i>
+                    </div>
+                </div>
+            </div>
+            
+         
+            
+            <!-- <div class="stat-card border-l-yellow-600">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-xs text-gray-600 uppercase tracking-wide">En Formation</p>
+                        <p class="mt-1 text-2xl font-semibold text-gray-900">0</p>
+                    </div>
+                    <div class="p-2 bg-yellow-50 rounded">
+                        <i class="fas fa-graduation-cap text-yellow-600"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="stat-card border-l-gray-600">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-xs text-gray-600 uppercase tracking-wide">Départements</p>
+                        <p class="mt-1 text-2xl font-semibold text-gray-900">{{ lines|length|default:"0" }}</p>
+                    </div>
+                    <div class="p-2 bg-gray-50 rounded">
+                        <i class="fas fa-building text-gray-600"></i>
+                    </div>
+                </div>
+            </div> -->
+        </div>
+
+        <!-- Table Card -->
+        <div class="card">
+            <!-- Search and Filters -->
+            <div class="px-6 py-4 border-b border-gray-200">
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <div class="flex-1 relative">
+                        <input type="text" 
+                               placeholder="Rechercher par nom, matricule..." 
+                               class="search-input"
+                               id="searchInput">
+                        <i class="fas fa-search absolute left-3 top-2.5 text-gray-400"></i>
+                    </div>
+                    <!-- <div class="flex gap-2">
+                        <button class="btn btn-outline">
+                            <i class="fas fa-filter"></i>
+                            Filtrer
+                        </button>
+                        <button class="btn btn-outline">
+                            <i class="fas fa-download"></i>
+                            Exporter
+                        </button>
+                    </div> -->
+                </div>
+            </div>
+
+            <!-- Table -->
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead>
+                        <tr>
+                            <th class="table-header text-left">Matricule</th>
+                            <th class="table-header text-left">Employé</th>
+                            <th class="table-header text-left">Ligne</th>
+                            <th class="table-header text-left">Date d'embauche</th>
+                            <!-- <th class="table-header text-left">Statut</th> -->
+                            <!-- <th class="table-header text-center">Actions</th> -->
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for emp in employees %}
+                        <tr class="table-row">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="badge badge-secondary">
+                                    {{ emp.matricule }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <div class="flex-shrink-0 h-10 w-10">
+                                        <div class="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
+                                            <span class="text-sm font-medium text-gray-600">
+                                                {{ emp.first_name|slice:":1" }}{{ emp.last_name|slice:":1" }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="ml-4">
+                                        <div class="text-sm font-medium text-gray-900">
+                                            {{ emp.last_name|upper }} {{ emp.first_name }}
+                                        </div>
+                                        <div class="text-xs text-gray-500">
+                                            {% if emp.manager %}Chef: {{ emp.manager.first_name }} {{ emp.manager.last_name }}{% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                {% if emp.line %}
+                                    <span class="badge badge-primary">
+                                        {{ emp.line.code }}
+                                    </span>
+                                {% else %}
+                                    <span class="text-sm text-gray-500">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                {{ emp.hire_date|date:"d/m/Y" }}
+                            </td>
+                            <!-- <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="badge badge-success">
+                                    <i class="fas fa-circle text-xs"></i>
+                                    Actif
+                                </span>
+                            </td> -->
+                            <!-- <td class="px-6 py-4 whitespace-nowrap text-center">
+                                <div class="flex items-center justify-center gap-1">
+                                    <a href="{% url 'employee_update' emp.id %}" 
+                                       class="action-btn action-btn-edit">
+                                        <i class="fas fa-edit mr-1"></i>
+                                        Modifier
+                                    </a>
+                                    <a href="{% url 'employee_history' emp.id %}" 
+                                       class="action-btn action-btn-view">
+                                        <i class="fas fa-history mr-1"></i>
+                                        Historique
+                                    </a>
+                                    <a href="{% url 'employee_delete' emp.id %}" 
+                                       class="action-btn action-btn-delete">
+                                        <i class="fas fa-trash mr-1"></i>
+                                        Supprimer
+                                    </a>
+                                </div>
+                            </td> -->
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="px-6 py-12 text-center">
+                                <div class="text-gray-500">
+                                    <i class="fas fa-inbox text-4xl mb-4"></i>
+                                    <p class="text-lg font-medium">Aucun employé trouvé</p>
+                                    <p class="text-sm mt-2">Commencez par ajouter des employés à votre équipe</p>
+                                    <a href="{% url 'employee_create' %}" class="btn btn-primary mt-4">
+                                        <i class="fas fa-plus"></i>
+                                        Ajouter un employé
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if employees %}
+            <div class="px-6 py-3 border-t border-gray-200 flex items-center justify-between">
+                <div class="text-sm text-gray-700">
+                    Affichage de <span class="font-medium">{{ employees|length }}</span> résultat(s)
+                </div>
+                <div class="flex gap-1">
+                    <button class="px-3 py-1 border border-gray-300 rounded text-sm hover:bg-gray-50" disabled>
+                        Précédent
+                    </button>
+                    <button class="px-3 py-1 bg-blue-600 text-white rounded text-sm">1</button>
+                    <button class="px-3 py-1 border border-gray-300 rounded text-sm hover:bg-gray-50">
+                        Suivant
+                    </button>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- JavaScript pour la recherche -->
+    <script>
+        document.getElementById('searchInput').addEventListener('keyup', function() {
+            const searchValue = this.value.toLowerCase();
+            const tableRows = document.querySelectorAll('tbody tr:not(:last-child)');
+            
+            tableRows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(searchValue) ? '' : 'none';
+            });
+        });
+    </script>
+</body>
+</html>

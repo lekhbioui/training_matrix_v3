@@ -1,0 +1,2575 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Matrice de formation</title>
+    <link rel="icon" type="image/png" href="{% static 'images/logo.png' %}">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&family=Montserrat:wght@600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body { font-family: 'Open Sans', sans-serif; color: #333; }
+        h1, h2, h3 { font-family: 'Montserrat', sans-serif; }
+
+        /* Niveaux (cohérents avec level-I / level-L / level-U) */
+        .level-I { background-color: #FEE2E2; color: #B91C1C; }   /* I */
+        .level-L { background-color: #FFFBEB; color: #D97706; }   /* L */
+        .level-U { background-color: #ECFCCB; color: #65A30D; }   /* U */
+        .level-default { background-color: #F9FAFB; color: #6B7280; }
+
+        /* Cellule de matrice */
+        .matrix-cell {
+            padding: 0.75rem 0.5rem;
+            text-align: center;
+            vertical-align: middle;
+            font-size: 0.85rem;
+            line-height: 1.4;
+            position: relative;
+            min-width: 130px;
+            height: 110px;
+            transition: background-color 0.2s ease-in-out;
+        }
+        .matrix-cell strong { font-weight: 700; color: inherit; }
+        .matrix-cell .cell-info { display: block; margin-bottom: 0.25rem; color: inherit; }
+
+        /* Hover */
+        .matrix-cell:hover { background-color: var(--hover-bg, #F3F4F6); box-shadow: inset 0 0 0 1px #D1D5DB; z-index: 5; }
+        .level-I:hover { --hover-bg: #FEE2E2; opacity: 0.95; }
+        .level-L:hover { --hover-bg: #FFFBEB; opacity: 0.95; }
+        .level-U:hover { --hover-bg: #ECFCCB; opacity: 0.95; }
+        .level-default:hover { --hover-bg: #F3F4F6; }
+
+        /* Tableaux pro */
+        .table-pro tbody tr:nth-child(odd) { background-color: #FAFAFB; }
+        .table-pro tbody tr { transition: background-color .2s ease; }
+        .table-pro tbody tr:hover { background-color: #F5F6F7; }
+
+        /* Densité compacte (toggle) */
+        .compact .matrix-cell { min-width: 110px; height: 88px; font-size: 0.80rem; }
+        .compact th, .compact td { padding-top: 0.5rem !important; padding-bottom: 0.5rem !important; }
+        .compact .text-sm { font-size: 0.8rem !important; }
+        .compact .text-xs { font-size: 0.68rem !important; }
+
+        /* Scrollbar discrète pour l'overflow horizontal */
+        .overflow-x-auto::-webkit-scrollbar { height: 8px; }
+        .overflow-x-auto::-webkit-scrollbar-thumb { background: #D1D5DB; border-radius: 9999px; }
+
+        /* Impression (A4 paysage) et mode "1 page" */
+        :root { --print-scale: 1; }
+
+        @page { 
+            size: A4 landscape; 
+            margin: 8mm; 
+        }
+
+        @media print {
+            /* Éléments à cacher */
+            .no-print:not(.show-in-fit), 
+            .hide-in-fit { 
+                display: none !important; 
+            }
+
+            /* Reset général */
+            body {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+                margin: 0;
+                padding: 0;
+            }
+
+            .shadow, .shadow-md, .shadow-lg, .shadow-xl, .shadow-2xl, .shadow-inner { 
+                box-shadow: none !important; 
+            }
+
+            .sticky { 
+                position: static !important; 
+            }
+
+            /* === MODE FIT-ONE-PAGE === */
+            body.fit-one-page {
+                zoom: var(--print-scale);
+            }
+
+            body.fit-one-page .page-shell {
+                padding: 0 !important;
+                margin: 0 !important;
+                border: none !important;
+                box-shadow: none !important;
+                max-width: none !important;
+            }
+
+            body.fit-one-page #matrixPrintContainer {
+                overflow: visible !important;
+                border: none !important;
+                box-shadow: none !important;
+            }
+
+            body.fit-one-page #matrixTable {
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }
+
+            /* Cellules ultra-compactes en mode fit */
+            body.fit-one-page .matrix-cell {
+                padding: 1px 2px !important;
+                height: auto !important;
+                min-width: auto !important;
+                font-size: 7pt !important;
+                line-height: 1.1 !important;
+            }
+
+            body.fit-one-page #matrixTable th,
+            body.fit-one-page #matrixTable td {
+                padding: 2px 3px !important;
+                font-size: 7pt !important;
+            }
+
+            body.fit-one-page .cell-info {
+                font-size: 6pt !important;
+            }
+
+            /* === AFFICHER LES SECTIONS EN MODE FIT === */
+            body.fit-one-page .show-in-fit {
+                display: block !important;
+            }
+            
+            body.fit-one-page .show-in-fit.no-print {
+                display: block !important;
+            }
+
+            /* Styles compacts pour la légende en mode fit */
+            body.fit-one-page #legendeNiveaux {
+                margin-bottom: 8px !important;
+                page-break-inside: avoid;
+            }
+            
+            body.fit-one-page #legendeNiveaux .grid {
+                gap: 4px !important;
+            }
+            
+            body.fit-one-page #legendeNiveaux .p-5 {
+                padding: 6px !important;
+            }
+            
+            body.fit-one-page #legendeNiveaux h3,
+            body.fit-one-page #legendeNiveaux p {
+                font-size: 7pt !important;
+                margin: 0 !important;
+            }
+            
+            body.fit-one-page #legendeNiveaux .w-12 {
+                width: 24px !important;
+                height: 24px !important;
+            }
+            
+            body.fit-one-page #legendeNiveaux .text-xl {
+                font-size: 10pt !important;
+            }
+
+            /* Styles compacts pour la liste des tâches en mode fit */
+            body.fit-one-page #listeDesTaches {
+                margin-bottom: 8px !important;
+                page-break-inside: avoid;
+            }
+            
+            body.fit-one-page #listeDesTaches table {
+                font-size: 6pt !important;
+            }
+            
+            body.fit-one-page #listeDesTaches th,
+            body.fit-one-page #listeDesTaches td {
+                padding: 2px 4px !important;
+            }
+            
+            body.fit-one-page #listeDesTaches .text-xs,
+            body.fit-one-page #listeDesTaches .text-sm {
+                font-size: 6pt !important;
+            }
+
+            /* Cacher tout sauf les sections à imprimer */
+            body.fit-one-page > *:not(.page-shell),
+            body.fit-one-page .page-shell > *:not(#matrixPrintContainer):not(#legendeNiveaux):not(#listeDesTaches):not(.show-in-fit) {
+                display: none !important;
+            }
+
+            body.fit-one-page .page-shell,
+            body.fit-one-page #matrixPrintContainer,
+            body.fit-one-page #legendeNiveaux,
+            body.fit-one-page #listeDesTaches {
+                display: block !important;
+            }
+        }
+        
+        /* Animation du modal */
+#change-password-modal > div:last-child > div {
+    animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95) translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+/* Dropdown menu animation */
+#user-dropdown-menu {
+    animation: dropdownFadeIn 0.15s ease-out;
+}
+
+@keyframes dropdownFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+    </style>
+</head>
+<body>
+
+
+<!-- ============================================
+     PROFESSIONAL TOAST NOTIFICATION SYSTEM
+     Enterprise-Grade Design
+     ============================================ -->
+
+{% if messages %}
+<div id="toast-container"
+     class="fixed top-6 right-6 z-[9999] flex flex-col gap-3 pointer-events-none"
+     style="max-width: 420px; width: calc(100vw - 48px);"
+     aria-live="polite" aria-atomic="true">
+    
+    {% for message in messages %}
+    <div role="alert"
+         class="toast pointer-events-auto relative overflow-hidden rounded-2xl 
+                bg-white/95 backdrop-blur-xl
+                shadow-[0_8px_30px_rgb(0,0,0,0.08),0_4px_10px_rgb(0,0,0,0.04)]
+                border border-slate-200/60
+                transform translate-x-[120%] opacity-0
+                transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]"
+         data-timeout="{% if 'error' in message.tags %}8000{% elif 'warning' in message.tags %}6000{% else %}5000{% endif %}"
+         style="animation: toastEnter 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards {{ forloop.counter0 }}00ms;">
+        
+        <!-- Accent Line (Left Border) -->
+        <div class="absolute left-0 top-0 bottom-0 w-1.5 rounded-l-2xl
+            {% if 'success' in message.tags %} bg-gradient-to-b from-emerald-400 to-emerald-600
+            {% elif 'error' in message.tags %} bg-gradient-to-b from-rose-400 to-rose-600
+            {% elif 'warning' in message.tags %} bg-gradient-to-b from-amber-400 to-amber-600
+            {% else %} bg-gradient-to-b from-blue-400 to-blue-600 {% endif %}">
+        </div>
+        
+        <!-- Main Content -->
+        <div class="pl-5 pr-4 py-4">
+            <div class="flex items-start gap-4">
+                
+                <!-- Icon Container -->
+                <div class="relative flex-shrink-0">
+                    <!-- Animated Ring -->
+                    <div class="absolute inset-0 rounded-xl opacity-30 animate-ping
+                        {% if 'success' in message.tags %} bg-emerald-400
+                        {% elif 'error' in message.tags %} bg-rose-400
+                        {% elif 'warning' in message.tags %} bg-amber-400
+                        {% else %} bg-blue-400 {% endif %}"
+                        style="animation-duration: 2s; animation-iteration-count: 2;">
+                    </div>
+                    
+                    <!-- Icon Box -->
+                    <div class="relative flex h-11 w-11 items-center justify-center rounded-xl shadow-sm
+                        {% if 'success' in message.tags %} 
+                            bg-gradient-to-br from-emerald-50 to-emerald-100 
+                            text-emerald-600 ring-1 ring-emerald-200/50
+                        {% elif 'error' in message.tags %} 
+                            bg-gradient-to-br from-rose-50 to-rose-100 
+                            text-rose-600 ring-1 ring-rose-200/50
+                        {% elif 'warning' in message.tags %} 
+                            bg-gradient-to-br from-amber-50 to-amber-100 
+                            text-amber-600 ring-1 ring-amber-200/50
+                        {% else %} 
+                            bg-gradient-to-br from-blue-50 to-blue-100 
+                            text-blue-600 ring-1 ring-blue-200/50
+                        {% endif %}">
+                        
+                        {% if 'success' in message.tags %}
+                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                            </svg>
+                        {% elif 'error' in message.tags %}
+                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        {% elif 'warning' in message.tags %}
+                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                        {% else %}
+                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Text Content -->
+                <div class="flex-1 min-w-0 pt-0.5">
+                    <!-- Title -->
+                    <h4 class="text-[15px] font-semibold tracking-tight
+                        {% if 'success' in message.tags %} text-emerald-900
+                        {% elif 'error' in message.tags %} text-rose-900
+                        {% elif 'warning' in message.tags %} text-amber-900
+                        {% else %} text-blue-900 {% endif %}">
+                        {% if 'success' in message.tags %}
+                            Opération réussie
+                        {% elif 'error' in message.tags %}
+                            Une erreur est survenue
+                        {% elif 'warning' in message.tags %}
+                            Attention requise
+                        {% else %}
+                            Information
+                        {% endif %}
+                    </h4>
+                    
+                    <!-- Message -->
+                    <p class="mt-1 text-[13px] leading-relaxed text-slate-600">
+                        {{ message|linebreaksbr }}
+                    </p>
+                    
+                    <!-- Timestamp -->
+                    <p class="mt-2 text-[11px] font-medium text-slate-400 uppercase tracking-wider">
+                        À l'instant
+                    </p>
+                </div>
+                
+                <!-- Close Button -->
+                <button type="button"
+                        class="toast-close flex-shrink-0 inline-flex h-8 w-8 items-center justify-center 
+                               rounded-lg text-slate-400 
+                               hover:bg-slate-100 hover:text-slate-600
+                               focus:outline-none focus:ring-2 focus:ring-slate-200
+                               transition-all duration-200 ease-out"
+                        aria-label="Fermer la notification">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Progress Bar -->
+        <div class="h-1 w-full bg-slate-100/80 overflow-hidden">
+            <div class="toast-progress h-full w-full origin-left
+                {% if 'success' in message.tags %} bg-gradient-to-r from-emerald-400 to-emerald-500
+                {% elif 'error' in message.tags %} bg-gradient-to-r from-rose-400 to-rose-500
+                {% elif 'warning' in message.tags %} bg-gradient-to-r from-amber-400 to-amber-500
+                {% else %} bg-gradient-to-r from-blue-400 to-blue-500 {% endif %}">
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Toast Animations & Styles -->
+<style>
+    @keyframes toastEnter {
+        0% {
+            transform: translateX(120%);
+            opacity: 0;
+        }
+        100% {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+    
+    @keyframes toastExit {
+        0% {
+            transform: translateX(0) scale(1);
+            opacity: 1;
+        }
+        100% {
+            transform: translateX(120%) scale(0.95);
+            opacity: 0;
+        }
+    }
+    
+    @keyframes progressShrink {
+        0% {
+            transform: scaleX(1);
+        }
+        100% {
+            transform: scaleX(0);
+        }
+    }
+    
+    .toast.hiding {
+        animation: toastExit 0.4s cubic-bezier(0.4, 0, 1, 1) forwards !important;
+    }
+    
+    .toast-progress {
+        animation: progressShrink var(--progress-duration, 5000ms) linear forwards;
+    }
+    
+    .toast:hover .toast-progress {
+        animation-play-state: paused;
+    }
+    
+    .toast:hover {
+        box-shadow: 0 12px 40px rgb(0 0 0 / 0.12), 0 6px 16px rgb(0 0 0 / 0.06);
+        transform: translateY(-2px) !important;
+    }
+    
+    /* Responsive */
+    @media (max-width: 480px) {
+        #toast-container {
+            top: 16px !important;
+            right: 16px !important;
+            left: 16px !important;
+            max-width: none !important;
+            width: auto !important;
+        }
+    }
+</style>
+
+<!-- Toast JavaScript -->
+<script>
+(function() {
+    'use strict';
+    
+    // Initialiser les toasts au chargement
+    document.addEventListener('DOMContentLoaded', function() {
+        const toasts = document.querySelectorAll('.toast');
+        
+        toasts.forEach((toast, index) => {
+            // Récupérer le timeout depuis l'attribut data
+            const timeout = parseInt(toast.dataset.timeout) || 5000;
+            
+            // Appliquer la durée à la progress bar
+            const progressBar = toast.querySelector('.toast-progress');
+            if (progressBar) {
+                progressBar.style.setProperty('--progress-duration', timeout + 'ms');
+            }
+            
+            // Auto-close après le timeout
+            const autoCloseTimeout = setTimeout(() => {
+                closeToast(toast);
+            }, timeout + (index * 150));
+            
+            // Stocker le timeout pour pouvoir le clear si nécessaire
+            toast.dataset.autoClose = autoCloseTimeout;
+            
+            // Pause sur hover
+            toast.addEventListener('mouseenter', () => {
+                clearTimeout(parseInt(toast.dataset.autoClose));
+            });
+            
+            toast.addEventListener('mouseleave', () => {
+                const remaining = getRemainingTime(toast);
+                if (remaining > 0) {
+                    toast.dataset.autoClose = setTimeout(() => {
+                        closeToast(toast);
+                    }, remaining);
+                }
+            });
+        });
+        
+        // Gérer les boutons de fermeture
+        document.querySelectorAll('.toast-close').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const toast = this.closest('.toast');
+                if (toast) {
+                    clearTimeout(parseInt(toast.dataset.autoClose));
+                    closeToast(toast);
+                }
+            });
+        });
+    });
+    
+    // Fonction pour fermer un toast
+    function closeToast(toast) {
+        if (!toast || toast.classList.contains('hiding')) return;
+        
+        toast.classList.add('hiding');
+        
+        setTimeout(() => {
+            toast.remove();
+            
+            // Supprimer le container s'il est vide
+            const container = document.getElementById('toast-container');
+            if (container && container.children.length === 0) {
+                container.remove();
+            }
+        }, 400);
+    }
+    
+    // Calculer le temps restant basé sur la progress bar
+    function getRemainingTime(toast) {
+        const progressBar = toast.querySelector('.toast-progress');
+        if (!progressBar) return 0;
+        
+        const computedStyle = window.getComputedStyle(progressBar);
+        const transform = computedStyle.transform;
+        
+        if (transform === 'none') return 0;
+        
+        const matrix = new DOMMatrix(transform);
+        const scaleX = matrix.a;
+        const totalDuration = parseInt(toast.dataset.timeout) || 5000;
+        
+        return Math.max(0, scaleX * totalDuration);
+    }
+    
+    // Exposer globalement pour usage externe
+    window.ToastNotification = {
+        close: closeToast,
+        
+        show: function(type, title, message, duration = 5000) {
+            let container = document.getElementById('toast-container');
+            
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'toast-container';
+                container.className = 'fixed top-6 right-6 z-[9999] flex flex-col gap-3 pointer-events-none';
+                container.style.cssText = 'max-width: 420px; width: calc(100vw - 48px);';
+                container.setAttribute('aria-live', 'polite');
+                container.setAttribute('aria-atomic', 'true');
+                document.body.appendChild(container);
+            }
+            
+            const toastId = 'toast-' + Date.now();
+            const colors = {
+                success: {
+                    accent: 'from-emerald-400 to-emerald-600',
+                    icon: 'from-emerald-50 to-emerald-100 text-emerald-600 ring-emerald-200/50',
+                    title: 'text-emerald-900',
+                    progress: 'from-emerald-400 to-emerald-500',
+                    iconPath: '<path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />'
+                },
+                error: {
+                    accent: 'from-rose-400 to-rose-600',
+                    icon: 'from-rose-50 to-rose-100 text-rose-600 ring-rose-200/50',
+                    title: 'text-rose-900',
+                    progress: 'from-rose-400 to-rose-500',
+                    iconPath: '<path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />'
+                },
+                warning: {
+                    accent: 'from-amber-400 to-amber-600',
+                    icon: 'from-amber-50 to-amber-100 text-amber-600 ring-amber-200/50',
+                    title: 'text-amber-900',
+                    progress: 'from-amber-400 to-amber-500',
+                    iconPath: '<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />'
+                },
+                info: {
+                    accent: 'from-blue-400 to-blue-600',
+                    icon: 'from-blue-50 to-blue-100 text-blue-600 ring-blue-200/50',
+                    title: 'text-blue-900',
+                    progress: 'from-blue-400 to-blue-500',
+                    iconPath: '<path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />'
+                }
+            };
+            
+            const c = colors[type] || colors.info;
+            
+            const toastHTML = `
+                <div id="${toastId}" role="alert"
+                     class="toast pointer-events-auto relative overflow-hidden rounded-2xl 
+                            bg-white/95 backdrop-blur-xl
+                            shadow-[0_8px_30px_rgb(0,0,0,0.08),0_4px_10px_rgb(0,0,0,0.04)]
+                            border border-slate-200/60"
+                     data-timeout="${duration}"
+                     style="animation: toastEnter 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;">
+                    
+                    <div class="absolute left-0 top-0 bottom-0 w-1.5 rounded-l-2xl bg-gradient-to-b ${c.accent}"></div>
+                    
+                    <div class="pl-5 pr-4 py-4">
+                        <div class="flex items-start gap-4">
+                            <div class="relative flex-shrink-0">
+                                <div class="relative flex h-11 w-11 items-center justify-center rounded-xl shadow-sm
+                                    bg-gradient-to-br ${c.icon} ring-1">
+                                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                        ${c.iconPath}
+                                    </svg>
+                                </div>
+                            </div>
+                            
+                            <div class="flex-1 min-w-0 pt-0.5">
+                                <h4 class="text-[15px] font-semibold tracking-tight ${c.title}">${title}</h4>
+                                <p class="mt-1 text-[13px] leading-relaxed text-slate-600">${message}</p>
+                                <p class="mt-2 text-[11px] font-medium text-slate-400 uppercase tracking-wider">À l'instant</p>
+                            </div>
+                            
+                            <button type="button"
+                                    class="toast-close flex-shrink-0 inline-flex h-8 w-8 items-center justify-center 
+                                           rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600
+                                           transition-all duration-200"
+                                    aria-label="Fermer">
+                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="h-1 w-full bg-slate-100/80 overflow-hidden">
+                        <div class="toast-progress h-full w-full origin-left bg-gradient-to-r ${c.progress}"
+                             style="--progress-duration: ${duration}ms;"></div>
+                    </div>
+                </div>
+            `;
+            
+            container.insertAdjacentHTML('beforeend', toastHTML);
+            
+            const toast = document.getElementById(toastId);
+            
+            // Close button
+            toast.querySelector('.toast-close').addEventListener('click', () => {
+                closeToast(toast);
+            });
+            
+            // Auto close
+            if (duration > 0) {
+                setTimeout(() => closeToast(toast), duration);
+            }
+            
+            return toastId;
+        },
+        
+        success: function(message, title = 'Opération réussie') {
+            return this.show('success', title, message);
+        },
+        
+        error: function(message, title = 'Une erreur est survenue') {
+            return this.show('error', title, message, 8000);
+        },
+        
+        warning: function(message, title = 'Attention requise') {
+            return this.show('warning', title, message, 6000);
+        },
+        
+        info: function(message, title = 'Information') {
+            return this.show('info', title, message);
+        }
+    };
+})();
+</script>
+{% endif %}
+
+<div class="max-w-full mx-auto bg-white shadow-xl rounded-2xl p-6 md:p-8 border border-gray-100 overflow-hidden page-shell">
+    <h1 class="hide-in-fit text-4xl font-extrabold text-gray-800 mb-8 text-center flex items-center justify-center gap-4">
+        <span class="text-indigo-600 text-5xl">📊</span> Matrice de formation
+    </h1>
+{% if development_alerts %}
+<div id="notifContainer" class="no-print mb-6 hidden">
+    <div class="bg-white border border-gray-200 rounded-2xl shadow-lg overflow-hidden">
+        
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- EN-TÊTE PRINCIPAL -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <div class="bg-gradient-to-r from-slate-50 to-blue-50 px-6 py-5 border-b border-gray-100">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <!-- Icône -->
+                    <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg">
+                        <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                        </svg>
+                    </div>
+                    
+                    <!-- Titre et sous-titre -->
+                    <div>
+                        <h3 class="font-bold text-gray-900 text-xl tracking-tight">
+                            Plan de Développement
+                        </h3>
+                        <p class="text-sm text-gray-600 mt-1 flex items-center gap-3">
+                            <span class="inline-flex items-center gap-1.5">
+                                <svg class="w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
+                                </svg>
+                                <span><strong class="text-gray-800">{{ total_alerts }}</strong> action(s) prioritaire(s)</span>
+                            </span>
+                            <span class="text-gray-300">•</span>
+                            <span class="inline-flex items-center gap-1.5">
+                                <svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                                </svg>
+                                <span><strong class="text-blue-600">{{ completion_rate }}%</strong> complétion</span>
+                            </span>
+                        </p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <!-- Badges de statut -->
+                    {% if total_critical > 0 %}
+                    <div class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-red-50 to-red-100 border border-red-200">
+                        <span class="relative flex h-2.5 w-2.5">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+                        </span>
+                        <span class="text-red-700 font-bold text-sm">{{ total_critical }}</span>
+                        <span class="text-red-600 text-xs font-medium">urgent(s)</span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if total_warning > 0 %}
+                    <div class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-orange-50 to-orange-100 border border-orange-200">
+                        <span class="w-2.5 h-2.5 rounded-full bg-orange-500"></span>
+                        <span class="text-orange-700 font-bold text-sm">{{ total_warning }}</span>
+                        <span class="text-orange-600 text-xs font-medium">en retard</span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if total_ready > 0 %}
+                    <div class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-green-50 to-green-100 border border-green-200">
+                        <span class="w-2.5 h-2.5 rounded-full bg-green-500"></span>
+                        <span class="text-green-700 font-bold text-sm">{{ total_ready }}</span>
+                        <span class="text-green-600 text-xs font-medium">prêt(s)</span>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Boutons d'action -->
+                    <button id="toggleNotifications" 
+                            class="px-4 py-2.5 rounded-xl bg-white border border-gray-300 hover:bg-gray-50 hover:border-gray-400 transition-all text-sm font-semibold text-gray-700 flex items-center gap-2 shadow-sm">
+                        <i class="fas fa-chevron-down text-xs transition-transform duration-200"></i>
+                        <span>Détails</span>
+                    </button>
+                    
+                    <button id="confirmNotifications" 
+                            class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold text-sm shadow-lg hover:shadow-xl transition-all flex items-center gap-2">
+                        <i class="fas fa-check"></i>
+                        <span>Compris</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- DÉTAILS DES ALERTES PAR EMPLOYÉ -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <div id="notificationDetails" class="hidden">
+            <div class="p-6 space-y-4 max-h-[70vh] overflow-y-auto bg-gray-50">
+                
+                {% for alert_data in development_alerts|slice:":15" %}
+                <div class="bg-white rounded-xl border 
+                    {% if alert_data.max_urgency == 'critical' %}border-red-200 shadow-red-100{% elif alert_data.max_urgency == 'warning' %}border-orange-200 shadow-orange-100{% else %}border-green-200 shadow-green-100{% endif %}
+                    shadow-sm overflow-hidden transition-all hover:shadow-md">
+                    
+                    <!-- En-tête employé -->
+                    <div class="flex items-center justify-between px-5 py-4
+                        {% if alert_data.max_urgency == 'critical' %}bg-gradient-to-r from-red-50 to-white{% elif alert_data.max_urgency == 'warning' %}bg-gradient-to-r from-orange-50 to-white{% else %}bg-gradient-to-r from-green-50 to-white{% endif %}">
+                        
+                        <div class="flex items-center gap-4">
+                            <!-- Avatar initiales -->
+                            <div class="w-12 h-12 rounded-xl 
+                                {% if alert_data.max_urgency == 'critical' %}bg-gradient-to-br from-red-400 to-red-600{% elif alert_data.max_urgency == 'warning' %}bg-gradient-to-br from-orange-400 to-orange-600{% else %}bg-gradient-to-br from-green-400 to-green-600{% endif %}
+                                flex items-center justify-center shadow-md">
+                                <span class="text-white font-bold text-sm">
+                                    {{ alert_data.employee.first_name|slice:":1" }}{{ alert_data.employee.last_name|slice:":1" }}
+                                </span>
+                            </div>
+                            
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <span class="font-bold text-gray-900 text-base">
+                                        {{ alert_data.employee.first_name }} {{ alert_data.employee.last_name }}
+                                    </span>
+                                    <span class="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full font-mono">
+                                        {{ alert_data.employee.matricule }}
+                                    </span>
+                                </div>
+                                <p class="text-xs text-gray-500 mt-0.5">
+                                    {{ alert_data.total_alerts }} tâche(s) à développer
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <!-- Badges de statut -->
+                        <div class="flex items-center gap-2">
+                            {% if alert_data.critical_count > 0 %}
+                            <span class="px-3 py-1 rounded-lg bg-red-100 text-red-700 text-xs font-bold flex items-center gap-1.5">
+                                <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                                {{ alert_data.critical_count }} urgent
+                            </span>
+                            {% endif %}
+                            {% if alert_data.warning_count > 0 %}
+                            <span class="px-3 py-1 rounded-lg bg-orange-100 text-orange-700 text-xs font-bold flex items-center gap-1.5">
+                                <span class="w-1.5 h-1.5 rounded-full bg-orange-500"></span>
+                                {{ alert_data.warning_count }} retard
+                            </span>
+                            {% endif %}
+                            {% if alert_data.ready_count > 0 %}
+                            <span class="px-3 py-1 rounded-lg bg-green-100 text-green-700 text-xs font-bold flex items-center gap-1.5">
+                                <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                                {{ alert_data.ready_count }} prêt
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Liste des tâches -->
+                    <div class="divide-y divide-gray-100">
+                        {% for alert in alert_data.alerts|slice:":5" %}
+                        <div class="flex items-center justify-between px-5 py-3.5 hover:bg-gray-50 transition-colors">
+                            <div class="flex items-center gap-4 flex-1">
+                                <!-- Indicateur d'urgence -->
+                                <div class="flex-shrink-0">
+                                    {% if alert.urgency == 'critical' %}
+                                    <span class="w-3 h-3 rounded-full bg-red-500 shadow-sm shadow-red-200 block"></span>
+                                    {% elif alert.urgency == 'warning' %}
+                                    <span class="w-3 h-3 rounded-full bg-orange-500 shadow-sm shadow-orange-200 block"></span>
+                                    {% else %}
+                                    <span class="w-3 h-3 rounded-full bg-green-500 shadow-sm shadow-green-200 block"></span>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="flex-1">
+                                    <!-- Nom de la tâche -->
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <span class="font-semibold text-gray-800">{{ alert.task.title }}</span>
+                                        <span class="text-xs text-gray-400 font-mono">({{ alert.task.code }})</span>
+                                    </div>
+                                    
+                                    <!-- Progression niveau -->
+                                    <div class="flex items-center gap-2 text-xs">
+                                        <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-gray-100">
+                                            <!-- Niveau actuel -->
+                                            <span class="px-2 py-0.5 rounded font-bold text-xs
+                                                {% if alert.current_level == 'I' %}bg-yellow-200 text-yellow-800
+                                                {% elif alert.current_level == 'L' %}bg-blue-200 text-blue-800
+                                                {% else %}bg-gray-200 text-gray-700{% endif %}">
+                                                {{ alert.current_level }}
+                                            </span>
+                                            
+                                            <!-- Flèche -->
+                                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                                            </svg>
+                                            
+                                            <!-- Niveau suivant -->
+                                            <span class="px-2 py-0.5 rounded font-bold text-xs
+                                                {% if alert.next_level == 'L' %}bg-blue-200 text-blue-800
+                                                {% elif alert.next_level == 'U' %}bg-green-200 text-green-800
+                                                {% else %}bg-gray-200 text-gray-700{% endif %}">
+                                                {{ alert.next_level }}
+                                            </span>
+                                        </span>
+                                        
+                                        <!-- Durée -->
+                                        <span class="text-gray-500">
+                                            depuis <strong class="text-gray-700">{{ alert.days_since }}j</strong>
+                                            <span class="text-gray-400">(min. {{ alert.threshold }}j)</span>
+                                        </span>
+                                        
+                                        <!-- Badge dépassement -->
+                                        {% if alert.days_overdue > 0 %}
+                                        <span class="px-2 py-0.5 rounded-full text-xs font-bold
+                                            {% if alert.urgency == 'critical' %}bg-red-100 text-red-600
+                                            {% elif alert.urgency == 'warning' %}bg-orange-100 text-orange-600
+                                            {% else %}bg-green-100 text-green-600{% endif %}">
+                                            +{{ alert.days_overdue }}j
+                                        </span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Bouton action -->
+                            <a href="{% url 'training_record_create' %}?employee={{ alert_data.employee.id }}&task={{ alert.task.id }}{% if selected_line_id %}&line_id={{ selected_line_id }}{% endif %}" 
+                               class="flex-shrink-0 px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 shadow-sm hover:shadow-md
+                                {% if alert.urgency == 'critical' %}bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700
+                                {% elif alert.urgency == 'warning' %}bg-gradient-to-r from-orange-500 to-orange-600 text-white hover:from-orange-600 hover:to-orange-700
+                                {% else %}bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700{% endif %}">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"/>
+                                </svg>
+                                Passer {{ alert.next_level }}
+                            </a>
+                        </div>
+                        {% endfor %}
+                        
+                        {% if alert_data.alerts|length > 5 %}
+                        <div class="px-5 py-3 bg-gray-50 text-center">
+                            <span class="text-xs text-gray-500 font-medium">
+                                + {{ alert_data.alerts|length|add:"-5" }} autre(s) tâche(s) à développer
+                            </span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+                
+                {% if development_alerts|length > 15 %}
+                <div class="text-center py-4">
+                    <span class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-gray-200 text-sm text-gray-600 font-medium shadow-sm">
+                        <svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"/>
+                        </svg>
+                        + {{ development_alerts|length|add:"-15" }} autre(s) employé(s) avec des alertes
+                    </span>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- ═══════════════════════════════════════════════════════════════ -->
+            <!-- LÉGENDE -->
+            <!-- ═══════════════════════════════════════════════════════════════ -->
+            <div class="bg-white border-t border-gray-200 px-6 py-4">
+                <div class="flex items-center justify-between flex-wrap gap-4">
+                    <div class="flex items-center gap-6 text-xs text-gray-600">
+                        <span class="font-bold text-gray-700 uppercase tracking-wide">Légende :</span>
+                        <span class="flex items-center gap-2">
+                            <span class="w-3 h-3 rounded-full bg-red-500 shadow-sm"></span>
+                            <span>Urgent <span class="text-gray-400">(I &gt; 30j / L &gt; 60j)</span></span>
+                        </span>
+                        <span class="flex items-center gap-2">
+                            <span class="w-3 h-3 rounded-full bg-orange-500 shadow-sm"></span>
+                            <span>En retard <span class="text-gray-400">(I &gt; 14j / L &gt; 30j)</span></span>
+                        </span>
+                        <span class="flex items-center gap-2">
+                            <span class="w-3 h-3 rounded-full bg-green-500 shadow-sm"></span>
+                            <span>Prêt <span class="text-gray-400">(délai minimum atteint)</span></span>
+                        </span>
+                    </div>
+                    
+                    <p class="text-xs text-gray-500 italic flex items-center gap-1.5">
+                        <svg class="w-4 h-4 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                        </svg>
+                        Seuls les opérateurs en formation active et stagnant dans un niveau sont affichés.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- SCRIPT -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<script>
+(function() {
+    const notifContainer = document.getElementById('notifContainer');
+    if (!notifContainer) return;
+
+    const userId = "{{ request.user.id }}";
+    const sessionId = "{{ request.session.session_key }}";
+    const storageKey = `devAlertSession_${userId}`;
+    
+    const fadeOut = () => {
+        notifContainer.style.transition = 'all 0.5s ease';
+        notifContainer.style.opacity = '0';
+        notifContainer.style.transform = 'translateY(-20px)';
+        setTimeout(() => notifContainer.remove(), 500);
+    };
+
+    const lastSessionId = localStorage.getItem(storageKey);
+    const isNewLogin = (lastSessionId !== sessionId);
+    
+    const confirmedKey = `devAlertConfirmed_${userId}_${sessionId}`;
+    const isConfirmed = sessionStorage.getItem(confirmedKey);
+
+    if (isNewLogin && !isConfirmed) {
+        notifContainer.classList.remove('hidden');
+        notifContainer.style.opacity = '0';
+        notifContainer.style.transform = 'translateY(-20px)';
+        
+        // Animation d'entrée
+        requestAnimationFrame(() => {
+            notifContainer.style.transition = 'all 0.5s ease';
+            notifContainer.style.opacity = '1';
+            notifContainer.style.transform = 'translateY(0)';
+        });
+        
+        localStorage.setItem(storageKey, sessionId);
+
+        // Auto-disparition après 10 minutes
+        setTimeout(fadeOut, 10 * 60 * 1000);
+
+        document.getElementById('confirmNotifications')?.addEventListener('click', () => {
+            sessionStorage.setItem(confirmedKey, 'true');
+            fadeOut();
+        });
+    }
+
+    // Toggle détails avec animation
+    document.getElementById('toggleNotifications')?.addEventListener('click', function() {
+        const details = document.getElementById('notificationDetails');
+        const icon = this.querySelector('i');
+        const textSpan = this.querySelector('span');
+        
+        if (details.classList.contains('hidden')) {
+            details.classList.remove('hidden');
+            details.style.maxHeight = '0';
+            details.style.overflow = 'hidden';
+            details.style.transition = 'max-height 0.3s ease';
+            
+            requestAnimationFrame(() => {
+                details.style.maxHeight = details.scrollHeight + 'px';
+            });
+            
+            setTimeout(() => {
+                details.style.maxHeight = 'none';
+                details.style.overflow = 'visible';
+            }, 300);
+            
+            if (icon) {
+                icon.style.transform = 'rotate(180deg)';
+            }
+            if (textSpan) {
+                textSpan.textContent = 'Masquer';
+            }
+        } else {
+            details.style.maxHeight = details.scrollHeight + 'px';
+            details.style.overflow = 'hidden';
+            
+            requestAnimationFrame(() => {
+                details.style.transition = 'max-height 0.3s ease';
+                details.style.maxHeight = '0';
+            });
+            
+            setTimeout(() => {
+                details.classList.add('hidden');
+            }, 300);
+            
+            if (icon) {
+                icon.style.transform = 'rotate(0deg)';
+            }
+            if (textSpan) {
+                textSpan.textContent = 'Détails';
+            }
+        }
+    });
+})();
+</script>
+{% endif %}
+
+
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     SECTION 1: SÉLECTEUR DE LIGNES DE PRODUCTION
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<div class="hide-in-fit no-print mb-8">
+    <!-- En-tête de section -->
+    <div class="flex items-center gap-3 mb-4">
+        <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg">
+            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+            </svg>
+        </div>
+        <div>
+            <h2 class="text-xl font-bold text-gray-800">Lignes de Production</h2>
+            <p class="text-sm text-gray-500">Sélectionnez une ligne pour afficher sa matrice</p>
+        </div>
+    </div>
+
+    <!-- Grille des cartes de lignes -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        {% for item in lines_with_leaders %}
+        <div class="group relative bg-white rounded-2xl border-2 transition-all duration-300 overflow-hidden
+                    {% if selected_line_id == item.line.id %}
+                        border-indigo-500 shadow-lg shadow-indigo-100 ring-4 ring-indigo-50
+                    {% else %}
+                        border-gray-100 shadow-sm hover:border-indigo-200 hover:shadow-md
+                    {% endif %}">
+            
+            <!-- Badge de sélection -->
+            {% if selected_line_id == item.line.id %}
+            <div class="absolute top-3 right-3">
+                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-700">
+                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                    </svg>
+                    Actif
+                </span>
+            </div>
+            {% endif %}
+
+            <!-- Contenu de la carte -->
+            <div class="p-5">
+                <!-- Icône et nom de la ligne -->
+                <div class="flex items-start gap-3 mb-4">
+                    <div class="flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center
+                                {% if selected_line_id == item.line.id %}
+                                    bg-gradient-to-br from-indigo-500 to-indigo-600
+                                {% else %}
+                                    bg-gradient-to-br from-gray-100 to-gray-200 group-hover:from-indigo-100 group-hover:to-indigo-200
+                                {% endif %}
+                                transition-all duration-300">
+                        <span class="text-xl {% if selected_line_id == item.line.id %}text-white{% else %}text-gray-600 group-hover:text-indigo-600{% endif %}">
+                            🏭
+                        </span>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <h3 class="text-lg font-bold text-gray-900 truncate">{{ item.line.name }}</h3>
+                        <p class="text-sm text-gray-500">Ligne de production</p>
+                    </div>
+                </div>
+
+                <!-- Chefs d'équipe -->
+                <div class="mb-4">
+                    <div class="flex items-center gap-2 text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                        </svg>
+                        Chef(s) d'équipe
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        {% for leader in item.leaders %}
+                        <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-lg border border-gray-100">
+                            <div class="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center">
+                                <span class="text-xs font-bold text-white">
+                                    {{ leader.first_name|slice:":1" }}{{ leader.last_name|slice:":1" }}
+                                </span>
+                            </div>
+                            <span class="text-sm font-medium text-gray-700">{{ leader.first_name }} {{ leader.last_name }}</span>
+                        </div>
+                        {% empty %}
+                        <span class="inline-flex items-center gap-1 px-3 py-1.5 bg-amber-50 text-amber-700 rounded-lg text-sm">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                            </svg>
+                            Non assigné
+                        </span>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Bouton d'action -->
+                <a href="?line_id={{ item.line.id }}" 
+                   class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm transition-all duration-200
+                          {% if selected_line_id == item.line.id %}
+                              bg-indigo-600 text-white shadow-lg shadow-indigo-200 hover:bg-indigo-700
+                          {% else %}
+                              bg-gray-100 text-gray-700 hover:bg-indigo-600 hover:text-white hover:shadow-lg hover:shadow-indigo-200
+                          {% endif %}">
+                    {% if selected_line_id == item.line.id %}
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                        </svg>
+                        Matrice affichée
+                    {% else %}
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                        </svg>
+                        Voir la matrice
+                    {% endif %}
+                </a>
+            </div>
+        </div>
+
+  {% empty %}
+        <!-- État vide -->
+        <div class="col-span-full py-12 text-center">
+            <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
+                <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                </svg>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-900 mb-1">Aucune ligne configurée</h3>
+            <p class="text-gray-500">Commencez par créer une ligne de production</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+      
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     SECTION 2: BARRE D'ACTIONS PRINCIPALES
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<div class="hide-in-fit no-print mb-8">
+    <div class="bg-gradient-to-r from-slate-50 to-gray-50 rounded-2xl border border-gray-200 p-4 shadow-sm">
+        <div class="flex flex-wrap items-center justify-between gap-4">
+            
+            <!-- Groupe: Actions Employés -->
+            <div class="flex items-center gap-2">
+                <span class="hidden sm:inline-flex items-center px-2 py-1 rounded-md bg-indigo-50 text-indigo-600 text-xs font-semibold uppercase tracking-wide">
+                    Employés
+                </span>
+                <div class="flex items-center gap-2">
+                    <a href="{% url 'employee_create' %}" 
+                       class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold
+                              bg-indigo-600 text-white shadow-lg shadow-indigo-200
+                              hover:bg-indigo-700 hover:shadow-xl hover:shadow-indigo-300
+                              transform hover:-translate-y-0.5 transition-all duration-200">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
+                        </svg>
+                        <span class="hidden sm:inline">Ajouter</span>
+                    </a>
+                    <a href="{% url 'employee_list' %}" 
+                       class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold
+                              bg-white text-indigo-600 border-2 border-indigo-100
+                              hover:bg-indigo-50 hover:border-indigo-200
+                              transition-all duration-200">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+                        </svg>
+                        <span class="hidden sm:inline">Gérer</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Séparateur vertical -->
+            <div class="hidden md:block w-px h-10 bg-gray-300"></div>
+
+            <!-- Groupe: Actions Formations -->
+            <div class="flex items-center gap-2">
+                <span class="hidden sm:inline-flex items-center px-2 py-1 rounded-md bg-emerald-50 text-emerald-600 text-xs font-semibold uppercase tracking-wide">
+                    Formations
+                </span>
+                <div class="flex items-center gap-2">
+                    <a href="{% url 'training_record_create' %}" 
+                       class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold
+                              bg-emerald-600 text-white shadow-lg shadow-emerald-200
+                              hover:bg-emerald-700 hover:shadow-xl hover:shadow-emerald-300
+                              transform hover:-translate-y-0.5 transition-all duration-200">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                        </svg>
+                        <span class="hidden sm:inline">Ajouter</span>
+                    </a>
+                    <a href="{% url 'training_record_list' %}" 
+                       class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold
+                              bg-white text-emerald-600 border-2 border-emerald-100
+                              hover:bg-emerald-50 hover:border-emerald-200
+                              transition-all duration-200">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
+                        </svg>
+                        <span class="hidden sm:inline">Gérer</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Séparateur vertical -->
+            <div class="hidden md:block w-px h-10 bg-gray-300"></div>
+
+            <!-- ═══════════════════════════════════════════════════════════════════ -->
+            <!-- Groupe Requalifications (188 jours) -->
+            <!-- ═══════════════════════════════════════════════════════════════════ -->
+            <div class="flex items-center gap-2">
+                <span class="hidden sm:inline-flex items-center px-2 py-1 rounded-md bg-amber-50 text-amber-600 text-xs font-semibold uppercase tracking-wide">
+                    Requalif.
+                </span>
+                <div class="flex items-center gap-2">
+                    <a href="{% url 'employees_to_requalify' %}" 
+                       class="group inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold
+                              bg-amber-500 text-white shadow-lg shadow-amber-200
+                              hover:bg-amber-600 hover:shadow-xl hover:shadow-amber-300
+                              transform hover:-translate-y-0.5 transition-all duration-200
+                              relative">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <span class="hidden sm:inline">188 jours</span>
+                        
+                        {% if requalification_count and requalification_count > 0 %}
+                        <span class="absolute -top-2 -right-2 inline-flex items-center justify-center 
+                                     w-5 h-5 text-xs font-bold text-white bg-red-500 rounded-full
+                                     ring-2 ring-white animate-pulse">
+                            {{ requalification_count }}
+                        </span>
+                        {% endif %}
+                    </a>
+                    <a href="{% url 'requalification_history' %}" 
+                       class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold
+                              bg-white text-amber-600 border-2 border-amber-100
+                              hover:bg-amber-50 hover:border-amber-200
+                              transition-all duration-200">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z M9 12l2 2 4-4"/>
+                        </svg>
+                        <span class="hidden sm:inline">Historique</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Séparateur vertical -->
+            <div class="hidden md:block w-px h-10 bg-gray-300"></div>
+
+            <!-- ═══════════════════════════════════════════════════════════════════ -->
+            <!-- ✅ NOUVEAU : Bouton Demande de Transfert -->
+            <!-- ═══════════════════════════════════════════════════════════════════ -->
+            <div class="flex items-center gap-2">
+    <span class="hidden sm:inline-flex items-center px-2 py-1 rounded-md bg-cyan-50 text-cyan-600 text-xs font-semibold uppercase tracking-wide">
+        Transfert
+    </span>
+    <a href="{% url 'team_leader_transfer' %}" 
+       class="group inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold
+              bg-cyan-600 text-white shadow-lg shadow-cyan-200
+              hover:bg-cyan-700 hover:shadow-xl hover:shadow-cyan-300
+              transform hover:-translate-y-0.5 transition-all duration-200">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                  d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+        </svg>
+        <span class="hidden sm:inline">Demande</span>
+    </a>
+</div>
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<!-- MODAL: CHANGEMENT DE MOT DE PASSE -->
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<div id="change-password-modal" class="fixed inset-0 z-[100] hidden">
+    <!-- Backdrop -->
+    <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" onclick="closeChangePasswordModal()"></div>
+    
+    <!-- Modal Content -->
+    <div class="fixed inset-0 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md relative transform transition-all"
+             onclick="event.stopPropagation()">
+            
+            <!-- Header -->
+            <div class="flex items-center justify-between p-5 border-b border-gray-200">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-key text-blue-600"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900">Changer mon mot de passe</h3>
+                        <p class="text-sm text-gray-500">Sécurisez votre compte</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeChangePasswordModal()" 
+                        class="text-gray-400 hover:text-gray-600 p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <!-- Form -->
+            <form id="change-password-form" onsubmit="submitPasswordChange(event)">
+                {% csrf_token %}
+                <div class="p-5 space-y-4">
+                    <!-- Message d'erreur global -->
+                    <div id="password-error-container" class="hidden p-4 bg-red-50 border border-red-200 rounded-lg">
+                        <div class="flex items-start gap-2">
+                            <i class="fas fa-exclamation-triangle text-red-500 mt-0.5"></i>
+                            <div id="password-error-message" class="text-sm text-red-700"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Message de succès -->
+                    <div id="password-success-container" class="hidden p-4 bg-green-50 border border-green-200 rounded-lg">
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-check-circle text-green-500"></i>
+                            <span class="text-sm text-green-700">Mot de passe modifié avec succès!</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Mot de passe actuel -->
+                    <div class="form-group">
+                        <label for="old_password" class="block text-sm font-medium text-gray-700 mb-1">
+                            <i class="fas fa-lock text-gray-400 mr-1"></i>
+                            Mot de passe actuel <span class="text-red-500">*</span>
+                        </label>
+                        <div class="relative">
+                            <input type="password" 
+                                   id="old_password" 
+                                   name="old_password" 
+                                   required
+                                   class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors pr-10"
+                                   placeholder="Entrez votre mot de passe actuel">
+                            <button type="button" 
+                                    onclick="togglePasswordVisibility('old_password')"
+                                    class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                                <i class="fas fa-eye" id="old_password-icon"></i>
+                            </button>
+                        </div>
+                        <p id="old_password-error" class="hidden mt-1 text-sm text-red-600"></p>
+                    </div>
+                    
+                    <!-- Nouveau mot de passe -->
+                    <div class="form-group">
+                        <label for="new_password1" class="block text-sm font-medium text-gray-700 mb-1">
+                            <i class="fas fa-key text-gray-400 mr-1"></i>
+                            Nouveau mot de passe <span class="text-red-500">*</span>
+                        </label>
+                        <div class="relative">
+                            <input type="password" 
+                                   id="new_password1" 
+                                   name="new_password1" 
+                                   required
+                                   class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors pr-10"
+                                   placeholder="Entrez un nouveau mot de passe"
+                                   oninput="checkPasswordStrength(this.value)">
+                            <button type="button" 
+                                    onclick="togglePasswordVisibility('new_password1')"
+                                    class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                                <i class="fas fa-eye" id="new_password1-icon"></i>
+                            </button>
+                        </div>
+                        <p id="new_password1-error" class="hidden mt-1 text-sm text-red-600"></p>
+                        
+                        <!-- Indicateur de force du mot de passe -->
+                        <div id="password-strength-container" class="hidden mt-2">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="text-xs text-gray-500">Force du mot de passe:</span>
+                                <span id="password-strength-text" class="text-xs font-medium"></span>
+                            </div>
+                            <div class="h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                                <div id="password-strength-bar" class="h-full transition-all duration-300" style="width: 0%"></div>
+                            </div>
+                            <ul class="mt-2 text-xs text-gray-500 space-y-1" id="password-requirements">
+                                <li id="req-length" class="flex items-center gap-1">
+                                    <i class="fas fa-circle text-[6px]"></i>
+                                    Au moins 8 caractères
+                                </li>
+                                <li id="req-uppercase" class="flex items-center gap-1">
+                                    <i class="fas fa-circle text-[6px]"></i>
+                                    Une lettre majuscule
+                                </li>
+                                <li id="req-lowercase" class="flex items-center gap-1">
+                                    <i class="fas fa-circle text-[6px]"></i>
+                                    Une lettre minuscule
+                                </li>
+                                <li id="req-number" class="flex items-center gap-1">
+                                    <i class="fas fa-circle text-[6px]"></i>
+                                    Un chiffre
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <!-- Confirmer le nouveau mot de passe -->
+                    <div class="form-group">
+                        <label for="new_password2" class="block text-sm font-medium text-gray-700 mb-1">
+                            <i class="fas fa-check-double text-gray-400 mr-1"></i>
+                            Confirmer le nouveau mot de passe <span class="text-red-500">*</span>
+                        </label>
+                        <div class="relative">
+                            <input type="password" 
+                                   id="new_password2" 
+                                   name="new_password2" 
+                                   required
+                                   class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors pr-10"
+                                   placeholder="Confirmez le nouveau mot de passe"
+                                   oninput="checkPasswordMatch()">
+                            <button type="button" 
+                                    onclick="togglePasswordVisibility('new_password2')"
+                                    class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                                <i class="fas fa-eye" id="new_password2-icon"></i>
+                            </button>
+                        </div>
+                        <p id="new_password2-error" class="hidden mt-1 text-sm text-red-600"></p>
+                        <p id="password-match-indicator" class="hidden mt-1 text-sm"></p>
+                    </div>
+                </div>
+                
+                <!-- Footer -->
+                <div class="flex items-center justify-end gap-3 p-5 border-t border-gray-200 bg-gray-50 rounded-b-xl">
+                    <button type="button" 
+                            onclick="closeChangePasswordModal()"
+                            class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                        Annuler
+                    </button>
+                    <button type="submit" 
+                            id="submit-password-btn"
+                            class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
+                        <i class="fas fa-save"></i>
+                        Enregistrer
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+            <!-- ═══════════════════════════════════════════════════════════════════ -->
+
+            <!-- Séparateur vertical -->
+            <div class="hidden md:block w-px h-10 bg-gray-300"></div>
+
+           <!-- Navigation -->
+<nav class="bg-white border-b border-gray-200 sticky top-0 z-50">
+    <div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center h-16">
+            
+            
+            <div class="flex items-center gap-4">
+                <!-- Ligne actuelle -->
+                {% if current_line %}
+                <span class="text-sm text-gray-600 hidden md:inline-flex items-center">
+                    <i class="fas fa-industry text-gray-400 mr-2"></i>
+                    {{ current_line.name }}
+                </span>
+                {% endif %}
+                
+                <!-- Menu utilisateur avec dropdown -->
+                <div class="relative" id="user-menu-container">
+                    <button type="button" 
+                            class="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                            id="user-menu-button"
+                            onclick="toggleUserMenu()">
+                        <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold text-xs">
+                            {{ request.user.first_name|slice:":1"|upper }}{{ request.user.last_name|slice:":1"|upper }}
+                        </div>
+                        <span class="hidden md:inline">{{ request.user.first_name }} {{ request.user.last_name }}</span>
+                        <i class="fas fa-chevron-down text-xs text-gray-400"></i>
+                    </button>
+                    
+                    <!-- Dropdown Menu -->
+                    <div class="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-1 hidden z-50"
+                         id="user-dropdown-menu">
+                        <!-- Infos utilisateur -->
+                        <div class="px-4 py-3 border-b border-gray-100">
+                            <p class="text-sm font-medium text-gray-900">{{ request.user.first_name }} {{ request.user.last_name }}</p>
+                            <p class="text-xs text-gray-500">{{ request.user.email }}</p>
+                            <span class="inline-flex items-center mt-2 px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                <i class="fas fa-user-tie mr-1"></i>
+                                Chef d'équipe
+                            </span>
+                        </div>
+                        
+                        <!-- Options du menu -->
+                        <div class="py-1">
+                            <button type="button" 
+                                    onclick="openChangePasswordModal()"
+                                    class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2">
+                                <i class="fas fa-key text-gray-400 w-4"></i>
+                                Changer mon mot de passe
+                            </button>
+                            
+                         
+                        </div>
+                        
+                        <!-- Déconnexion -->
+                        <div class="border-t border-gray-100 py-1">
+                            <a href="{% url 'login' %}" 
+                               class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2">
+                                <i class="fas fa-sign-out-alt w-4"></i>
+                                Se déconnecter
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</nav>
+
+        </div>
+    </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     SECTION 3: BARRE D'OUTILS - RECHERCHE ET FILTRES
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<div class="no-print mb-6">
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+        
+        <!-- Ligne supérieure: Recherches -->
+        <div class="p-4 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-slate-50">
+            <div class="flex flex-wrap items-center gap-4">
+                
+                <!-- Recherche Tâches -->
+                <div class="flex-1 min-w-[250px]">
+                    <label for="taskSearch" class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+                        Rechercher une tâche
+                    </label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                            </svg>
+                        </div>
+                        <input id="taskSearch" 
+                               type="search" 
+                               placeholder="Ex: bobinage, assemblage..." 
+                               class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 
+                                      bg-white text-sm text-gray-900 placeholder-gray-400
+                                      focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500
+                                      transition-all duration-200">
+                    </div>
+                </div>
+
+                <!-- Recherche Employés -->
+                <div class="flex-1 min-w-[250px]">
+                    <label for="employeeSearch" class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+                        Rechercher un employé
+                    </label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                            </svg>
+                        </div>
+                        <input id="employeeSearch" 
+                               type="search" 
+                               placeholder="Nom, prénom ou matricule..." 
+                               class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 
+                                      bg-white text-sm text-gray-900 placeholder-gray-400
+                                      focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500
+                                      transition-all duration-200">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ligne inférieure: Options et Actions -->
+        <div class="px-4 py-3 bg-white">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                
+                <!-- Options d'affichage -->
+                <div class="flex items-center gap-4">
+                    <!-- Toggle Densité -->
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input id="densityToggle" type="checkbox" class="sr-only peer">
+                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-100 
+                                    rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white 
+                                    after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white 
+                                    after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 
+                                    after:transition-all peer-checked:bg-indigo-600"></div>
+                        <span class="ml-3 text-sm font-medium text-gray-700">Vue compacte</span>
+                    </label>
+
+                    <!-- Bouton Réinitialiser -->
+                    <button id="clearFilters" 
+                            type="button" 
+                            class="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium
+                                   text-gray-600 bg-gray-100 hover:bg-gray-200 
+                                   transition-all duration-200">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                        </svg>
+                        Réinitialiser
+                    </button>
+                </div>
+
+                <!-- Boutons d'impression -->
+                <div class="flex items-center gap-2">
+                    <button type="button" 
+                            onclick="printOnePageA4()" 
+                            class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold
+                                   bg-gradient-to-r from-indigo-600 to-purple-600 text-white
+                                   shadow-lg shadow-indigo-200 hover:shadow-xl hover:shadow-indigo-300
+                                   transform hover:-translate-y-0.5 transition-all duration-200">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+                        </svg>
+                        1 page A4
+                    </button>
+                    <!-- Après le bouton "1 page A4" -->
+<a href="{% url 'export_matrice_excel' %}?line_id={{ selected_line_id }}"
+   class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold
+          bg-gradient-to-r from-emerald-600 to-green-600 text-white
+          shadow-lg shadow-emerald-200 hover:shadow-xl hover:shadow-emerald-300
+          transform hover:-translate-y-0.5 transition-all duration-200">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+              d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+    </svg>
+    Export Excel
+</a>
+                    <!-- <button type="button" 
+                            onclick="printNormal()" 
+                            class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium
+                                   bg-gray-800 text-white hover:bg-gray-900
+                                   transition-all duration-200">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+                        </svg>
+                        Multi-pages
+                    </button> -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     SECTION: LÉGENDE DES NIVEAUX DE COMPÉTENCE
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<div class="show-in-fit no-print mb-10" id="legendeNiveaux">
+    <!-- En-tête -->
+    <div class="flex items-center gap-2 mb-4">
+        <div class="w-1 h-6 bg-gray-800 rounded-full"></div>
+        <h2 class="text-lg font-semibold text-gray-800">Niveaux de compétence</h2>
+    </div>
+
+    <!-- Cartes des niveaux -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        
+        <!-- Niveau I -->
+        <div class="bg-white rounded-lg border border-gray-200 p-5 hover:shadow-md transition-shadow duration-200">
+            <div class="flex items-start gap-4">
+                <div class="flex-shrink-0 w-12 h-12 rounded-lg bg-red-600 flex items-center justify-center">
+                    <span class="text-xl font-bold text-white">I</span>
+                </div>
+                <div class="flex-1">
+                    <h3 class="font-semibold text-gray-900 mb-1">En formation</h3>
+                    <p class="text-sm text-gray-600 leading-relaxed">
+                        Travaille sous supervision d'un formateur qualifié.
+                    </p>
+                    <div class="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-red-700 bg-red-50 px-2 py-1 rounded">
+                        <span class="w-1.5 h-1.5 bg-red-500 rounded-full"></span>
+                        Supervision requise
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Niveau L -->
+        <div class="bg-white rounded-lg border border-gray-200 p-5 hover:shadow-md transition-shadow duration-200">
+            <div class="flex items-start gap-4">
+                <div class="flex-shrink-0 w-12 h-12 rounded-lg bg-amber-500 flex items-center justify-center">
+                    <span class="text-xl font-bold text-white">L</span>
+                </div>
+                <div class="flex-1">
+                    <h3 class="font-semibold text-gray-900 mb-1">Autonome</h3>
+                    <p class="text-sm text-gray-600 leading-relaxed">
+                        Qualifié pour exécuter la tâche de manière indépendante.
+                    </p>
+                    <div class="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-amber-700 bg-amber-50 px-2 py-1 rounded">
+                        <span class="w-1.5 h-1.5 bg-amber-500 rounded-full"></span>
+                        Travail autonome
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Niveau U -->
+        <div class="bg-white rounded-lg border border-gray-200 p-5 hover:shadow-md transition-shadow duration-200">
+            <div class="flex items-start gap-4">
+                <div class="flex-shrink-0 w-12 h-12 rounded-lg bg-green-600 flex items-center justify-center">
+                    <span class="text-xl font-bold text-white">U</span>
+                </div>
+                <div class="flex-1">
+                    <h3 class="font-semibold text-gray-900 mb-1">Formateur</h3>
+                    <p class="text-sm text-gray-600 leading-relaxed">
+                        Habilité à former et superviser d'autres employés.
+                    </p>
+                    <div class="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-green-700 bg-green-50 px-2 py-1 rounded">
+                        <span class="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+                        Peut former
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     SECTION: LISTE DES TÂCHES
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<div class="show-in-fit no-print mb-10" id="listeDesTaches">
+    <!-- En-tête -->
+    <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-2">
+            <div class="w-1 h-6 bg-gray-800 rounded-full"></div>
+            <h2 class="text-lg font-semibold text-gray-800">Liste des tâches</h2>
+            <span class="ml-2 text-sm text-gray-500">({{ matrix|length }})</span>
+        </div>
+        
+        <button id="toggleTasksList" 
+                class="text-sm text-gray-600 hover:text-gray-900 flex items-center gap-1 transition-colors hide-in-fit">
+            <span id="toggleText">Masquer</span>
+            <svg id="toggleIcon" class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+            </svg>
+        </button>
+    </div>
+
+    <!-- Tableau -->
+    <div id="tasksListContainer" class="bg-white rounded-lg border border-gray-200 overflow-hidden transition-all duration-300">
+        <table id="tasksTable" class="w-full">
+            <thead>
+                <tr class="bg-gray-50 border-b border-gray-200">
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-20">
+                        Code
+                    </th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                        Désignation
+                    </th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                {% for row in matrix %}
+                    {% ifchanged row.task.group_title %}
+                    <!-- Groupe -->
+                    <tr class="bg-gray-50">
+                        <td colspan="2" class="px-4 py-2">
+                            <span class="text-xs font-semibold text-gray-900 uppercase tracking-wide">
+                                {{ row.task.group_title }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endifchanged %}
+
+                    <!-- Tâche -->
+                    <tr class="hover:bg-gray-50 transition-colors">
+                        <td class="px-4 py-3">
+                            <span class="inline-flex items-center justify-center w-12 h-7 
+                                         bg-gray-100 text-gray-700 text-xs font-semibold rounded border border-gray-200">
+                                {{ row.task.task_number }}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 text-sm text-gray-800">
+                            {{ row.task.title }}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="2" class="px-4 py-12 text-center text-gray-500">
+                            Aucune tâche disponible
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const toggleBtn = document.getElementById('toggleTasksList');
+    const container = document.getElementById('tasksListContainer');
+    const icon = document.getElementById('toggleIcon');
+    const text = document.getElementById('toggleText');
+    
+    if (toggleBtn && container) {
+        let isCollapsed = false;
+        
+        toggleBtn.addEventListener('click', () => {
+            isCollapsed = !isCollapsed;
+            container.style.display = isCollapsed ? 'none' : 'block';
+            icon.style.transform = isCollapsed ? 'rotate(180deg)' : 'rotate(0deg)';
+            text.textContent = isCollapsed ? 'Afficher' : 'Réduire';
+        });
+    }
+});
+</script>
+
+    <!-- Matrice -->
+    <div id="matrixPrintContainer" class="overflow-x-auto bg-white rounded-xl shadow border border-gray-200">
+        <table id="matrixTable" class="min-w-full divide-y divide-gray-200 text-sm">
+            <thead class="bg-gray-100">
+                <tr>
+                    <th class="px-4 py-3 text-left font-semibold text-gray-700 sticky left-0 bg-gray-100 z-20 rounded-tl-xl border-r border-gray-200">
+                        Tâche / Niveau
+                    </th>
+                    {% for emp in employees %}
+                    <th class="px-3 py-3 text-center border-l border-gray-200">
+                        <div class="flex flex-col items-center gap-1">
+                            <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 text-xs font-bold">
+                                {{ emp.first_name|default_if_none:""|slice:":1" }}{{ emp.last_name|default_if_none:""|slice:":1" }}
+                            </span>
+                            <span class="text-sm font-semibold text-gray-900 leading-tight text-center">
+                                {{ emp.first_name }} {{ emp.last_name }}
+                            </span>
+                            <span class="text-xs text-gray-500">({{ emp.matricule }})</span>
+                        </div>
+                    </th>
+                    {% endfor %}
+                </tr>
+            </thead>
+
+            <tbody class="divide-y divide-gray-100">
+    {% for row in matrix %}
+        <!-- 🟩 En-tête de tâche -->
+        <tr class="bg-gray-50">
+            <td colspan="{{ employees|length|add:'1' }}" class="px-4 py-2 font-bold text-gray-800 border-t border-gray-200">
+                <span class="inline-flex items-center px-2 py-0.5 mr-2 rounded bg-gray-100 text-gray-700 text-xs font-semibold ring-1 ring-gray-200">
+                    #{{ row.task.task_number }}
+                </span>
+                {{ row.task.title }}
+            </td>
+        </tr>
+
+        <!-- 🟨 Niveau I -->
+<tr>
+    <td class="px-4 py-2 font-semibold text-gray-700 sticky left-0 bg-white border-r border-gray-200">I</td>
+    {% for cell in row.cells %}
+        {% with rec=cell.I %}
+            <td class="matrix-cell {% if rec %}level-I{% else %}level-default{% endif %} border-l border-gray-200"
+                title="{% if rec %}I — {{ rec.trainer.last_name|default:'RH' }} • {{ rec.date|date:'d/m/Y' }}{% endif %}">
+                {% if rec %}
+                    <strong>I</strong>
+                    {% if rec.date %}<span class="cell-info text-gray-600">{{ rec.date|date:"d/m/Y" }}</span>{% endif %}
+                    
+                    {# ═══════════════════════════════════════════════════════════════ #}
+                    {# AFFICHAGE DU FORMATEUR - NIVEAU I #}
+                    {# ═══════════════════════════════════════════════════════════════ #}
+                    {% if cell.is_team_leader %}
+                        {# Chef d'équipe : afficher le formateur RH du niveau I #}
+                        {% if rec.trainer %}
+                            <span class="trainer-info text-purple-600 font-medium">
+                                <i class="fas fa-user-graduate text-xs mr-1"></i>{{ rec.trainer.last_name }}
+                            </span>
+                        {% else %}
+                            <span class="trainer-info text-green-600 font-medium">
+                                <i class="fas fa-building text-xs mr-1"></i>SV
+                            </span>
+                        {% endif %}
+                    {% else %}
+                        {# Opérateur : afficher le chef d'équipe #}
+                        {% if cell.team_leader %}
+                            <span class="cell-info text-blue-600 font-medium">
+                                <i class="fas fa-user-tie text-xs mr-1"></i>{{ cell.team_leader.last_name }}
+                            </span>
+                        {% endif %}
+                    {% endif %}
+                {% else %}
+                    <span class="text-gray-400">-</span>
+                {% endif %}
+            </td>
+        {% endwith %}
+    {% endfor %}
+</tr>
+
+<!-- 🟦 Niveau L -->
+<tr>
+    <td class="px-4 py-2 font-semibold text-gray-700 sticky left-0 bg-white border-r border-gray-200">L</td>
+    {% for cell in row.cells %}
+        {% with rec=cell.L %}
+            <td class="matrix-cell border-l border-gray-200 {% if rec %}level-L{% else %}level-default{% endif %}"
+                title="{% if rec %}L — {{ rec.trainer.last_name|default:'RH' }} • {{ rec.date|date:'d/m/Y' }}{% endif %}">
+                
+                {% if rec %}
+                    <strong>L</strong>
+                    {% if rec.date %}<span class="cell-info text-gray-600">{{ rec.date|date:"d/m/Y" }}</span>{% endif %}
+                    
+                    {# ═══════════════════════════════════════════════════════════════ #}
+                    {# AFFICHAGE DU FORMATEUR - NIVEAU L #}
+                    {# ═══════════════════════════════════════════════════════════════ #}
+                    {% if cell.is_team_leader %}
+                        {# Chef d'équipe : afficher le formateur RH du niveau L #}
+                        {% if rec.trainer %}
+                            <span class="trainer-info text-purple-600 font-medium">
+                                <i class="fas fa-user-graduate text-xs mr-1"></i>{{ rec.trainer.last_name }}
+                            </span>
+                        {% else %}
+                            <span class="trainer-info text-green-600 font-medium">
+                                <i class="fas fa-building text-xs mr-1"></i>SV
+                            </span>
+                        {% endif %}
+                    {% else %}
+                        {# Opérateur : afficher le chef d'équipe #}
+                        {% if cell.team_leader %}
+                            <span class="cell-info text-blue-600 font-medium">
+                                <i class="fas fa-user-tie text-xs mr-1"></i>{{ cell.team_leader.last_name }}
+                            </span>
+                        {% endif %}
+                    {% endif %}
+                
+                {% elif cell.pending.1 %}
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800 ring-1 ring-inset ring-yellow-300">
+                        En attente RH
+                    </span>
+
+                {% else %}
+                    <span class="text-gray-400">-</span>
+                {% endif %}
+            </td>
+        {% endwith %}
+    {% endfor %}
+</tr>
+
+<!-- 🟥 Niveau U -->
+<tr>
+    <td class="px-4 py-2 font-semibold text-gray-700 sticky left-0 bg-white border-r border-gray-200">U</td>
+    {% for cell in row.cells %}
+        {% with rec=cell.U %}
+            <td class="matrix-cell {% if rec %}level-U{% else %}level-default{% endif %} border-l border-gray-200"
+                title="{% if rec %}U — {{ rec.trainer.last_name|default:'RH' }} • {{ rec.date|date:'d/m/Y' }}{% endif %}">
+                
+                {% if rec %}
+                    <strong>U</strong>
+                    {% if rec.date %}<span class="cell-info text-gray-600">{{ rec.date|date:"d/m/Y" }}</span>{% endif %}
+                    
+                    {# ═══════════════════════════════════════════════════════════════ #}
+                    {# AFFICHAGE DU FORMATEUR - NIVEAU U #}
+                    {# ═══════════════════════════════════════════════════════════════ #}
+                    {% if cell.is_team_leader %}
+                        {# Chef d'équipe : afficher le formateur RH du niveau U #}
+                        {% if rec.trainer %}
+                            <span class="trainer-info text-purple-600 font-medium">
+                                <i class="fas fa-user-graduate text-xs mr-1"></i>{{ rec.trainer.last_name }}
+                            </span>
+                        {% else %}
+                            <span class="trainer-info text-green-600 font-medium">
+                                <i class="fas fa-building text-xs mr-1"></i>SV
+                            </span>
+                        {% endif %}
+                    {% else %}
+                        {# Opérateur : afficher le chef d'équipe #}
+                        {% if cell.team_leader %}
+                            <span class="cell-info text-blue-600 font-medium">
+                                <i class="fas fa-user-tie text-xs mr-1"></i>{{ cell.team_leader.last_name }}
+                            </span>
+                        {% endif %}
+                    {% endif %}
+                
+                {% elif cell.pending.2 %}
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800 ring-1 ring-inset ring-yellow-300">
+                        En attente RH
+                    </span>
+
+                {% else %}
+                    <span class="text-gray-400">-</span>
+                {% endif %}
+            </td>
+        {% endwith %}
+    {% endfor %}
+</tr>
+
+    {% endfor %}
+</tbody>
+
+        </table>
+    </div>
+</div>
+
+<!-- JS: filtres, densité, impression -->
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const body = document.body;
+  const tasksTable = document.getElementById('tasksTable');
+  const matrixTable = document.getElementById('matrixTable');
+  const taskSearch = document.getElementById('taskSearch');
+  const employeeSearch = document.getElementById('employeeSearch');
+  const densityToggle = document.getElementById('densityToggle');
+  const clearBtn = document.getElementById('clearFilters');
+
+  // Densité compacte
+  densityToggle?.addEventListener('change', e => {
+    body.classList.toggle('compact', e.target.checked);
+  });
+
+  // Filtrer la liste des tâches + la matrice par tâche
+  function applyTaskFilter(q) {
+    const query = (q || '').trim().toLowerCase();
+
+    // 1) Liste des tâches
+    if (tasksTable) {
+      const rows = Array.from(tasksTable.tBodies[0].rows || []);
+      rows.forEach(tr => {
+        tr.classList.toggle('hidden', query && !tr.textContent.toLowerCase().includes(query));
+      });
+    }
+
+    // 2) Matrice: masque le bloc d'une tâche (header + I/L/U)
+    if (matrixTable && matrixTable.tBodies[0]) {
+      const rows = Array.from(matrixTable.tBodies[0].rows);
+      let showCurrentGroup = true;
+      rows.forEach(tr => {
+        const isTaskHeader = tr.classList.contains('bg-gray-50') || (tr.cells.length === 1 && tr.cells[0].hasAttribute('colspan'));
+        if (isTaskHeader) {
+          const text = tr.textContent.toLowerCase();
+          showCurrentGroup = !query || text.includes(query);
+          tr.classList.toggle('hidden', !showCurrentGroup);
+        } else {
+          if (tr.cells.length > 1) {
+            tr.classList.toggle('hidden', !showCurrentGroup);
+          }
+        }
+      });
+    }
+  }
+
+  // Filtrer par employé: masque les colonnes du tableau matrice
+  function applyEmployeeFilter(q) {
+    if (!matrixTable) return;
+    const query = (q || '').trim().toLowerCase();
+
+    const theadRow = matrixTable.tHead ? matrixTable.tHead.rows[0] : null;
+    if (!theadRow) return;
+
+    const ths = Array.from(theadRow.cells);
+    const indicesToHide = [];
+
+    ths.forEach((th, i) => {
+      if (i === 0) return; // première colonne (Tâche/Niveau) toujours visible
+      const match = !query || th.textContent.toLowerCase().includes(query);
+      th.classList.toggle('hidden', !match);
+      if (!match) indicesToHide.push(i);
+    });
+
+    // Pour chaque ligne du body, cacher/montrer les mêmes colonnes
+    const bodyRows = Array.from(matrixTable.tBodies[0].rows || []);
+    bodyRows.forEach(tr => {
+      const cells = tr.cells;
+      if (cells.length <= 1) return; // lignes titre de tâche (colspan)
+      for (let i = 1; i < cells.length; i++) {
+        cells[i].classList.remove('hidden');
+      }
+      indicesToHide.forEach(idx => {
+        if (cells[idx]) cells[idx].classList.add('hidden');
+      });
+    });
+  }
+
+  // Attachements
+  taskSearch?.addEventListener('input', e => applyTaskFilter(e.target.value));
+  employeeSearch?.addEventListener('input', e => applyEmployeeFilter(e.target.value));
+
+  // Réinitialiser
+  clearBtn?.addEventListener('click', () => {
+    if (taskSearch) taskSearch.value = '';
+    if (employeeSearch) employeeSearch.value = '';
+    applyTaskFilter('');
+    applyEmployeeFilter('');
+    body.classList.remove('compact');
+    if (densityToggle) densityToggle.checked = false;
+  });
+});
+
+/* Impression en 1 page A4 - AVEC LÉGENDE ET LISTE DES TÂCHES */
+function printOnePageA4() {
+    var table = document.getElementById('matrixTable');
+    var container = document.getElementById('matrixPrintContainer');
+    var pageShell = document.querySelector('.page-shell');
+    
+    if (!table) {
+        window.print();
+        return;
+    }
+
+    var body = document.body;
+    var html = document.documentElement;
+    
+    // ═══════════════════════════════════════════════════════════════════
+    // 1. SAUVEGARDER LES STYLES ORIGINAUX
+    // ═══════════════════════════════════════════════════════════════════
+    var cells = table.querySelectorAll('th, td');
+    var cellInfos = table.querySelectorAll('.cell-info');
+    var savedCellStyles = [];
+    var savedInfoStyles = [];
+    
+    cells.forEach(function(cell) {
+        savedCellStyles.push({
+            padding: cell.style.padding,
+            fontSize: cell.style.fontSize,
+            lineHeight: cell.style.lineHeight,
+            minWidth: cell.style.minWidth
+        });
+    });
+    
+    cellInfos.forEach(function(info) {
+        savedInfoStyles.push({
+            display: info.style.display,
+            fontSize: info.style.fontSize,
+            lineHeight: info.style.lineHeight
+        });
+    });
+
+    // ═══════════════════════════════════════════════════════════════════
+    // 2. APPLIQUER STYLES COMPACTS (GARDER INFOS VISIBLES)
+    // ═══════════════════════════════════════════════════════════════════
+    body.classList.add('print-mode-active');
+    
+    cells.forEach(function(cell) {
+        cell.style.padding = '2px 3px';
+        cell.style.fontSize = '6pt';
+        cell.style.lineHeight = '1.2';
+        cell.style.minWidth = '25px';
+    });
+    
+    // ✅ GARDER LES INFOS VISIBLES (date + chef d'équipe)
+    cellInfos.forEach(function(info) {
+        info.style.display = 'block';
+        info.style.fontSize = '5pt';
+        info.style.lineHeight = '1.1';
+    });
+
+    // ═══════════════════════════════════════════════════════════════════
+    // 3. FORCER RECALCUL
+    // ═══════════════════════════════════════════════════════════════════
+    void table.offsetWidth;
+
+    // ═══════════════════════════════════════════════════════════════════
+    // 4. CALCULER DIMENSIONS
+    // ═══════════════════════════════════════════════════════════════════
+    var contentWidth = table.scrollWidth;
+    var contentHeight = table.scrollHeight + 100; // +100 pour en-tête
+    
+    // A4 paysage en pixels (96 DPI, marges 5mm)
+    var pageWidth = 1085;  // (297 - 10) * 96 / 25.4
+    var pageHeight = 755;  // (210 - 10) * 96 / 25.4
+
+    console.log('Contenu: ' + contentWidth + 'x' + contentHeight);
+    console.log('Page: ' + pageWidth + 'x' + pageHeight);
+
+    // ═══════════════════════════════════════════════════════════════════
+    // 5. CALCULER SCALE OPTIMAL
+    // ═══════════════════════════════════════════════════════════════════
+    var scaleX = pageWidth / contentWidth;
+    var scaleY = pageHeight / contentHeight;
+    var scale = Math.min(scaleX, scaleY, 1);
+    scale = Math.max(scale, 0.08); // Minimum 8%
+
+    console.log('Scale: ' + Math.round(scale * 100) + '%');
+
+    // ═══════════════════════════════════════════════════════════════════
+    // 6. APPLIQUER LE SCALE
+    // ═══════════════════════════════════════════════════════════════════
+    html.style.setProperty('--print-scale', scale);
+    body.classList.add('fit-one-page');
+
+    // ═══════════════════════════════════════════════════════════════════
+    // 7. FONCTION CLEANUP
+    // ═══════════════════════════════════════════════════════════════════
+    function cleanup() {
+        body.classList.remove('fit-one-page', 'print-mode-active');
+        html.style.removeProperty('--print-scale');
+        
+        cells.forEach(function(cell, i) {
+            if (savedCellStyles[i]) {
+                cell.style.padding = savedCellStyles[i].padding;
+                cell.style.fontSize = savedCellStyles[i].fontSize;
+                cell.style.lineHeight = savedCellStyles[i].lineHeight;
+                cell.style.minWidth = savedCellStyles[i].minWidth;
+            }
+        });
+        
+        cellInfos.forEach(function(info, i) {
+            if (savedInfoStyles[i]) {
+                info.style.display = savedInfoStyles[i].display;
+                info.style.fontSize = savedInfoStyles[i].fontSize;
+                info.style.lineHeight = savedInfoStyles[i].lineHeight;
+            }
+        });
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // 8. IMPRIMER
+    // ═══════════════════════════════════════════════════════════════════
+    window.onafterprint = function() {
+        cleanup();
+        window.onafterprint = null;
+    };
+
+    setTimeout(function() {
+        window.print();
+        setTimeout(cleanup, 2500);
+    }, 250);
+}
+
+function printNormal() {
+    window.print();
+}
+</script>
+<script>
+// ═══════════════════════════════════════════════════════════════════════════
+// MENU UTILISATEUR
+// ═══════════════════════════════════════════════════════════════════════════
+
+function toggleUserMenu() {
+    const menu = document.getElementById('user-dropdown-menu');
+    menu.classList.toggle('hidden');
+}
+
+// Fermer le menu si on clique ailleurs
+document.addEventListener('click', function(event) {
+    const container = document.getElementById('user-menu-container');
+    const menu = document.getElementById('user-dropdown-menu');
+    
+    if (container && !container.contains(event.target)) {
+        menu.classList.add('hidden');
+    }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// MODAL CHANGEMENT DE MOT DE PASSE
+// ═══════════════════════════════════════════════════════════════════════════
+
+function openChangePasswordModal() {
+    // Fermer le menu utilisateur
+    document.getElementById('user-dropdown-menu').classList.add('hidden');
+    
+    // Réinitialiser le formulaire
+    document.getElementById('change-password-form').reset();
+    hidePasswordErrors();
+    document.getElementById('password-strength-container').classList.add('hidden');
+    document.getElementById('password-match-indicator').classList.add('hidden');
+    document.getElementById('password-success-container').classList.add('hidden');
+    
+    // Afficher le modal
+    const modal = document.getElementById('change-password-modal');
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    
+    // Focus sur le premier champ
+    setTimeout(() => {
+        document.getElementById('old_password').focus();
+    }, 100);
+}
+
+function closeChangePasswordModal() {
+    const modal = document.getElementById('change-password-modal');
+    modal.classList.add('hidden');
+    document.body.style.overflow = '';
+}
+
+// Fermer avec Escape
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        closeChangePasswordModal();
+    }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TOGGLE VISIBILITÉ MOT DE PASSE
+// ═══════════════════════════════════════════════════════════════════════════
+
+function togglePasswordVisibility(inputId) {
+    const input = document.getElementById(inputId);
+    const icon = document.getElementById(inputId + '-icon');
+    
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+    } else {
+        input.type = 'password';
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// VÉRIFICATION FORCE DU MOT DE PASSE
+// ═══════════════════════════════════════════════════════════════════════════
+
+function checkPasswordStrength(password) {
+    const container = document.getElementById('password-strength-container');
+    const bar = document.getElementById('password-strength-bar');
+    const text = document.getElementById('password-strength-text');
+    
+    if (password.length === 0) {
+        container.classList.add('hidden');
+        return;
+    }
+    
+    container.classList.remove('hidden');
+    
+    // Critères
+    const hasLength = password.length >= 8;
+    const hasUppercase = /[A-Z]/.test(password);
+    const hasLowercase = /[a-z]/.test(password);
+    const hasNumber = /[0-9]/.test(password);
+    const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+    
+    // Mettre à jour les indicateurs
+    updateRequirement('req-length', hasLength);
+    updateRequirement('req-uppercase', hasUppercase);
+    updateRequirement('req-lowercase', hasLowercase);
+    updateRequirement('req-number', hasNumber);
+    
+    // Calculer le score
+    let score = 0;
+    if (hasLength) score += 25;
+    if (hasUppercase) score += 25;
+    if (hasLowercase) score += 25;
+    if (hasNumber) score += 15;
+    if (hasSpecial) score += 10;
+    
+    // Mettre à jour la barre
+    bar.style.width = score + '%';
+    
+    if (score < 50) {
+        bar.className = 'h-full transition-all duration-300 bg-red-500';
+        text.textContent = 'Faible';
+        text.className = 'text-xs font-medium text-red-500';
+    } else if (score < 75) {
+        bar.className = 'h-full transition-all duration-300 bg-yellow-500';
+        text.textContent = 'Moyen';
+        text.className = 'text-xs font-medium text-yellow-500';
+    } else {
+        bar.className = 'h-full transition-all duration-300 bg-green-500';
+        text.textContent = 'Fort';
+        text.className = 'text-xs font-medium text-green-500';
+    }
+}
+
+function updateRequirement(id, isMet) {
+    const element = document.getElementById(id);
+    const icon = element.querySelector('i');
+    
+    if (isMet) {
+        element.classList.remove('text-gray-500');
+        element.classList.add('text-green-600');
+        icon.classList.remove('fa-circle');
+        icon.classList.add('fa-check-circle');
+    } else {
+        element.classList.remove('text-green-600');
+        element.classList.add('text-gray-500');
+        icon.classList.remove('fa-check-circle');
+        icon.classList.add('fa-circle');
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// VÉRIFICATION CORRESPONDANCE DES MOTS DE PASSE
+// ═══════════════════════════════════════════════════════════════════════════
+
+function checkPasswordMatch() {
+    const password1 = document.getElementById('new_password1').value;
+    const password2 = document.getElementById('new_password2').value;
+    const indicator = document.getElementById('password-match-indicator');
+    
+    if (password2.length === 0) {
+        indicator.classList.add('hidden');
+        return;
+    }
+    
+    indicator.classList.remove('hidden');
+    
+    if (password1 === password2) {
+        indicator.innerHTML = '<i class="fas fa-check-circle mr-1"></i> Les mots de passe correspondent';
+        indicator.className = 'mt-1 text-sm text-green-600 flex items-center';
+    } else {
+        indicator.innerHTML = '<i class="fas fa-times-circle mr-1"></i> Les mots de passe ne correspondent pas';
+        indicator.className = 'mt-1 text-sm text-red-600 flex items-center';
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SOUMISSION DU FORMULAIRE
+// ═══════════════════════════════════════════════════════════════════════════
+
+function hidePasswordErrors() {
+    document.getElementById('password-error-container').classList.add('hidden');
+    document.querySelectorAll('[id$="-error"]').forEach(el => {
+        if (el.id !== 'password-error-container') {
+            el.classList.add('hidden');
+        }
+    });
+    
+    // Réinitialiser les styles des inputs
+    ['old_password', 'new_password1', 'new_password2'].forEach(id => {
+        const input = document.getElementById(id);
+        input.classList.remove('border-red-500', 'focus:ring-red-500', 'focus:border-red-500');
+        input.classList.add('border-gray-300', 'focus:ring-blue-500', 'focus:border-blue-500');
+    });
+}
+
+function showFieldError(fieldId, message) {
+    const errorEl = document.getElementById(fieldId + '-error');
+    const inputEl = document.getElementById(fieldId);
+    
+    if (errorEl) {
+        errorEl.textContent = message;
+        errorEl.classList.remove('hidden');
+    }
+    
+    if (inputEl) {
+        inputEl.classList.remove('border-gray-300', 'focus:ring-blue-500', 'focus:border-blue-500');
+        inputEl.classList.add('border-red-500', 'focus:ring-red-500', 'focus:border-red-500');
+    }
+}
+
+async function submitPasswordChange(event) {
+    event.preventDefault();
+    
+    hidePasswordErrors();
+    
+    const form = document.getElementById('change-password-form');
+    const submitBtn = document.getElementById('submit-password-btn');
+    const formData = new FormData(form);
+    
+    // Vérification côté client
+    const password1 = document.getElementById('new_password1').value;
+    const password2 = document.getElementById('new_password2').value;
+    
+    if (password1 !== password2) {
+        showFieldError('new_password2', 'Les mots de passe ne correspondent pas.');
+        return;
+    }
+    
+    // Désactiver le bouton
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enregistrement...';
+    
+    try {
+        const response = await fetch('{% url "change_password_team_leader" %}', {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Afficher le message de succès
+            document.getElementById('password-success-container').classList.remove('hidden');
+            
+            // Fermer le modal après un délai
+            setTimeout(() => {
+                closeChangePasswordModal();
+                // Optionnel: afficher une notification
+                showNotification('Mot de passe modifié avec succès!', 'success');
+            }, 1500);
+        } else {
+            // Afficher les erreurs
+            if (data.errors) {
+                for (const [field, messages] of Object.entries(data.errors)) {
+                    if (field === '__all__') {
+                        const container = document.getElementById('password-error-container');
+                        const messageEl = document.getElementById('password-error-message');
+                        messageEl.innerHTML = messages.join('<br>');
+                        container.classList.remove('hidden');
+                    } else {
+                        showFieldError(field, messages[0]);
+                    }
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Erreur:', error);
+        const container = document.getElementById('password-error-container');
+        const messageEl = document.getElementById('password-error-message');
+        messageEl.textContent = 'Une erreur est survenue. Veuillez réessayer.';
+        container.classList.remove('hidden');
+    } finally {
+        // Réactiver le bouton
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-save"></i> Enregistrer';
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// NOTIFICATION (optionnel)
+// ═══════════════════════════════════════════════════════════════════════════
+
+function showNotification(message, type = 'success') {
+    // Créer la notification
+    const notification = document.createElement('div');
+    notification.className = `fixed top-20 right-4 z-[200] px-4 py-3 rounded-lg shadow-lg transform transition-all duration-300 translate-x-full ${
+        type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+    }`;
+    notification.innerHTML = `
+        <div class="flex items-center gap-2">
+            <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
+            <span>${message}</span>
+        </div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Animation d'entrée
+    setTimeout(() => {
+        notification.classList.remove('translate-x-full');
+    }, 10);
+    
+    // Supprimer après 3 secondes
+    setTimeout(() => {
+        notification.classList.add('translate-x-full');
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
+</script>
+</body>
+</html>

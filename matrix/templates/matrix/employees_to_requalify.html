@@ -1,0 +1,969 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Requalifications - {{ request.user.company }}</title>
+    <link rel="icon" type="image/png" href="{% static 'images/logo.png' %}">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+        
+        :root {
+            --primary-color: #1e40af;
+            --secondary-color: #64748b;
+            --success-color: #16a34a;
+            --danger-color: #dc2626;
+            --warning-color: #ea580c;
+            --info-color: #0284c7;
+            --background: #f8fafc;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --border-color: #e2e8f0;
+        }
+        
+        body {
+            background-color: var(--background);
+            color: var(--text-primary);
+        }
+        
+        /* Card container */
+        .card {
+            background: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--border-color);
+        }
+        
+        .card-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            background-color: #f8fafc;
+        }
+        
+        .card-body {
+            padding: 1.5rem;
+        }
+        
+        /* Form styles */
+        .form-field {
+            margin-bottom: 1.25rem;
+        }
+        
+        .form-field label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+        
+        .form-field label .required {
+            color: var(--danger-color);
+            margin-left: 0.25rem;
+        }
+        
+        .form-field input,
+        .form-field select,
+        .form-field textarea {
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            color: var(--text-primary);
+            background-color: white;
+            transition: all 0.15s ease;
+        }
+        
+        .form-field input:focus,
+        .form-field select:focus,
+        .form-field textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+        }
+        
+        .form-field .helptext {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+        }
+        
+        /* Buttons */
+        .btn {
+            padding: 0.5rem 1rem;
+            font-weight: 500;
+            font-size: 0.875rem;
+            border-radius: 0.375rem;
+            transition: all 0.15s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            border: 1px solid transparent;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+        
+        .btn-primary:hover {
+            background-color: #1e3a8a;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn-secondary {
+            background-color: white;
+            color: var(--text-secondary);
+            border-color: var(--border-color);
+        }
+        
+        .btn-secondary:hover {
+            background-color: #f8fafc;
+            border-color: var(--text-secondary);
+        }
+        
+        .btn-success {
+            background-color: var(--success-color);
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background-color: #15803d;
+        }
+        
+        /* Stats cards */
+        .stat-card {
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            padding: 1.25rem;
+            transition: box-shadow 0.15s ease;
+        }
+        
+        .stat-card:hover {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .stat-icon {
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+        }
+        
+        .stat-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+        
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+        }
+        
+        /* Result options */
+        .result-option {
+            border: 2px solid var(--border-color);
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        
+        .result-option:hover {
+            border-color: var(--primary-color);
+            background-color: #f8fafc;
+        }
+        
+        .result-option.selected {
+            border-color: var(--primary-color);
+            background-color: #eff6ff;
+        }
+        
+        .result-option input[type="radio"] {
+            display: none;
+        }
+        
+        /* Employee list */
+        .employee-item {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: background-color 0.15s ease;
+        }
+        
+        .employee-item:hover {
+            background-color: #f8fafc;
+        }
+        
+        .employee-item:last-child {
+            border-bottom: none;
+        }
+        
+        /* Status badges */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.625rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            border-radius: 9999px;
+        }
+        
+        .badge-critical {
+            background-color: #fef2f2;
+            color: var(--danger-color);
+        }
+        
+        .badge-warning {
+            background-color: #fff7ed;
+            color: var(--warning-color);
+        }
+        
+        .badge-info {
+            background-color: #f0f9ff;
+            color: var(--info-color);
+        }
+        
+        .badge-success {
+            background-color: #f0fdf4;
+            color: var(--success-color);
+        }
+        
+        /* Level indicators */
+        .level-badge {
+            width: 1.5rem;
+            height: 1.5rem;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .level-I { background-color: #fef3c7; color: #92400e; }
+        .level-L { background-color: #dbeafe; color: #1e40af; }
+        .level-U { background-color: #dcfce7; color: #166534; }
+        
+        /* Scrollbar */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        
+        /* Table styles */
+        .data-table {
+            width: 100%;
+        }
+        
+        .data-table thead {
+            background-color: #f8fafc;
+        }
+        
+        .data-table th {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .data-table td {
+            padding: 0.75rem 1rem;
+            font-size: 0.875rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .data-table tbody tr:hover {
+            background-color: #f8fafc;
+        }
+    </style>
+</head>
+<body>
+    
+    <!-- Navigation -->
+<nav class="bg-white border-b border-gray-200 sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center h-16">
+            <div class="flex items-center gap-8">
+                <span class="text-xl font-semibold text-gray-900">
+                    Système de gestion des formations
+                </span>
+            </div>
+            <div class="flex items-center gap-4">
+                <span class="text-sm text-gray-600">
+                    <i class="fas fa-user-circle mr-2 text-gray-400"></i>
+                    {{ request.user.first_name }} {{ request.user.last_name }}
+                </span>
+            </div>
+        </div>
+    </div>
+</nav>
+
+    <!-- Main Content -->
+    <div class="min-h-screen py-6 px-4">
+        <div class="max-w-7xl mx-auto">
+            
+            <!-- Breadcrumb -->
+            <nav class="flex mb-6" aria-label="Breadcrumb">
+                <ol class="inline-flex items-center space-x-1 text-sm">
+                    <li>
+                        <a href="{% url 'matrix_view' %}" class="text-gray-500 hover:text-gray-700">
+                            <i class="fas fa-home"></i>
+                        </a>
+                    </li>
+                    <li>
+                        <span class="mx-2 text-gray-400">/</span>
+                        <span class="text-gray-700">Requalifications</span>
+                    </li>
+                </ol>
+            </nav>
+
+            <!-- Page Header -->
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+                <div>
+                    <h1 class="text-2xl font-semibold text-gray-900">
+                        <i class="fas fa-clock text-gray-400 mr-2"></i>
+                        Requalifications à effectuer
+                    </h1>
+                    <p class="mt-1 text-sm text-gray-600">
+                        Gérer les requalifications de vos employés 
+                        <span class="text-orange-600 font-medium">(seuil: {{ threshold_days }} jours)</span>
+                    </p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <a href="{% url 'requalification_history' %}" class="btn btn-secondary">
+                        <i class="fas fa-history"></i>
+                        Historique
+                    </a>
+                    <a href="{% url 'matrix_view' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i>
+                    Retour aux matrice
+                </a>
+                </div>
+            </div>
+
+            <!-- Filter Section -->
+            <div class="card mb-6">
+                <div class="card-body py-4">
+                    <form method="GET" class="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                        <div class="flex items-center gap-3 flex-1">
+                            <label class="text-sm font-medium text-gray-700 whitespace-nowrap">
+                                <i class="fas fa-filter text-gray-400 mr-2"></i>
+                                Filtrer par ligne :
+                            </label>
+                            <select name="line_id" onchange="this.form.submit()"
+                                    class="px-3 py-2 border border-gray-200 rounded-md text-sm min-w-[200px]
+                                           focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <option value="">Toutes mes lignes</option>
+                                {% for line in lines %}
+                                <option value="{{ line.id }}" {% if selected_line_id == line.id %}selected{% endif %}>
+                                    {{ line.code }} - {{ line.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        {% if selected_line_id %}
+                        <a href="{% url 'employees_to_requalify' %}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i>
+                            Réinitialiser
+                        </a>
+                        {% endif %}
+                    </form>
+                </div>
+            </div>
+
+            <!-- Statistics Cards -->
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+                <!-- Total Employees -->
+                <div class="stat-card">
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="stat-icon bg-gray-100 text-gray-600">
+                            <i class="fas fa-users"></i>
+                        </div>
+                    </div>
+                    <div class="stat-value text-gray-700">{{ stats.total_employees }}</div>
+                    <div class="stat-label">Mes employés</div>
+                </div>
+
+                <!-- To Requalify -->
+                <div class="stat-card" style="border-left: 3px solid var(--primary-color);">
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="stat-icon bg-blue-100 text-blue-600">
+                            <i class="fas fa-clipboard-list"></i>
+                        </div>
+                    </div>
+                    <div class="stat-value text-blue-700">{{ stats.total }}</div>
+                    <div class="stat-label">À requalifier</div>
+                </div>
+
+                <!-- Critical -->
+                <div class="stat-card" style="border-left: 3px solid var(--danger-color);">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="stat-icon bg-red-100 text-red-600">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        {% if stats.critical > 0 %}
+                        <span class="badge badge-critical animate-pulse">URGENT</span>
+                        {% endif %}
+                    </div>
+                    <div class="stat-value text-red-600">{{ stats.critical }}</div>
+                    <div class="stat-label">> 250 jours</div>
+                </div>
+
+                <!-- Warning -->
+                <div class="stat-card" style="border-left: 3px solid var(--warning-color);">
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="stat-icon bg-orange-100 text-orange-600">
+                            <i class="fas fa-exclamation-circle"></i>
+                        </div>
+                    </div>
+                    <div class="stat-value text-orange-600">{{ stats.warning }}</div>
+                    <div class="stat-label">200-250 jours</div>
+                </div>
+
+                <!-- Info -->
+                <div class="stat-card" style="border-left: 3px solid var(--info-color);">
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="stat-icon bg-sky-100 text-sky-600">
+                            <i class="fas fa-info-circle"></i>
+                        </div>
+                    </div>
+                    <div class="stat-value text-sky-600">{{ stats.info }}</div>
+                    <div class="stat-label">188-200 jours</div>
+                </div>
+            </div>
+
+            <!-- Main Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                
+                <!-- Requalification Form -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="text-lg font-semibold text-gray-900">
+                            <i class="fas fa-edit text-gray-400 mr-2"></i>
+                            Nouvelle Requalification
+                        </h2>
+                        <p class="text-sm text-gray-600 mt-1">
+                            Sélectionnez un employé pour enregistrer une requalification
+                        </p>
+                    </div>
+                    
+                    <form method="POST" action="{% url 'process_requalification' %}" class="card-body" id="requalification-form">
+                        {% csrf_token %}
+                        
+                        <!-- Date -->
+                       
+                        
+<!-- Employee Selection -->
+<div class="form-field">
+    <label>
+        <i class="fas fa-user text-gray-400 mr-1"></i>
+        Employé <span class="required">*</span>
+    </label>
+    <select name="employee_id" id="employee_select" required>
+        <option value="">
+            -- Sélectionner un employé 
+            ({{ employees_to_requalify|length }}) --
+        </option>
+        {% for item in employees_to_requalify %}
+        <option value="{{ item.employee.id }}"
+                data-line-id="{{ item.line.id }}"
+                data-line="{{ item.line.name|default:'-' }}"
+                data-line-code="{{ item.line.code|default:'-' }}"
+                data-task-id="{{ item.task.id|default:'' }}">
+            {{ item.employee.matricule }} -
+            {{ item.employee.first_name }}
+            {{ item.employee.last_name }}
+            ({{ item.line.code }})
+        </option>
+        {% endfor %}
+    </select>
+    {% if not employees_to_requalify %}
+    <p class="text-sm text-green-600 mt-2">
+        <i class="fas fa-check-circle mr-1"></i>
+        Aucun employé à requalifier
+    </p>
+    {% endif %}
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     ✅ Sélection de la ligne à requalifier
+     Affiche UNIQUEMENT les lignes où l'employé doit requalifier
+     ══════════════════════════════════════════════════════════════ -->
+<div class="form-field hidden" id="line-selector-container">
+    <label>
+        <i class="fas fa-industry text-gray-400 mr-1"></i>
+        Ligne à requalifier <span class="required">*</span>
+    </label>
+
+    <!-- Ligne unique → lecture seule -->
+    <div id="single-line-display" class="hidden">
+        <div class="px-3 py-2 bg-green-50 border border-green-200
+                    rounded-md text-sm text-gray-700
+                    flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <i class="fas fa-check-circle text-green-500"></i>
+                <span id="single-line-name">-</span>
+            </div>
+            <span id="single-line-days"
+                  class="text-xs text-orange-600 font-medium">
+            </span>
+        </div>
+        <input type="hidden" name="line_id" id="line_id_hidden">
+    </div>
+
+    <!-- Plusieurs lignes → sélecteur -->
+    <div id="multi-line-display" class="hidden">
+
+        <!-- Alerte info -->
+        <div class="mb-2 p-2 bg-orange-50 border border-orange-200
+                    rounded-md text-xs text-orange-700
+                    flex items-center gap-2">
+            <i class="fas fa-exclamation-triangle"></i>
+            Cet employé doit être requalifié sur plusieurs lignes.
+            Choisissez la ligne à traiter.
+        </div>
+
+        <select name="line_id" id="line_select"
+                class="w-full px-3 py-2 border border-orange-300
+                       rounded-md text-sm focus:outline-none
+                       focus:ring-2 focus:ring-orange-400 bg-orange-50">
+            <option value="">-- Choisir la ligne --</option>
+        </select>
+
+        <!-- Compteur de lignes restantes -->
+        <p class="text-xs text-orange-600 mt-1" id="lines-count-info"></p>
+    </div>
+</div>
+
+<!-- Passer les données JSON au JS -->
+{{ employee_lines_json|json_script:"employee-lines-data" }}
+
+<!-- Employee Info Display -->
+<div id="employee-info" class="hidden mb-4">
+    <div class="bg-gray-50 rounded-md p-3 border border-gray-100">
+        <div class="grid grid-cols-2 gap-4 text-sm">
+            <div>
+                <span class="text-gray-500">Employé :</span>
+                <div class="font-medium text-gray-900"
+                     id="info-employee-name">-</div>
+            </div>
+            <div>
+                <span class="text-gray-500">Ligne sélectionnée :</span>
+                <div class="font-medium text-gray-900"
+                     id="info-line">-</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Task Selection -->
+
+
+<!-- Result Selection -->
+<div class="form-field">
+    <label>
+        <i class="fas fa-check-circle text-gray-400 mr-1"></i>
+        Résultat <span class="required">*</span>
+    </label>
+    <div class="grid grid-cols-2 gap-3 mt-2">
+        <label class="result-option flex items-center gap-3">
+            <input type="radio" name="result" value="PASS" required>
+            <div class="w-8 h-8 rounded-md bg-green-100
+                        flex items-center justify-center">
+                <i class="fas fa-check text-green-600"></i>
+            </div>
+            <div>
+                <div class="font-medium text-sm text-gray-900">
+                    Maintien
+                </div>
+                <div class="text-xs text-gray-500">Réussi</div>
+            </div>
+        </label>
+
+        <label class="result-option flex items-center gap-3">
+            <input type="radio" name="result" value="UPGRADE">
+            <div class="w-8 h-8 rounded-md bg-blue-100
+                        flex items-center justify-center">
+                <i class="fas fa-arrow-up text-blue-600"></i>
+            </div>
+            <div>
+                <div class="font-medium text-sm text-gray-900">
+                    Montée
+                </div>
+                <div class="text-xs text-gray-500">Niveau +</div>
+            </div>
+        </label>
+
+        <label class="result-option flex items-center gap-3">
+            <input type="radio" name="result" value="RETRAIN">
+            <div class="w-8 h-8 rounded-md bg-red-100
+                        flex items-center justify-center">
+                <i class="fas fa-redo text-red-600"></i>
+            </div>
+            <div>
+                <div class="font-medium text-sm text-gray-900">
+                    À reformer
+                </div>
+                <div class="text-xs text-gray-500">Reprendre</div>
+            </div>
+        </label>
+    </div>
+</div>
+
+<!-- Date -->
+<div class="form-field">
+    <label>
+        <i class="fas fa-calendar-alt text-gray-400 mr-1"></i>
+        Date de requalification <span class="required">*</span>
+    </label>
+    <input type="date" name="requalification_date"
+           id="requalification_date"
+           value="{{ today|date:'Y-m-d' }}" required>
+</div>
+
+<!-- Notes -->
+<div class="form-field">
+    <label>
+        <i class="fas fa-comment text-gray-400 mr-1"></i>
+        Notes
+    </label>
+    <textarea name="notes" rows="2"
+              placeholder="Observations sur la requalification...">
+    </textarea>
+</div>
+
+<!-- Requalifier Name -->
+<!-- <div class="form-field">
+    <label>
+        <i class="fas fa-user-check text-gray-400 mr-1"></i>
+        Nom du requalificateur
+    </label>
+    <input type="text" name="requalifier_name" id="requalifier_name"
+           placeholder="Entrez le nom du requalificateur...">
+</div> -->
+
+<!-- Submit -->
+<button type="submit" class="btn btn-success w-full justify-center py-3">
+    <i class="fas fa-check"></i>
+    Enregistrer la requalification
+</button>
+                    </form>
+                </div>
+
+                <!-- Employees to Requalify List -->
+                <div class="card">
+                    <div class="card-header flex items-center justify-between">
+                        <div>
+                            <h2 class="text-lg font-semibold text-gray-900">
+                                <i class="fas fa-exclamation-triangle text-orange-500 mr-2"></i>
+                                En attente de requalification
+                            </h2>
+                        </div>
+                        <span class="badge badge-critical">{{ stats.total }}</span>
+                    </div>
+                    
+                    <div class="max-h-[550px] overflow-y-auto custom-scrollbar">
+                        {% if employees_to_requalify %}
+                        <div>
+                            {% for item in employees_to_requalify %}
+                            <div class="employee-item employee-row"
+                                 data-employee-id="{{ item.employee.id }}"
+                                 data-task-id="{{ item.task.id }}">
+                                <div class="flex items-start justify-between gap-4">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 rounded-full flex items-center justify-center
+                                                    {% if item.urgency == 'critical' %}bg-red-100
+                                                    {% elif item.urgency == 'warning' %}bg-orange-100
+                                                    {% else %}bg-blue-100{% endif %}">
+                                            <i class="fas fa-user {% if item.urgency == 'critical' %}text-red-600{% elif item.urgency == 'warning' %}text-orange-600{% else %}text-blue-600{% endif %}"></i>
+                                        </div>
+                                        <div>
+                                            <div class="font-medium text-gray-900">
+                                                {{ item.employee.first_name }} {{ item.employee.last_name }}
+                                            </div>
+                                            <div class="text-sm text-gray-500">
+                                                {{ item.employee.matricule }} • {{ item.line.code }}
+                                            </div>
+                                            <div class="text-xs text-gray-400 mt-0.5">
+                                                {{ item.task.title }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="text-right flex-shrink-0">
+                                        <span class="badge {% if item.urgency == 'critical' %}badge-critical{% elif item.urgency == 'warning' %}badge-warning{% else %}badge-info{% endif %}">
+                                            <i class="fas fa-clock mr-1"></i>
+                                            {{ item.days_since }}j
+                                        </span>
+                                        <div class="mt-2">
+                                            <span class="level-badge level-{{ item.current_level_display }}">
+                                                {{ item.current_level_display }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="py-12 text-center">
+                            <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-green-100 flex items-center justify-center">
+                                <i class="fas fa-check text-2xl text-green-600"></i>
+                            </div>
+                            <h3 class="text-lg font-semibold text-gray-900 mb-1">Tout est à jour !</h3>
+                            <p class="text-sm text-gray-500">Aucune requalification en attente</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Help Section -->
+            <!-- <div class="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-md">
+                <div class="flex">
+                    <i class="fas fa-info-circle text-blue-600 mt-0.5 mr-3"></i>
+                    <div class="text-sm text-blue-800">
+                        <p class="font-medium mb-1">À propos des requalifications</p>
+                        <p>Les employés apparaissent dans cette liste lorsque leur dernière évaluation dépasse {{ threshold_days }} jours. 
+                        Cliquez sur un employé pour pré-remplir le formulaire de requalification.</p>
+                    </div>
+                </div>
+            </div> -->
+
+        </div>
+    </div>
+
+   <script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    // ── Données depuis Django ─────────────────────────────────────────
+    const employeeLinesData = JSON.parse(
+        document.getElementById('employee-lines-data').textContent
+    );
+
+    // ── Éléments DOM ─────────────────────────────────────────────────
+    const employeeSelect        = document.getElementById('employee_select');
+    const lineSelect            = document.getElementById('line_select');
+    const lineSelectorContainer = document.getElementById('line-selector-container');
+    const singleLineDisplay     = document.getElementById('single-line-display');
+    const multiLineDisplay      = document.getElementById('multi-line-display');
+    const singleLineName        = document.getElementById('single-line-name');
+    const singleLineDays        = document.getElementById('single-line-days');
+    const lineIdHidden          = document.getElementById('line_id_hidden');
+    const employeeInfo          = document.getElementById('employee-info');
+    const infoEmployeeName      = document.getElementById('info-employee-name');
+    const infoLine              = document.getElementById('info-line');
+    const lineCountInfo         = document.getElementById('lines-count-info');
+
+    // ── Résultats visuels ─────────────────────────────────────────────
+    document.querySelectorAll('.result-option').forEach(opt => {
+        opt.addEventListener('click', function () {
+            document.querySelectorAll('.result-option').forEach(
+                o => o.classList.remove('selected')
+            );
+            this.classList.add('selected');
+            this.querySelector('input').checked = true;
+        });
+    });
+
+    // ── Mettre à jour le sélecteur de lignes ─────────────────────────
+    function updateLineSelector(lines, preselectedLineId) {
+        if (!lines || lines.length === 0) {
+            lineSelectorContainer.classList.add('hidden');
+            return;
+        }
+
+        lineSelectorContainer.classList.remove('hidden');
+
+        if (lines.length === 1) {
+            const line = lines[0];
+            singleLineName.textContent = line.code + ' - ' + line.name;
+            singleLineDays.textContent = line.days_since + ' jours';
+            lineIdHidden.value         = line.id;
+
+            singleLineDisplay.classList.remove('hidden');
+            multiLineDisplay.classList.add('hidden');
+
+        } else {
+            singleLineDisplay.classList.add('hidden');
+            multiLineDisplay.classList.remove('hidden');
+
+            lineSelect.innerHTML =
+                '<option value="">-- Choisir la ligne --</option>';
+
+            lines.forEach(line => {
+                const opt        = document.createElement('option');
+                opt.value        = line.id;
+                opt.dataset.days = line.days_since;
+                opt.textContent  = (
+                    line.code + ' - ' + line.name +
+                    ' (' + line.days_since + ' jours)'
+                );
+                lineSelect.appendChild(opt);
+            });
+
+            if (preselectedLineId) {
+                lineSelect.value = preselectedLineId;
+            } else {
+                lineSelect.selectedIndex = 1;
+            }
+
+            const count = lines.length;
+            lineCountInfo.textContent = (
+                count + ' ligne' + (count > 1 ? 's' : '') +
+                ' à requalifier pour cet employé'
+            );
+        }
+    }
+
+    // ── Charger les lignes via AJAX ───────────────────────────────────
+    function loadLines(employeeId, lineId) {
+        if (!employeeId) return;
+
+        const url = `{% url 'get_employee_tasks' %}` +
+                    `?employee_id=${employeeId}` +
+                    (lineId ? `&line_id=${lineId}` : '');
+
+        fetch(url)
+            .then(r => r.json())
+            .then(data => {
+
+                // Mettre à jour le sélecteur de lignes
+                const lines     = data.lines || [];
+                const selLineId = data.selected_line
+                    ? data.selected_line.id : null;
+
+                updateLineSelector(lines, lineId || selLineId);
+
+                // Info employé
+                if (data.employee) {
+                    infoEmployeeName.textContent = data.employee.name;
+                }
+                if (data.selected_line) {
+                    infoLine.textContent = (
+                        data.selected_line.code +
+                        ' - ' + data.selected_line.name +
+                        ' (' + (data.selected_line.days_since || '') + ' j)'
+                    );
+                }
+                employeeInfo.classList.remove('hidden');
+            })
+            .catch(err => {
+                console.error('Erreur:', err);
+            });
+    }
+
+    // ── Changement d'employé ──────────────────────────────────────────
+    employeeSelect.addEventListener('change', function () {
+        const employeeId  = this.value;
+        const selectedOpt = this.options[this.selectedIndex];
+
+        if (!employeeId) {
+            employeeInfo.classList.add('hidden');
+            lineSelectorContainer.classList.add('hidden');
+            return;
+        }
+
+        const empLines    = employeeLinesData[employeeId] || [];
+        const firstLineId = empLines.length > 0
+            ? empLines[0].line_id : null;
+        const lineIdFromOption = selectedOpt.dataset.lineId || firstLineId;
+
+        loadLines(employeeId, lineIdFromOption);
+    });
+
+    // ── Changement de ligne ───────────────────────────────────────────
+    lineSelect.addEventListener('change', function () {
+        const employeeId = employeeSelect.value;
+        const lineId     = this.value;
+
+        if (!lineId || !employeeId) return;
+
+        loadLines(employeeId, lineId);
+    });
+
+    // ── Clic sur une ligne de la liste ────────────────────────────────
+    document.querySelectorAll('.employee-row').forEach(row => {
+        row.addEventListener('click', function () {
+            const employeeId = this.dataset.employeeId;
+            const lineId     = this.dataset.lineId;
+
+            employeeSelect.value = employeeId;
+            loadLines(employeeId, lineId);
+
+            setTimeout(() => {
+                if (lineId && !multiLineDisplay.classList.contains('hidden')) {
+                    lineSelect.value = lineId;
+                }
+                document.getElementById('requalification-form')
+                    .scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 600);
+        });
+    });
+
+    // ── Validation avant soumission ───────────────────────────────────
+    document.getElementById('requalification-form')
+        .addEventListener('submit', function (e) {
+
+        const employeeId = employeeSelect.value;
+        const result     = document.querySelector(
+            'input[name="result"]:checked'
+        );
+        const lineIdVal  = lineIdHidden.value || lineSelect.value;
+
+        if (!employeeId) {
+            e.preventDefault();
+            alert('❌ Veuillez sélectionner un employé.');
+            return;
+        }
+        if (!result) {
+            e.preventDefault();
+            alert('❌ Veuillez sélectionner un résultat.');
+            return;
+        }
+        if (!lineIdVal) {
+            e.preventDefault();
+            alert('❌ Veuillez sélectionner une ligne de production.');
+            return;
+        }
+    });
+
+});
+</script>
+
+</body>
+</html>

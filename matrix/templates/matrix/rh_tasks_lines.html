@@ -1,0 +1,1554 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Tâches et Lignes | HR Management</title>
+   
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Fonts professionnelles -->
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-color: #0F172A;
+            --secondary-color: #1E40AF;
+            --accent-color: #3B82F6;
+            --success-color: #059669;
+            --warning-color: #D97706;
+            --danger-color: #DC2626;
+            --gray-50: #F8FAFC;
+            --gray-100: #F1F5F9;
+            --gray-200: #E2E8F0;
+            --gray-300: #CBD5E1;
+            --gray-400: #94A3B8;
+            --gray-500: #64748B;
+            --gray-600: #475569;
+            --gray-700: #334155;
+            --gray-800: #1E293B;
+            --gray-900: #0F172A;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background-attachment: fixed;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .main-container {
+            background: var(--gray-50);
+            min-height: 100vh;
+        }
+
+        /* SIDEBAR */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: 280px;
+            background: linear-gradient(180deg, #0F172A 0%, #1E293B 100%);
+            color: white;
+            padding: 0;
+            z-index: 1000;
+            box-shadow: 4px 0 24px rgba(0, 0, 0, 0.12);
+            overflow-y: auto;
+        }
+
+        .sidebar-header {
+            padding: 28px 24px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+               .sidebar-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 0;
+}
+
+.company-logo {
+    max-width: 140px;
+    height: auto;
+    display: block;
+}
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 24px;
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            transition: all 0.2s ease;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .menu-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+        }
+
+        .menu-item.active {
+            background: rgba(59, 130, 246, 0.15);
+            color: white;
+            border-left: 3px solid #3B82F6;
+        }
+
+        .menu-item i {
+            width: 20px;
+            text-align: center;
+        }
+
+        /* MAIN CONTENT */
+        .main-content {
+            margin-left: 280px;
+            min-height: 100vh;
+        }
+
+        /* HEADER */
+        .top-header {
+            background: white;
+            border-bottom: 1px solid var(--gray-200);
+            padding: 20px 40px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+        }
+
+        .page-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--gray-900);
+            letter-spacing: -0.02em;
+            margin-bottom: 4px;
+        }
+
+        .breadcrumb {
+            display: flex;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--gray-500);
+            align-items: center;
+        }
+
+        /* CARDS */
+        .card {
+            background: white;
+            border-radius: 12px;
+            border: 1px solid var(--gray-200);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--gray-200);
+            background: var(--gray-50);
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--gray-900);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-title i {
+            color: var(--accent-color);
+            font-size: 20px;
+        }
+
+        .card-body {
+            padding: 24px;
+        }
+
+        /* FORMS */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--gray-700);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .form-input,
+        .form-select,
+        .form-textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid var(--gray-300);
+            border-radius: 8px;
+            font-size: 14px;
+            color: var(--gray-800);
+            background: white;
+            transition: all 0.2s ease;
+        }
+
+        .form-input:focus,
+        .form-select:focus,
+        .form-textarea:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .form-input:disabled {
+            background: var(--gray-100);
+            cursor: not-allowed;
+        }
+
+        /* BUTTONS */
+        .btn {
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            justify-content: center;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #1E40AF 0%, #3B82F6 100%);
+            color: white;
+            box-shadow: 0 2px 8px rgba(30, 64, 175, 0.2);
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 4px 16px rgba(30, 64, 175, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #059669 0%, #10B981 100%);
+            color: white;
+            box-shadow: 0 2px 8px rgba(5, 150, 105, 0.2);
+        }
+
+        .btn-success:hover {
+            box-shadow: 0 4px 16px rgba(5, 150, 105, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #D97706 0%, #F59E0B 100%);
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background: linear-gradient(135deg, #B45309 0%, #D97706 100%);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #DC2626 0%, #EF4444 100%);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: linear-gradient(135deg, #B91C1C 0%, #DC2626 100%);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: var(--gray-700);
+            border: 1px solid var(--gray-300);
+        }
+
+        .btn-secondary:hover {
+            background: var(--gray-50);
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        /* TABLES */
+        .data-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        .data-table thead th {
+            background: var(--gray-50);
+            color: var(--gray-700);
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 14px 16px;
+            text-align: left;
+            border-bottom: 2px solid var(--gray-200);
+            white-space: nowrap;
+        }
+
+        .data-table tbody td {
+            padding: 16px;
+            border-bottom: 1px solid var(--gray-100);
+            font-size: 14px;
+            color: var(--gray-800);
+        }
+
+        .data-table tbody tr {
+            transition: all 0.2s ease;
+        }
+
+        .data-table tbody tr:hover {
+            background: var(--gray-50);
+        }
+
+        /* BADGES */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            margin: 2px;
+        }
+
+        .badge-primary {
+            background: rgba(59, 130, 246, 0.1);
+            color: var(--secondary-color);
+        }
+
+        .badge-success {
+            background: rgba(5, 150, 105, 0.1);
+            color: var(--success-color);
+        }
+
+        .badge-warning {
+            background: rgba(217, 119, 6, 0.1);
+            color: var(--warning-color);
+        }
+
+        .badge-gray {
+            background: var(--gray-100);
+            color: var(--gray-700);
+        }
+
+        /* SEARCH BOX */
+        .search-box {
+            position: relative;
+            flex: 1;
+            max-width: 400px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 10px 14px 10px 42px;
+            border: 1px solid var(--gray-300);
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray-400);
+        }
+
+        /* ANIMATIONS */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 1024px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            .main-content {
+                margin-left: 0;
+            }
+        }
+
+        /* SCROLLBAR */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--gray-100);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--gray-300);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--gray-400);
+        }
+
+        /* DJANGO FORMS */
+        .form-django p {
+            margin-bottom: 20px;
+        }
+
+        .form-django label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--gray-700);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .form-django input[type="text"],
+        .form-django input[type="email"],
+        .form-django input[type="number"],
+        .form-django input[type="date"],
+        .form-django select,
+        .form-django textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid var(--gray-300);
+            border-radius: 8px;
+            font-size: 14px;
+            color: var(--gray-800);
+            background: white;
+            transition: all 0.2s ease;
+        }
+
+        .form-django input:focus,
+        .form-django select:focus,
+        .form-django textarea:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .form-django select[multiple] {
+            min-height: 120px;
+        }
+
+        .form-django ul.errorlist {
+            list-style: none;
+            padding: 0;
+            margin: 8px 0 0 0;
+        }
+
+        .form-django ul.errorlist li {
+            color: var(--danger-color);
+            font-size: 12px;
+            padding: 4px 8px;
+            background: rgba(220, 38, 38, 0.1);
+            border-radius: 4px;
+            margin-top: 4px;
+        }
+
+        /* STATS CARDS */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid var(--gray-200);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .stat-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .stat-content h3 {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--gray-600);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .stat-content p {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--gray-900);
+            margin-top: 4px;
+        }
+        /* ============================================
+   PROFESSIONAL TOAST NOTIFICATIONS
+   ============================================ */
+
+/* Container des notifications */
+.toast-container {
+    position: fixed;
+    top: 24px;
+    right: 24px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-width: 420px;
+    width: 100%;
+    pointer-events: none;
+}
+
+/* Toast de base */
+.toast {
+    background: white;
+    border-radius: 16px;
+    padding: 0;
+    box-shadow: 
+        0 4px 6px -1px rgba(0, 0, 0, 0.1),
+        0 10px 15px -3px rgba(0, 0, 0, 0.1),
+        0 20px 25px -5px rgba(0, 0, 0, 0.05);
+    display: flex;
+    align-items: stretch;
+    overflow: hidden;
+    pointer-events: auto;
+    transform: translateX(120%);
+    animation: toastSlideIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+    position: relative;
+}
+
+.toast.hiding {
+    animation: toastSlideOut 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+/* Barre latérale colorée */
+.toast-accent {
+    width: 6px;
+    flex-shrink: 0;
+}
+
+.toast-success .toast-accent {
+    background: linear-gradient(180deg, #10B981 0%, #059669 100%);
+}
+
+.toast-error .toast-accent {
+    background: linear-gradient(180deg, #EF4444 0%, #DC2626 100%);
+}
+
+.toast-warning .toast-accent {
+    background: linear-gradient(180deg, #F59E0B 0%, #D97706 100%);
+}
+
+.toast-info .toast-accent {
+    background: linear-gradient(180deg, #3B82F6 0%, #1D4ED8 100%);
+}
+
+/* Corps du toast */
+.toast-body {
+    flex: 1;
+    padding: 16px 20px;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+}
+
+/* Icône */
+.toast-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 20px;
+}
+
+.toast-success .toast-icon {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.15) 100%);
+    color: #059669;
+}
+
+.toast-error .toast-icon {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(220, 38, 38, 0.15) 100%);
+    color: #DC2626;
+}
+
+.toast-warning .toast-icon {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(217, 119, 6, 0.15) 100%);
+    color: #D97706;
+}
+
+.toast-info .toast-icon {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(29, 78, 216, 0.15) 100%);
+    color: #1D4ED8;
+}
+
+/* Contenu texte */
+.toast-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.toast-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #0F172A;
+    margin-bottom: 4px;
+    line-height: 1.3;
+}
+
+.toast-message {
+    font-size: 13px;
+    color: #64748B;
+    line-height: 1.5;
+    word-break: break-word;
+}
+
+/* Bouton fermer */
+.toast-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
+    color: #94A3B8;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    font-size: 14px;
+}
+
+.toast-close:hover {
+    background: #F1F5F9;
+    color: #475569;
+}
+
+/* Barre de progression */
+.toast-progress {
+    position: absolute;
+    bottom: 0;
+    left: 6px;
+    right: 0;
+    height: 3px;
+    background: rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+}
+
+.toast-progress-bar {
+    height: 100%;
+    width: 100%;
+    transform-origin: left;
+    animation: progressShrink 5s linear forwards;
+}
+
+.toast-success .toast-progress-bar {
+    background: linear-gradient(90deg, #10B981 0%, #059669 100%);
+}
+
+.toast-error .toast-progress-bar {
+    background: linear-gradient(90deg, #EF4444 0%, #DC2626 100%);
+}
+
+.toast-warning .toast-progress-bar {
+    background: linear-gradient(90deg, #F59E0B 0%, #D97706 100%);
+}
+
+.toast-info .toast-progress-bar {
+    background: linear-gradient(90deg, #3B82F6 0%, #1D4ED8 100%);
+}
+
+/* Animations */
+@keyframes toastSlideIn {
+    0% {
+        transform: translateX(120%);
+        opacity: 0;
+    }
+    100% {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes toastSlideOut {
+    0% {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    100% {
+        transform: translateX(120%);
+        opacity: 0;
+    }
+}
+
+@keyframes progressShrink {
+    0% {
+        transform: scaleX(1);
+    }
+    100% {
+        transform: scaleX(0);
+    }
+}
+
+/* Effet hover - pause l'animation */
+.toast:hover .toast-progress-bar {
+    animation-play-state: paused;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+    .toast-container {
+        top: 16px;
+        right: 16px;
+        left: 16px;
+        max-width: none;
+    }
+    
+    .toast-body {
+        padding: 14px 16px;
+    }
+    
+    .toast-icon {
+        width: 38px;
+        height: 38px;
+        font-size: 18px;
+    }
+}
+
+/* ============================================
+   ALTERNATIVE: BANNER STYLE (en haut de page)
+   ============================================ */
+
+.banner-container {
+    padding: 20px 40px 0;
+}
+
+.banner {
+    background: white;
+    border-radius: 12px;
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 
+        0 1px 3px rgba(0, 0, 0, 0.05),
+        0 4px 12px rgba(0, 0, 0, 0.05);
+    border-left: 4px solid;
+    position: relative;
+    overflow: hidden;
+    animation: bannerSlideDown 0.4s ease-out forwards;
+}
+
+.banner.hiding {
+    animation: bannerSlideUp 0.3s ease-out forwards;
+}
+
+.banner-success {
+    border-left-color: #10B981;
+    background: linear-gradient(90deg, rgba(16, 185, 129, 0.05) 0%, white 100%);
+}
+
+.banner-error {
+    border-left-color: #EF4444;
+    background: linear-gradient(90deg, rgba(239, 68, 68, 0.05) 0%, white 100%);
+}
+
+.banner-warning {
+    border-left-color: #F59E0B;
+    background: linear-gradient(90deg, rgba(245, 158, 11, 0.05) 0%, white 100%);
+}
+
+.banner-info {
+    border-left-color: #3B82F6;
+    background: linear-gradient(90deg, rgba(59, 130, 246, 0.05) 0%, white 100%);
+}
+
+.banner-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.banner-success .banner-icon {
+    background: rgba(16, 185, 129, 0.1);
+    color: #059669;
+}
+
+.banner-error .banner-icon {
+    background: rgba(239, 68, 68, 0.1);
+    color: #DC2626;
+}
+
+.banner-warning .banner-icon {
+    background: rgba(245, 158, 11, 0.1);
+    color: #D97706;
+}
+
+.banner-info .banner-icon {
+    background: rgba(59, 130, 246, 0.1);
+    color: #1D4ED8;
+}
+
+.banner-content {
+    flex: 1;
+}
+
+.banner-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #0F172A;
+    margin-bottom: 2px;
+}
+
+.banner-message {
+    font-size: 13px;
+    color: #64748B;
+}
+
+.banner-close {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
+    color: #94A3B8;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.banner-close:hover {
+    background: #F1F5F9;
+    color: #475569;
+}
+
+.banner-progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: rgba(0, 0, 0, 0.03);
+}
+
+.banner-progress-bar {
+    height: 100%;
+    animation: progressShrink 5s linear forwards;
+}
+
+.banner-success .banner-progress-bar {
+    background: #10B981;
+}
+
+.banner-error .banner-progress-bar {
+    background: #EF4444;
+}
+
+.banner-warning .banner-progress-bar {
+    background: #F59E0B;
+}
+
+.banner-info .banner-progress-bar {
+    background: #3B82F6;
+}
+
+.sidebar-footer-compact {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.logout-item {
+  color: #FCA5A5 !important;
+  background: rgba(220, 38, 38, 0.1);
+}
+
+.logout-item:hover {
+  background: rgba(220, 38, 38, 0.2) !important;
+  color: #FEE2E2 !important;
+}
+@keyframes bannerSlideDown {
+    0% {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes bannerSlideUp {
+    0% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+}
+
+.banner:hover .banner-progress-bar {
+    animation-play-state: paused;
+}
+    </style>
+</head>
+<body>
+
+<div class="main-container">
+    
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+    <img src="{% static 'images/logo.png' %}" alt="Logo de l'entreprise" class="company-logo">
+</div>
+        </div>
+
+        <nav style="padding: 16px 0;">
+            <div style="margin-bottom: 24px;">
+                <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255, 255, 255, 0.5); padding: 0 24px 12px;">Principal</div>
+                <a href="{% url 'rh_dashboard' %}" class="menu-item">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Tableau de bord</span>
+                </a>
+                <a href="{% url 'employee_list_rh' %}" class="menu-item">
+                    <i class="fas fa-users"></i>
+                    <span>Employés</span>
+                </a>
+                <a href="#" class="menu-item active">
+                    <i class="fas fa-tasks"></i>
+                    <span>Tâches & Lignes</span>
+                </a>
+                <!-- <a href="#" class="menu-item">
+                    <i class="fas fa-graduation-cap"></i>
+                    <span>Formations</span>
+                </a> -->
+            </div>
+
+            <div style="margin-bottom: 24px;">
+                <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255, 255, 255, 0.5); padding: 0 24px 12px;">Gestion</div>
+                <a href="{% url 'rh_training_approvals' %}" class="menu-item">
+                    <i class="fas fa-clock"></i>
+                    <span>Demandes Formations</span>
+                </a>
+                <a href="{% url 'rh_requalification_approvals' %}" class="menu-item">
+                    <i class="fas fa-clipboard-check"></i>
+                    <span>Demandes Requalifications</span>
+                </a>
+                <a href="{% url 'rh_employees_to_requalify' %}" class="menu-item">
+                    <i class="fas fa-history"></i>
+                    <span>Historique requalifications</span>
+                </a>
+                <a href="{% url 'transfer_employee' %}" class="menu-item">
+                    <i class="fas fa-exchange-alt"></i>
+                    <span>Transferts</span>
+                </a>
+                <a href="{% url 'rh_transfer_approvals' %}" class="menu-item">
+                    <i class="fas fa-user-check"></i>
+                    <span>Valider Transferts</span>
+                    {% if pending.count > 0 %}
+                    <span style="background: var(--warning-color); color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px; margin-left: auto;">{{ pending.count }}</span>
+                    {% endif %}
+                </a>
+            </div>
+                  <!-- Version compacte -->
+<div class="sidebar-footer-compact">
+  <a href="{% url 'login' %}" class="menu-item logout-item">
+    <i class="fas fa-sign-out-alt"></i>
+    <span>Déconnexion</span>
+    <span style="margin-left: auto; font-size: 11px; opacity: 0.7;">
+      {{ request.user.username }}
+    </span>
+  </a>
+</div>
+        </nav>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-content">
+        <!-- TOAST NOTIFICATIONS CONTAINER -->
+{% if messages %}
+<div class="toast-container" id="toastContainer">
+    {% for message in messages %}
+    <div class="toast toast-{{ message.tags }}" id="toast-{{ forloop.counter }}" 
+         style="animation-delay: {{ forloop.counter0 }}00ms;">
+        <div class="toast-accent"></div>
+        <div class="toast-body">
+            <div class="toast-icon">
+                {% if message.tags == 'success' %}
+                    <i class="fas fa-check"></i>
+                {% elif message.tags == 'error' %}
+                    <i class="fas fa-times"></i>
+                {% elif message.tags == 'warning' %}
+                    <i class="fas fa-exclamation"></i>
+                {% else %}
+                    <i class="fas fa-info"></i>
+                {% endif %}
+            </div>
+            <div class="toast-content">
+                <div class="toast-title">
+                    {% if message.tags == 'success' %}
+                        Opération réussie
+                    {% elif message.tags == 'error' %}
+                        Une erreur est survenue
+                    {% elif message.tags == 'warning' %}
+                        Attention
+                    {% else %}
+                        Information
+                    {% endif %}
+                </div>
+                <div class="toast-message">{{ message }}</div>
+            </div>
+            <button class="toast-close" onclick="closeToast('toast-{{ forloop.counter }}')">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="toast-progress">
+            <div class="toast-progress-bar"></div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+        <!-- HEADER -->
+        <header class="top-header">
+            <div>
+                <h1 class="page-title">Gestion des Tâches et Lignes</h1>
+                <div class="breadcrumb">
+                    <a href="#" style="color: var(--accent-color); text-decoration: none;">
+                        <i class="fas fa-home"></i> Accueil
+                    </a>
+                    <span>/</span>
+                    <span>Tâches & Lignes</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- CONTENT -->
+        <div style="padding: 32px 40px; max-width: 1800px;">
+
+            <!-- STATS -->
+            <div class="stats-grid fade-in">
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: rgba(59, 130, 246, 0.1); color: var(--accent-color);">
+                        <i class="fas fa-tasks"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>Tâches totales</h3>
+                        <p>{{ tasks|length }}</p>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: rgba(5, 150, 105, 0.1); color: var(--success-color);">
+                        <i class="fas fa-industry"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>Lignes actives</h3>
+                        <p>{{ lines|length }}</p>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: rgba(217, 119, 6, 0.1); color: var(--warning-color);">
+                        <i class="fas fa-user-tie"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>Chefs d'équipe</h3>
+                        <p>{{ team_leaders|length }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FORMS ROW -->
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; margin-bottom: 32px;">
+    
+    <!-- TASK FORM -->
+    <div class="card fade-in">
+        <div class="card-header" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(99, 102, 241, 0.05) 100%);">
+            <h2 class="card-title">
+                <i class="fas fa-plus-circle"></i>
+                Ajouter une Tâche
+            </h2>
+        </div>
+        <div class="card-body">
+            <form method="post" class="form-django">
+                {% csrf_token %}
+                
+                <!-- Autres champs -->
+                {% for field in task_form %}
+                    {% if field.name != 'team_leaders' and field.name != 'operators' and field.name != 'assigned_to' %}
+                        <p>{{ field.label_tag }} {{ field }}</p>
+                    {% endif %}
+                {% endfor %}
+                
+                <!-- Team Leaders - Grille 2 colonnes -->
+                {% if task_form.team_leaders %}
+                    <div class="my-5 p-4 bg-blue-50/50 rounded-xl border border-blue-100">
+                        <label class="block text-blue-700 font-semibold mb-3">
+                            <i class="fas fa-user-tie mr-2"></i>Team Leaders
+                        </label>
+                        
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            {% for choice in task_form.team_leaders %}
+                                <label class="flex items-center gap-3 p-3 bg-white rounded-lg border 
+                                              border-gray-200 cursor-pointer hover:border-blue-400 
+                                              hover:bg-blue-50 transition-all duration-200">
+                                    {{ choice.tag }}
+                                    <span class="text-gray-700">{{ choice.choice_label }}</span>
+                                </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+                
+                <!-- Opérateurs - Grille 2 colonnes -->
+                {% if task_form.operators %}
+                    <div class="my-5 p-4 bg-indigo-50/50 rounded-xl border border-indigo-100">
+                        <label class="block text-indigo-700 font-semibold mb-3">
+                            <i class="fas fa-hard-hat mr-2"></i>Opérateurs
+                        </label>
+                        
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            {% for choice in task_form.operators %}
+                                <label class="flex items-center gap-3 p-3 bg-white rounded-lg border 
+                                              border-gray-200 cursor-pointer hover:border-indigo-400 
+                                              hover:bg-indigo-50 transition-all duration-200">
+                                    {{ choice.tag }}
+                                    <span class="text-gray-700">{{ choice.choice_label }}</span>
+                                </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+                
+                <button type="submit" name="task_submit" 
+                        class="w-full py-3 bg-blue-600 text-white font-semibold rounded-lg 
+                               hover:bg-blue-700 transition-colors duration-200">
+                    <i class="fas fa-save mr-2"></i>
+                    Enregistrer la tâche
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- LINE FORM -->
+    <div class="card fade-in">
+        <div class="card-header" style="background: linear-gradient(135deg, rgba(5, 150, 105, 0.05) 0%, rgba(16, 185, 129, 0.05) 100%);">
+            <h2 class="card-title">
+                <i class="fas fa-plus-circle"></i>
+                Ajouter une Ligne
+            </h2>
+        </div>
+        <div class="card-body">
+            <form method="post" class="form-django">
+                {% csrf_token %}
+                
+                <!-- Autres champs -->
+                {% for field in line_form %}
+                    {% if field.name != 'team_leaders' %}
+                        <p>{{ field.label_tag }} {{ field }}</p>
+                    {% endif %}
+                {% endfor %}
+                
+                <!-- Team Leaders - Grille 2 colonnes -->
+                {% if line_form.team_leaders %}
+                    <div class="my-5 p-4 bg-emerald-50/50 rounded-xl border border-emerald-100">
+                        <label class="block text-emerald-700 font-semibold mb-3">
+                            <i class="fas fa-users mr-2"></i>Chefs d'équipe
+                        </label>
+                        
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            {% for choice in line_form.team_leaders %}
+                                <label class="flex items-center gap-3 p-3 bg-white rounded-lg border 
+                                              border-gray-200 cursor-pointer hover:border-emerald-400 
+                                              hover:bg-emerald-50 transition-all duration-200">
+                                    {{ choice.tag }}
+                                    <span class="text-gray-700">{{ choice.choice_label }}</span>
+                                </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+                
+                <button type="submit" name="line_submit" 
+                        class="w-full py-3 bg-emerald-600 text-white font-semibold rounded-lg 
+                               hover:bg-emerald-700 transition-colors duration-200">
+                    <i class="fas fa-save mr-2"></i>
+                    Enregistrer la ligne
+                </button>
+            </form>
+        </div>
+    </div>
+    
+</div>
+
+            <!-- LINES TABLE -->
+            <div class="card fade-in" style="margin-bottom: 32px;">
+                <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                    <h2 class="card-title">
+                        <i class="fas fa-industry"></i>
+                        Lignes de production ({{ lines|length }})
+                    </h2>
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="searchLines" placeholder="Rechercher une ligne..." onkeyup="filterTable('linesTable', 'searchLines')">
+                    </div>
+                </div>
+                <div class="card-body" style="padding: 0;">
+                    <div style="overflow-x: auto;">
+                        <table class="data-table" id="linesTable">
+                            <thead>
+                                <tr>
+                                    <th><i class="fas fa-hashtag" style="margin-right: 8px;"></i>Code</th>
+                                    <th><i class="fas fa-tag" style="margin-right: 8px;"></i>Nom</th>
+                                    <th><i class="fas fa-users" style="margin-right: 8px;"></i>Chefs d'équipe</th>
+                                    <th style="text-align: center;"><i class="fas fa-cog" style="margin-right: 8px;"></i>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for line in lines %}
+                                <tr>
+                                    <td>
+                                        <span class="badge badge-primary">{{ line.code }}</span>
+                                    </td>
+                                    <td>
+                                        <strong>{{ line.name }}</strong>
+                                    </td>
+                                    <td>
+                                        {% if line.team_leaders.all %}
+                                            {% for leader in line.team_leaders.all %}
+                                                <span class="badge badge-success">
+                                                    <i class="fas fa-user-tie" style="margin-right: 4px;"></i>
+                                                    {{ leader.username }}
+                                                </span>
+                                            {% endfor %}
+                                        {% else %}
+                                            <span style="color: var(--gray-400);">
+                                                <i class="fas fa-minus"></i> Aucun chef
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div style="display: flex; gap: 8px; justify-content: center;">
+                                            {% if line.id %}
+                                                <a href="{% url 'line_detail' line.id %}" class="btn btn-secondary btn-sm">
+                                                    <i class="fas fa-eye"></i>
+                                                    Détails
+                                                </a>
+                                                <a href="{% url 'line_update' line.id %}" class="btn btn-warning btn-sm">
+                                                    <i class="fas fa-edit"></i>
+                                                    Modifier
+                                                </a>
+                                                <form method="post" action="{% url 'line_delete' line.id %}" style="display: inline;" onsubmit="return confirm('Voulez-vous vraiment supprimer cette ligne ?');">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="btn btn-danger btn-sm">
+                                                        <i class="fas fa-trash"></i>
+                                                        Supprimer
+                                                    </button>
+                                                </form>
+                                            {% else %}
+                                                <span style="color: var(--gray-400); font-size: 12px;">Non disponible</span>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" style="text-align: center; padding: 40px; color: var(--gray-400);">
+                                        <i class="fas fa-inbox" style="font-size: 36px; margin-bottom: 8px; display: block;"></i>
+                                        Aucune ligne de production trouvée
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TASKS TABLE -->
+            <div class="card fade-in">
+                <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                    <h2 class="card-title">
+                        <i class="fas fa-tasks"></i>
+                        Tâches disponibles ({{ tasks|length }})
+                    </h2>
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="searchTasks" placeholder="Rechercher une tâche..." onkeyup="filterTable('tasksTable', 'searchTasks')">
+                    </div>
+                </div>
+                <div class="card-body" style="padding: 0;">
+                    <div style="overflow-x: auto;">
+                        <table class="data-table" id="tasksTable">
+                            <thead>
+                                <tr>
+                                    <th><i class="fas fa-hashtag" style="margin-right: 8px;"></i>Code</th>
+                                    <th><i class="fas fa-tag" style="margin-right: 8px;"></i>Titre</th>
+                                    <th><i class="fas fa-link" style="margin-right: 8px;"></i>Lignes associées</th>
+                                    <th style="text-align: center;"><i class="fas fa-cog" style="margin-right: 8px;"></i>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for task in tasks %}
+                                <tr>
+                                    <td>
+                                        <span class="badge badge-primary">{{ task.code }}</span>
+                                    </td>
+                                    <td>
+                                        <strong>{{ task.title }}</strong>
+                                    </td>
+                                    <td>
+                                        {% if task.lines.all %}
+                                            {% for line in task.lines.all %}
+                                                <span class="badge badge-gray">
+                                                    <i class="fas fa-industry" style="margin-right: 4px;"></i>
+                                                    {{ line.name }}
+                                                </span>
+                                            {% endfor %}
+                                        {% else %}
+                                            <span style="color: var(--gray-400);">
+                                                <i class="fas fa-minus"></i> Aucune ligne
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div style="display: flex; gap: 8px; justify-content: center;">
+                                            {% if task.id %}
+                                                <a href="{% url 'task_update' task.id %}" class="btn btn-warning btn-sm">
+                                                    <i class="fas fa-edit"></i>
+                                                    Modifier
+                                                </a>
+                                                <form method="post" action="{% url 'task_delete' task.id %}" style="display: inline;" onsubmit="return confirm('Voulez-vous vraiment supprimer cette tâche ?');">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="btn btn-danger btn-sm">
+                                                        <i class="fas fa-trash"></i>
+                                                        Supprimer
+                                                    </button>
+                                                </form>
+                                            {% else %}
+                                                <span style="color: var(--gray-400); font-size: 12px;">Non disponible</span>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" style="text-align: center; padding: 40px; color: var(--gray-400);">
+                                        <i class="fas fa-inbox" style="font-size: 36px; margin-bottom: 8px; display: block;"></i>
+                                        Aucune tâche trouvée
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- FOOTER -->
+        
+
+    </div>
+</div>
+
+<script>
+    // ============================================
+// TOAST NOTIFICATIONS
+// ============================================
+
+function closeToast(toastId) {
+    const toast = document.getElementById(toastId);
+    if (toast) {
+        toast.classList.add('hiding');
+        setTimeout(() => {
+            toast.remove();
+            // Supprimer le container s'il est vide
+            const container = document.getElementById('toastContainer');
+            if (container && container.children.length === 0) {
+                container.remove();
+            }
+        }, 400);
+    }
+}
+
+function closeBanner(bannerId) {
+    const banner = document.getElementById(bannerId);
+    if (banner) {
+        banner.classList.add('hiding');
+        setTimeout(() => {
+            banner.remove();
+            // Supprimer le container s'il est vide
+            const container = document.getElementById('bannerContainer');
+            if (container && container.children.length === 0) {
+                container.remove();
+            }
+        }, 300);
+    }
+}
+
+// Auto-close après 5 secondes
+document.addEventListener('DOMContentLoaded', function() {
+    // Pour les toasts
+    const toasts = document.querySelectorAll('.toast');
+    toasts.forEach((toast, index) => {
+        const delay = 5000 + (index * 200);
+        setTimeout(() => {
+            if (toast && toast.parentElement) {
+                closeToast(toast.id);
+            }
+        }, delay);
+    });
+
+    // Pour les banners
+    const banners = document.querySelectorAll('.banner');
+    banners.forEach((banner, index) => {
+        const delay = 5000 + (index * 200);
+        setTimeout(() => {
+            if (banner && banner.parentElement) {
+                closeBanner(banner.id);
+            }
+        }, delay);
+    });
+});
+
+// Pause l'auto-close au hover
+document.querySelectorAll('.toast, .banner').forEach(el => {
+    let timeout;
+    
+    el.addEventListener('mouseenter', () => {
+        // Récupérer l'animation et la mettre en pause
+        const progressBar = el.querySelector('.toast-progress-bar, .banner-progress-bar');
+        if (progressBar) {
+            progressBar.style.animationPlayState = 'paused';
+        }
+    });
+    
+    el.addEventListener('mouseleave', () => {
+        const progressBar = el.querySelector('.toast-progress-bar, .banner-progress-bar');
+        if (progressBar) {
+            progressBar.style.animationPlayState = 'running';
+        }
+    });
+});
+    // Fonction de filtrage des tableaux
+    function filterTable(tableId, inputId) {
+        const input = document.getElementById(inputId);
+        const filter = input.value.toLowerCase();
+        const table = document.getElementById(tableId);
+        const rows = table.getElementsByTagName('tr');
+        
+        for (let i = 1; i < rows.length; i++) {
+            const row = rows[i];
+            const text = row.textContent.toLowerCase();
+            
+            if (text.includes(filter)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        }
+    }
+
+    // Animation au scroll
+    const observerOptions = {
+        threshold: 0.05,
+        rootMargin: '0px 0px -50px 0px'
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry, index) => {
+            if (entry.isIntersecting) {
+                setTimeout(() => {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }, index * 50);
+                observer.unobserve(entry.target);
+            }
+        });
+    }, observerOptions);
+
+    document.querySelectorAll('.fade-in').forEach(el => {
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(15px)';
+        el.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+        observer.observe(el);
+    });
+</script>
+
+</body>
+</html>

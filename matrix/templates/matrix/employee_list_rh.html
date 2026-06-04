@@ -1,0 +1,1708 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Liste des Employés | HR Management</title>
+    <link rel="icon" type="image/png" href="{% static 'images/logo.png' %}">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Fonts professionnelles -->
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-color: #0F172A;
+            --secondary-color: #1E40AF;
+            --accent-color: #3B82F6;
+            --success-color: #059669;
+            --warning-color: #D97706;
+            --danger-color: #DC2626;
+            --gray-50: #F8FAFC;
+            --gray-100: #F1F5F9;
+            --gray-200: #E2E8F0;
+            --gray-300: #CBD5E1;
+            --gray-400: #94A3B8;
+            --gray-500: #64748B;
+            --gray-600: #475569;
+            --gray-700: #334155;
+            --gray-800: #1E293B;
+            --gray-900: #0F172A;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background-attachment: fixed;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .main-container {
+            background: var(--gray-50);
+            min-height: 100vh;
+        }
+
+        /* SIDEBAR */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: 280px;
+            background: linear-gradient(180deg, #0F172A 0%, #1E293B 100%);
+            color: white;
+            padding: 0;
+            z-index: 1000;
+            box-shadow: 4px 0 24px rgba(0, 0, 0, 0.12);
+            overflow-y: auto;
+        }
+
+        .sidebar-header {
+            padding: 28px 24px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+                .sidebar-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 0;
+}
+
+.company-logo {
+    max-width: 140px;
+    height: auto;
+    display: block;
+}
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 24px;
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            transition: all 0.2s ease;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .menu-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+        }
+
+        .menu-item.active {
+            background: rgba(59, 130, 246, 0.15);
+            color: white;
+            border-left: 3px solid #3B82F6;
+        }
+
+        .menu-item i {
+            width: 20px;
+            text-align: center;
+        }
+
+        /* MAIN CONTENT */
+        .main-content {
+            margin-left: 280px;
+            min-height: 100vh;
+        }
+
+        /* HEADER */
+        .top-header {
+            background: white;
+            border-bottom: 1px solid var(--gray-200);
+            padding: 20px 40px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+        }
+
+        .page-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--gray-900);
+            letter-spacing: -0.02em;
+            margin-bottom: 4px;
+        }
+
+        .breadcrumb {
+            display: flex;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--gray-500);
+            align-items: center;
+        }
+
+        /* CARDS */
+        .card {
+            background: white;
+            border-radius: 12px;
+            border: 1px solid var(--gray-200);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--gray-200);
+            background: var(--gray-50);
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--gray-900);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-title i {
+            color: var(--accent-color);
+            font-size: 20px;
+        }
+
+        .card-body {
+            padding: 24px;
+        }
+
+        /* BUTTONS */
+        .btn {
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            justify-content: center;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #1E40AF 0%, #3B82F6 100%);
+            color: white;
+            box-shadow: 0 2px 8px rgba(30, 64, 175, 0.2);
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 4px 16px rgba(30, 64, 175, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #059669 0%, #10B981 100%);
+            color: white;
+            box-shadow: 0 2px 8px rgba(5, 150, 105, 0.2);
+        }
+
+        .btn-success:hover {
+            box-shadow: 0 4px 16px rgba(5, 150, 105, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #d1310d 0%, #d1310d 100%);
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background: linear-gradient(135deg, #ca3232 0%, #ca3232 100%);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: var(--gray-700);
+            border: 1px solid var(--gray-300);
+        }
+
+        .btn-secondary:hover {
+            background: var(--gray-50);
+        }
+
+        /* TABLES */
+        .data-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        .data-table thead th {
+            background: var(--gray-50);
+            color: var(--gray-700);
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 14px 16px;
+            text-align: left;
+            border-bottom: 2px solid var(--gray-200);
+            white-space: nowrap;
+        }
+
+        .data-table tbody td {
+            padding: 16px;
+            border-bottom: 1px solid var(--gray-100);
+            font-size: 14px;
+            color: var(--gray-800);
+        }
+
+        .data-table tbody tr {
+            transition: all 0.2s ease;
+        }
+
+        .data-table tbody tr:hover {
+            background: var(--gray-50);
+            transform: scale(1.001);
+        }
+
+        /* BADGES */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+        }
+
+        .badge-primary {
+            background: rgba(59, 130, 246, 0.1);
+            color: var(--secondary-color);
+        }
+
+        .badge-success {
+            background: rgba(5, 150, 105, 0.1);
+            color: var(--success-color);
+        }
+
+        /* SEARCH BOX */
+        .search-box {
+            position: relative;
+            flex: 1;
+            max-width: 600px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 12px 16px 12px 48px;
+            border: 1px solid var(--gray-300);
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray-400);
+            font-size: 16px;
+        }
+
+        /* STATS CARDS */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            border: 1px solid var(--gray-200);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+        }
+
+        .stat-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .stat-content h3 {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--gray-600);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .stat-content p {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--gray-900);
+            margin-top: 4px;
+        }
+
+        /* QUICK ACTIONS */
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .quick-action-btn {
+            padding: 16px;
+            border-radius: 10px;
+            border: 2px solid transparent;
+            transition: all 0.2s ease;
+            text-align: center;
+            cursor: pointer;
+            text-decoration: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .quick-action-btn:hover {
+            border-color: currentColor;
+            transform: translateY(-2px);
+        }
+
+        .quick-action-btn i {
+            font-size: 24px;
+            margin-bottom: 4px;
+        }
+
+        /* ANIMATIONS */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 1024px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            .main-content {
+                margin-left: 0;
+            }
+        }
+
+        /* SCROLLBAR */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--gray-100);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--gray-300);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--gray-400);
+        }
+
+        /* AVATAR */
+        .avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 13px;
+            color: white;
+            background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+        }
+        /* ============================================
+   PROFESSIONAL TOAST NOTIFICATIONS SYSTEM
+   ============================================ */
+
+/* Container principal */
+.toast-container {
+    position: fixed;
+    top: 24px;
+    right: 24px;
+    z-index: 99999;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-width: 420px;
+    width: calc(100% - 48px);
+    pointer-events: none;
+}
+
+/* Toast de base */
+.toast {
+    background: white;
+    border-radius: 16px;
+    padding: 0;
+    box-shadow: 
+        0 4px 6px -1px rgba(0, 0, 0, 0.1),
+        0 10px 15px -3px rgba(0, 0, 0, 0.1),
+        0 20px 25px -5px rgba(0, 0, 0, 0.05),
+        0 0 0 1px rgba(0, 0, 0, 0.05);
+    display: flex;
+    align-items: stretch;
+    overflow: hidden;
+    pointer-events: auto;
+    transform: translateX(120%);
+    opacity: 0;
+    animation: toastSlideIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+    position: relative;
+    backdrop-filter: blur(10px);
+}
+
+.toast.hiding {
+    animation: toastSlideOut 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+/* Barre latérale colorée */
+.toast-accent {
+    width: 6px;
+    flex-shrink: 0;
+}
+
+.toast-success .toast-accent {
+    background: linear-gradient(180deg, #10B981 0%, #059669 100%);
+}
+
+.toast-error .toast-accent {
+    background: linear-gradient(180deg, #EF4444 0%, #DC2626 100%);
+}
+
+.toast-warning .toast-accent {
+    background: linear-gradient(180deg, #F59E0B 0%, #D97706 100%);
+}
+
+.toast-info .toast-accent {
+    background: linear-gradient(180deg, #3B82F6 0%, #1D4ED8 100%);
+}
+
+/* Corps du toast */
+.toast-body {
+    flex: 1;
+    padding: 16px 48px 16px 20px;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+}
+
+/* Icône */
+.toast-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 20px;
+}
+
+.toast-success .toast-icon {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.15) 100%);
+    color: #059669;
+}
+
+.toast-error .toast-icon {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(220, 38, 38, 0.15) 100%);
+    color: #DC2626;
+}
+
+.toast-warning .toast-icon {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(217, 119, 6, 0.15) 100%);
+    color: #D97706;
+}
+
+.toast-info .toast-icon {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(29, 78, 216, 0.15) 100%);
+    color: #1D4ED8;
+}
+
+/* Contenu texte */
+.toast-content {
+    flex: 1;
+    min-width: 0;
+    padding-top: 2px;
+}
+
+.toast-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #0F172A;
+    margin-bottom: 4px;
+    line-height: 1.3;
+}
+
+.toast-message {
+    font-size: 13px;
+    color: #64748B;
+    line-height: 1.5;
+    word-break: break-word;
+}
+
+/* Bouton fermer */
+.toast-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
+    color: #94A3B8;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    font-size: 14px;
+}
+
+.toast-close:hover {
+    background: #F1F5F9;
+    color: #475569;
+    transform: scale(1.1);
+}
+
+/* Barre de progression */
+.toast-progress {
+    position: absolute;
+    bottom: 0;
+    left: 6px;
+    right: 0;
+    height: 3px;
+    background: rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+    border-radius: 0 0 16px 0;
+}
+
+.toast-progress-bar {
+    height: 100%;
+    width: 100%;
+    transform-origin: left;
+    animation: progressShrink 5s linear forwards;
+}
+
+.toast-success .toast-progress-bar {
+    background: linear-gradient(90deg, #10B981 0%, #059669 100%);
+}
+
+.toast-error .toast-progress-bar {
+    background: linear-gradient(90deg, #EF4444 0%, #DC2626 100%);
+}
+
+.toast-warning .toast-progress-bar {
+    background: linear-gradient(90deg, #F59E0B 0%, #D97706 100%);
+}
+
+.toast-info .toast-progress-bar {
+    background: linear-gradient(90deg, #3B82F6 0%, #1D4ED8 100%);
+}
+.sidebar-footer-compact {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.logout-item {
+  color: #FCA5A5 !important;
+  background: rgba(220, 38, 38, 0.1);
+}
+
+.logout-item:hover {
+  background: rgba(220, 38, 38, 0.2) !important;
+  color: #FEE2E2 !important;
+}
+
+/* Animations */
+@keyframes toastSlideIn {
+    0% {
+        transform: translateX(120%);
+        opacity: 0;
+    }
+    100% {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes toastSlideOut {
+    0% {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    100% {
+        transform: translateX(120%);
+        opacity: 0;
+    }
+}
+
+@keyframes progressShrink {
+    0% {
+        transform: scaleX(1);
+    }
+    100% {
+        transform: scaleX(0);
+    }
+}
+
+/* Pause l'animation au hover */
+.toast:hover .toast-progress-bar {
+    animation-play-state: paused;
+}
+
+/* Effet de hover sur le toast */
+.toast:hover {
+    box-shadow: 
+        0 8px 12px -2px rgba(0, 0, 0, 0.12),
+        0 16px 24px -4px rgba(0, 0, 0, 0.12),
+        0 24px 32px -8px rgba(0, 0, 0, 0.08),
+        0 0 0 1px rgba(0, 0, 0, 0.05);
+}
+
+/* Animation d'entrée décalée pour plusieurs toasts */
+.toast:nth-child(1) { animation-delay: 0ms; }
+.toast:nth-child(2) { animation-delay: 100ms; }
+.toast:nth-child(3) { animation-delay: 200ms; }
+.toast:nth-child(4) { animation-delay: 300ms; }
+.toast:nth-child(5) { animation-delay: 400ms; }
+
+/* Responsive */
+@media (max-width: 480px) {
+    .toast-container {
+        top: 16px;
+        right: 16px;
+        left: 16px;
+        max-width: none;
+        width: auto;
+    }
+    
+    .toast {
+        border-radius: 12px;
+    }
+    
+    .toast-body {
+        padding: 14px 44px 14px 16px;
+        gap: 12px;
+    }
+    
+    .toast-icon {
+        width: 38px;
+        height: 38px;
+        font-size: 18px;
+        border-radius: 10px;
+    }
+    
+    .toast-title {
+        font-size: 14px;
+    }
+    
+    .toast-message {
+        font-size: 12px;
+    }
+    
+    .toast-close {
+        top: 10px;
+        right: 10px;
+        width: 26px;
+        height: 26px;
+    }
+}
+
+/* Dark Mode Support (optionnel) */
+@media (prefers-color-scheme: dark) {
+    .toast {
+        background: #1E293B;
+        box-shadow: 
+            0 4px 6px -1px rgba(0, 0, 0, 0.3),
+            0 10px 15px -3px rgba(0, 0, 0, 0.3),
+            0 0 0 1px rgba(255, 255, 255, 0.1);
+    }
+    
+    .toast-title {
+        color: #F1F5F9;
+    }
+    
+    .toast-message {
+        color: #94A3B8;
+    }
+    
+    .toast-close {
+        color: #64748B;
+    }
+    
+    .toast-close:hover {
+        background: #334155;
+        color: #E2E8F0;
+    }
+    
+    .toast-progress {
+        background: rgba(255, 255, 255, 0.1);
+    }
+}
+
+.top-header {
+    background: white;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.header-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.25rem 2rem;
+    max-width: 100%;
+    gap: 1.5rem;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   PARTIE GAUCHE
+═══════════════════════════════════════════════════════════════════ */
+
+.header-left {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+}
+
+.header-title-section {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.header-icon {
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.header-icon i {
+    color: white;
+    font-size: 1.25rem;
+}
+
+.page-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   BREADCRUMB
+═══════════════════════════════════════════════════════════════════ */
+
+.breadcrumb {
+    margin-top: 0.25rem;
+}
+
+.breadcrumb ol {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.breadcrumb li {
+    display: flex;
+    align-items: center;
+}
+
+.breadcrumb a {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    color: #64748b;
+    text-decoration: none;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    transition: color 0.15s ease;
+}
+
+.breadcrumb a:hover {
+    color: #3b82f6;
+}
+
+.breadcrumb a i {
+    font-size: 0.75rem;
+}
+
+.breadcrumb .separator {
+    color: #cbd5e1;
+    font-size: 0.625rem;
+}
+
+.breadcrumb .current span {
+    color: #94a3b8;
+    font-size: 0.8125rem;
+    font-weight: 500;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   PARTIE DROITE - ACTIONS
+═══════════════════════════════════════════════════════════════════ */
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-shrink: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   BOUTONS D'ACTION
+═══════════════════════════════════════════════════════════════════ */
+
+.btn-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border-radius: 0.5rem;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+/* Bouton Principal (CTA) */
+.btn-primary-action {
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    color: white;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+.btn-primary-action:hover {
+    background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+    transform: translateY(-1px);
+}
+
+.btn-primary-action i {
+    font-size: 0.875rem;
+}
+
+/* Boutons Secondaires */
+.btn-secondary-action {
+    background: #f8fafc;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+}
+
+.btn-secondary-action:hover {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+    color: #1e293b;
+}
+
+.btn-secondary-action i {
+    color: #64748b;
+    font-size: 0.875rem;
+}
+
+.btn-secondary-action:hover i {
+    color: #3b82f6;
+}
+
+/* Bouton Icône seul */
+.btn-icon {
+    padding: 0.625rem;
+    background: #f8fafc;
+    color: #64748b;
+    border: 1px solid #e2e8f0;
+}
+
+.btn-icon:hover {
+    background: #f1f5f9;
+    color: #1e293b;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   GROUPE DE BOUTONS
+═══════════════════════════════════════════════════════════════════ */
+
+.btn-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding-left: 0.75rem;
+    border-left: 1px solid #e2e8f0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   DROPDOWN MENU
+═══════════════════════════════════════════════════════════════════ */
+
+.dropdown {
+    position: relative;
+}
+
+.dropdown-menu {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    right: 0;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.75rem;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    min-width: 200px;
+    padding: 0.5rem;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.2s ease;
+    z-index: 1000;
+}
+
+.dropdown.active .dropdown-menu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.625rem 0.875rem;
+    color: #475569;
+    text-decoration: none;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border-radius: 0.5rem;
+    transition: all 0.15s ease;
+}
+
+.dropdown-item:hover {
+    background: #f1f5f9;
+    color: #1e293b;
+}
+
+.dropdown-item i {
+    width: 18px;
+    color: #64748b;
+    font-size: 0.875rem;
+}
+
+.dropdown-item:hover i {
+    color: #3b82f6;
+}
+
+.dropdown-divider {
+    height: 1px;
+    background: #e2e8f0;
+    margin: 0.5rem 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 1024px) {
+    .header-container {
+        padding: 1rem 1.5rem;
+    }
+    
+    .btn-text {
+        display: none;
+    }
+    
+    .btn-secondary-action {
+        padding: 0.625rem;
+    }
+    
+    .btn-group {
+        padding-left: 0.5rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .header-container {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+        padding: 1rem;
+    }
+    
+    .header-right {
+        width: 100%;
+        justify-content: flex-start;
+        flex-wrap: wrap;
+    }
+    
+    .btn-group {
+        border-left: none;
+        padding-left: 0;
+    }
+    
+    .page-title {
+        font-size: 1.25rem;
+    }
+    
+    .header-icon {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .header-icon i {
+        font-size: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .btn-primary-action span {
+        display: none;
+    }
+    
+    .btn-primary-action {
+        padding: 0.75rem;
+    }
+}
+    </style>
+</head>
+<body>
+
+<div class="main-container">
+{% if messages %}
+<div class="toast-container" id="toastContainer">
+    {% for message in messages %}
+    <div class="toast toast-{{ message.tags }}" id="toast-{{ forloop.counter }}" role="alert" aria-live="assertive" aria-atomic="true">
+        <!-- Barre d'accent colorée -->
+        <div class="toast-accent"></div>
+        
+        <!-- Corps du toast -->
+        <div class="toast-body">
+            <!-- Icône -->
+            <div class="toast-icon">
+                {% if message.tags == 'success' %}
+                    <i class="fas fa-check"></i>
+                {% elif message.tags == 'error' %}
+                    <i class="fas fa-times"></i>
+                {% elif message.tags == 'warning' %}
+                    <i class="fas fa-exclamation"></i>
+                {% else %}
+                    <i class="fas fa-info"></i>
+                {% endif %}
+            </div>
+            
+            <!-- Contenu -->
+            <div class="toast-content">
+                <div class="toast-title">
+                    {% if message.tags == 'success' %}
+                        Succès
+                    {% elif message.tags == 'error' %}
+                        Erreur
+                    {% elif message.tags == 'warning' %}
+                        Attention
+                    {% else %}
+                        Information
+                    {% endif %}
+                </div>
+                <div class="toast-message">{{ message }}</div>
+            </div>
+        </div>
+        
+        <!-- Bouton fermer -->
+        <button type="button" class="toast-close" onclick="closeToast('toast-{{ forloop.counter }}')" aria-label="Fermer">
+            <i class="fas fa-times"></i>
+        </button>
+        
+        <!-- Barre de progression -->
+        <div class="toast-progress">
+            <div class="toast-progress-bar"></div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- Toast JavaScript -->
+<script>
+
+    document.addEventListener('DOMContentLoaded', function() {
+    const dropdownBtn = document.getElementById('moreActionsBtn');
+    const dropdown = dropdownBtn?.closest('.dropdown');
+    
+    if (dropdownBtn && dropdown) {
+        // Toggle dropdown
+        dropdownBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            dropdown.classList.toggle('active');
+        });
+        
+        // Fermer en cliquant ailleurs
+        document.addEventListener('click', function(e) {
+            if (!dropdown.contains(e.target)) {
+                dropdown.classList.remove('active');
+            }
+        });
+        
+        // Fermer avec Escape
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                dropdown.classList.remove('active');
+            }
+        });
+    }
+});
+// ===========================================
+// TOAST NOTIFICATION SYSTEM
+// ===========================================
+
+/**
+ * Ferme un toast spécifique
+ * @param {string} toastId - L'ID du toast à fermer
+ */
+function closeToast(toastId) {
+    const toast = document.getElementById(toastId);
+    if (toast) {
+        toast.classList.add('hiding');
+        setTimeout(() => {
+            toast.remove();
+            // Supprimer le container s'il est vide
+            const container = document.getElementById('toastContainer');
+            if (container && container.children.length === 0) {
+                container.remove();
+            }
+        }, 400);
+    }
+}
+
+/**
+ * Crée et affiche un nouveau toast dynamiquement
+ * @param {string} type - Type du toast: 'success', 'error', 'warning', 'info'
+ * @param {string} title - Titre du toast
+ * @param {string} message - Message du toast
+ * @param {number} duration - Durée avant fermeture auto (ms), 0 = pas de fermeture auto
+ */
+function showToast(type, title, message, duration = 5000) {
+    // Créer le container s'il n'existe pas
+    let container = document.getElementById('toastContainer');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'toastContainer';
+        container.className = 'toast-container';
+        document.body.appendChild(container);
+    }
+    
+    // Générer un ID unique
+    const toastId = 'toast-' + Date.now();
+    
+    // Définir l'icône selon le type
+    const icons = {
+        success: 'fa-check',
+        error: 'fa-times',
+        warning: 'fa-exclamation',
+        info: 'fa-info'
+    };
+    
+    // Créer le HTML du toast
+    const toastHTML = `
+        <div class="toast toast-${type}" id="${toastId}" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-accent"></div>
+            <div class="toast-body">
+                <div class="toast-icon">
+                    <i class="fas ${icons[type] || icons.info}"></i>
+                </div>
+                <div class="toast-content">
+                    <div class="toast-title">${title}</div>
+                    <div class="toast-message">${message}</div>
+                </div>
+            </div>
+            <button type="button" class="toast-close" onclick="closeToast('${toastId}')" aria-label="Fermer">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="toast-progress">
+                <div class="toast-progress-bar" style="animation-duration: ${duration}ms;"></div>
+            </div>
+        </div>
+    `;
+    
+    // Ajouter le toast au container
+    container.insertAdjacentHTML('beforeend', toastHTML);
+    
+    // Auto-fermeture
+    if (duration > 0) {
+        setTimeout(() => closeToast(toastId), duration);
+    }
+    
+    return toastId;
+}
+
+// Auto-fermeture des toasts au chargement
+document.addEventListener('DOMContentLoaded', function() {
+    const toasts = document.querySelectorAll('.toast');
+    toasts.forEach((toast, index) => {
+        const delay = 5000 + (index * 300);
+        setTimeout(() => {
+            if (toast && toast.parentElement) {
+                closeToast(toast.id);
+            }
+        }, delay);
+    });
+    
+    // Pause/Resume sur hover
+    document.querySelectorAll('.toast').forEach(toast => {
+        let timeoutId;
+        let remainingTime;
+        let startTime;
+        
+        toast.addEventListener('mouseenter', () => {
+            const progressBar = toast.querySelector('.toast-progress-bar');
+            if (progressBar) {
+                progressBar.style.animationPlayState = 'paused';
+            }
+        });
+        
+        toast.addEventListener('mouseleave', () => {
+            const progressBar = toast.querySelector('.toast-progress-bar');
+            if (progressBar) {
+                progressBar.style.animationPlayState = 'running';
+            }
+        });
+    });
+});
+
+// Raccourcis pour créer des toasts rapidement
+const Toast = {
+    success: (message, title = 'Succès') => showToast('success', title, message),
+    error: (message, title = 'Erreur') => showToast('error', title, message),
+    warning: (message, title = 'Attention') => showToast('warning', title, message),
+    info: (message, title = 'Information') => showToast('info', title, message)
+};
+</script>
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+    <img src="{% static 'images/logo.png' %}" alt="Logo de l'entreprise" class="company-logo">
+</div>
+        </div>
+
+        <nav style="padding: 16px 0;">
+            <div style="margin-bottom: 24px;">
+                <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255, 255, 255, 0.5); padding: 0 24px 12px;">Principal</div>
+                <a href="{% url 'rh_dashboard' %}" class="menu-item">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Tableau de bord</span>
+                </a>
+                <a href="#" class="menu-item active">
+                    <i class="fas fa-users"></i>
+                    <span>Employés</span>
+                </a>
+                <a href="{% url 'rh_manage_tasks_lines' %}" class="menu-item">
+                    <i class="fas fa-tasks"></i>
+                    <span>Tâches & Lignes</span>
+                </a>
+                <!-- <a href="#" class="menu-item">
+                    <i class="fas fa-graduation-cap"></i>
+                    <span>Formations</span>
+                </a> -->
+            </div>
+
+            <div style="margin-bottom: 24px;">
+                <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255, 255, 255, 0.5); padding: 0 24px 12px;">Gestion</div>
+                <a href="{% url 'rh_training_approvals' %}" class="menu-item">
+                    <i class="fas fa-clock"></i>
+                    <span>Demandes Formations</span>
+                </a>
+                <a href="{% url 'rh_requalification_approvals' %}" class="menu-item">
+                    <i class="fas fa-clipboard-check"></i>
+                    <span>Demandes Requalifications</span>
+                </a>
+                <a href="{% url 'rh_employees_to_requalify' %}" class="menu-item">
+                    <i class="fas fa-history"></i>
+                    <span>Historique requalifications</span>
+                </a>
+                <a href="{% url 'transfer_employee' %}" class="menu-item">
+                    <i class="fas fa-exchange-alt"></i>
+                    <span>Transferts</span>
+                </a>
+                <a href="{% url 'rh_transfer_approvals' %}" class="menu-item">
+                    <i class="fas fa-user-check"></i>
+                    <span>Valider Transferts</span>
+                    {% if pending.count > 0 %}
+                    <span style="background: var(--warning-color); color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px; margin-left: auto;">{{ pending.count }}</span>
+                    {% endif %}
+                </a>
+            </div>
+                  <!-- Version compacte -->
+<div class="sidebar-footer-compact">
+  <a href="{% url 'login' %}" class="menu-item logout-item">
+    <i class="fas fa-sign-out-alt"></i>
+    <span>Déconnexion</span>
+    <span style="margin-left: auto; font-size: 11px; opacity: 0.7;">
+      {{ request.user.username }}
+    </span>
+  </a>
+</div>
+        </nav>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-content">
+        
+        <!-- HEADER -->
+        <header class="top-header">
+    <div class="header-container">
+        <!-- Partie gauche : Titre et Breadcrumb -->
+        <div class="header-left">
+            <div class="header-title-section">
+                <div class="header-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div>
+                    <h1 class="page-title">Employés</h1>
+                    <nav class="breadcrumb" aria-label="Breadcrumb">
+                        <ol>
+                            <li>
+                                <a href="{% url 'rh_dashboard' %}">
+                                    <i class="fas fa-home"></i>
+                                    <span>Accueil</span>
+                                </a>
+                            </li>
+                            <li class="separator">
+                                <i class="fas fa-chevron-right"></i>
+                            </li>
+                            <li class="current">
+                                <span>Employés</span>
+                            </li>
+                        </ol>
+                    </nav>
+                </div>
+            </div>
+        </div>
+
+        <!-- Partie droite : Actions -->
+        <div class="header-right">
+            <a href="{% url 'rh_employee_register' %}" class="btn-action btn-primary-action">
+                <i class="fas fa-user-plus"></i>
+                <span>Nouvel </span>
+            </a>
+            <!-- Bouton principal -->
+            <a href="{% url 'rh_employee_create' %}" class="btn-action btn-primary-action">
+                <i class="fas fa-user-plus"></i>
+                <span>Nouvel employé</span>
+            </a>
+
+            <!-- Groupe de boutons secondaires -->
+            <div class="btn-group">
+                <a href="{% url 'rh_operators_overview' %}" class="btn-action btn-secondary-action" title="Vue des opérateurs">
+                    <i class="fas fa-id-badge"></i>
+                    <span class="btn-text">Opérateurs</span>
+                </a>
+                
+                <a href="{% url 'rh_train_team_leader' %}" class="btn-action btn-secondary-action" title="Former les chefs">
+                    <i class="fas fa-chalkboard-teacher"></i>
+                    <span class="btn-text">Former Chefs</span>
+                </a>
+
+                <a href="{% url 'rh_requalify_team_leader' %}" class="btn-action btn-secondary-action" title="Former les chefs">
+                    <i class="fas fa-chalkboard-teacher"></i>
+                    <span class="btn-text">Requalifier Chefs</span>
+                </a>
+                
+                <a href="{% url 'rh_manage_users' %}" class="btn-action btn-secondary-action" title="Gestion utilisateurs">
+                    <i class="fas fa-users-cog"></i>
+                    <span class="btn-text">Utilisateurs</span>
+                </a>
+            </div>
+
+            <!-- Menu déroulant pour plus d'options (optionnel) -->
+            <div class="dropdown">
+                <button class="btn-action btn-icon" id="moreActionsBtn" title="Plus d'actions">
+                    <i class="fas fa-ellipsis-v"></i>
+                </button>
+                <div class="dropdown-menu" id="moreActionsMenu">
+                    <a href="{% url 'rh_manage_tasks_lines' %}" class="dropdown-item">
+                        <i class="fas fa-tasks"></i>
+                        <span>Tâches & Lignes</span>
+                    </a>
+                    <a href="{% url 'transfer_employee' %}" class="dropdown-item">
+                        <i class="fas fa-exchange-alt"></i>
+                        <span>Transferts</span>
+                    </a>
+                    <div class="dropdown-divider"></div>
+                    <a href="{% url 'rh_training_approvals' %}" class="dropdown-item">
+                        <i class="fas fa-clipboard-check"></i>
+                        <span>Approbations</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+        <!-- CONTENT -->
+        <div style="padding: 32px 40px; max-width: 1800px;">
+
+            <!-- STATS -->
+            <div class="stats-grid fade-in">
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: rgba(59, 130, 246, 0.1); color: var(--accent-color);">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>Total employés</h3>
+                        <p>{{ employees|length }}</p>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: rgba(5, 150, 105, 0.1); color: var(--success-color);">
+                        <i class="fas fa-user-check"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>Actifs</h3>
+                        <p>{{ employees|length }}</p>
+                    </div>
+                </div>              
+            </div>
+            <!-- EMPLOYEES TABLE -->
+            <div class="card fade-in">
+                <div class="card-header">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+                        <h2 class="card-title">
+                            <i class="fas fa-users"></i>
+                            Liste des employés ({{ employees|length }})
+                        </h2>
+                        
+                        <!-- SEARCH FORM -->
+                        <form method="get" class="search-box">
+                            <i class="fas fa-search"></i>
+                            <input 
+                                type="text" 
+                                name="q" 
+                                placeholder="Rechercher par nom, prénom ou matricule..." 
+                                value="{{ query }}"
+                            />
+                            <button type="submit" style="display: none;"></button>
+                        </form>
+                    </div>
+                </div>
+                
+                <div class="card-body" style="padding: 0;">
+    <div style="overflow-x: auto;">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th style="width: 60px;"><i class="fas fa-hashtag"></i></th>
+                    <th><i class="fas fa-user" style="margin-right: 8px;"></i>Employé</th>
+                    <th><i class="fas fa-id-card" style="margin-right: 8px;"></i>Matricule</th>
+                    <th><i class="fas fa-industry" style="margin-right: 8px;"></i>Ligne</th>
+                    <!-- ✨ NOUVELLE COLONNE POUR LES NIVEAUX -->
+                    <!-- <th style="min-width: 200px;"><i class="fas fa-chart-pie" style="margin-right: 8px;"></i>Niveaux de formation</th> -->
+                    <th style="text-align: center;"><i class="fas fa-cog" style="margin-right: 8px;"></i>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for employee in employees %}
+                <tr>
+                    <td style="text-align: center;">
+                        <div class="avatar">
+                            {{ employee.first_name|first }}{{ employee.last_name|first }}
+                        </div>
+                    </td>
+                    <td>
+                        <div>
+                            <strong style="font-size: 15px; color: var(--gray-900);">
+                                {{ employee.first_name }} {{ employee.last_name }}
+                            </strong>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="badge badge-primary">
+                            <i class="fas fa-id-badge" style="margin-right: 4px;"></i>
+                            {{ employee.matricule }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if employee.line %}
+                            <span class="badge" style="background: rgba(139, 92, 246, 0.1); color: #8B5CF6;">
+                                <i class="fas fa-industry" style="margin-right: 4px;"></i>
+                                {{ employee.line.name }}
+                            </span>
+                        {% else %}
+                            <span style="color: var(--gray-400); font-size: 13px;">
+                                <i class="fas fa-minus"></i> Non assigné
+                            </span>
+                        {% endif %}
+                    </td>
+                    
+                    <td>
+                        <div style="display: flex; gap: 8px; justify-content: center;">
+                            <a href="{% url 'employee_history' employee.id %}" class="btn btn-primary" style="padding: 8px 16px; font-size: 13px;">
+                                <i class="fas fa-history"></i>
+                                Historique
+                            </a>
+                            <a href="{% url 'rh_employee_update' employee.id %}" class="btn btn-secondary" style="padding: 8px 16px; font-size: 13px;">
+                                <i class="fas fa-edit"></i>
+                                Modifier
+                            </a>
+                            <form method="post" 
+                                  action="{% url 'rh_employee_delete' employee.id %}" 
+                                  style="display:inline;"
+                                  onsubmit="return confirm('⚠️ Supprimer {{ employee.first_name }} {{ employee.last_name }} ?')">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-warning" title="Supprimer">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" style="text-align: center; padding: 60px 20px;">
+                        <i class="fas fa-search" style="font-size: 48px; color: #D1D5DB;"></i>
+                        <p style="color: var(--gray-500); margin-top: 16px;">Aucun employé trouvé</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+                <!-- TABLE FOOTER -->
+                {% if employees %}
+                <div style="padding: 16px 24px; border-top: 1px solid var(--gray-200); background: var(--gray-50); display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 13px; color: var(--gray-600);">
+                        <i class="fas fa-info-circle" style="margin-right: 4px;"></i>
+                        Affichage de <strong>{{ employees|length }}</strong> employé(s)
+                    </span>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px;" disabled>
+                            <i class="fas fa-chevron-left"></i>
+                            Précédent
+                        </button>
+                        <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px;" disabled>
+                            Suivant
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+
+    // Animation au scroll
+    const observerOptions = {
+        threshold: 0.05,
+        rootMargin: '0px 0px -50px 0px'
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry, index) => {
+            if (entry.isIntersecting) {
+                setTimeout(() => {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }, index * 50);
+                observer.unobserve(entry.target);
+            }
+        });
+    }, observerOptions);
+
+    document.querySelectorAll('.fade-in').forEach(el => {
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(15px)';
+        el.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+        observer.observe(el);
+    });
+
+    // Auto-submit search on input
+    const searchInput = document.querySelector('.search-box input');
+    if (searchInput) {
+        let timeout;
+        searchInput.addEventListener('input', function() {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => {
+                this.form.submit();
+            }, 500);
+        });
+    }
+    
+</script>
+
+</body>
+</html>

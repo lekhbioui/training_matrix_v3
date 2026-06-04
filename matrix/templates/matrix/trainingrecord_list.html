@@ -1,0 +1,371 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enregistrements de formation</title>
+    <link rel="icon" type="image/png" href="{% static 'images/logo.png' %}">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+        
+        /* Palette de couleurs corporate */
+        :root {
+            --primary-color: #1e40af;
+            --secondary-color: #64748b;
+            --success-color: #16a34a;
+            --danger-color: #dc2626;
+            --background: #f8fafc;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --border-color: #e2e8f0;
+        }
+        
+        body {
+            background-color: var(--background);
+            color: var(--text-primary);
+        }
+        
+        /* Card container */
+        .card {
+            background: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--border-color);
+        }
+        
+        /* Record item styles */
+        .record-item {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            transition: background-color 0.15s ease;
+        }
+        
+        .record-item:last-child {
+            border-bottom: none;
+        }
+        
+        .record-item:hover {
+            background-color: #f8fafc;
+        }
+        
+        /* Boutons */
+        .btn {
+            padding: 0.5rem 1.25rem;
+            font-weight: 500;
+            font-size: 0.875rem;
+            border-radius: 0.375rem;
+            transition: all 0.15s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            border: 1px solid transparent;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+        
+        .btn-primary:hover {
+            background-color: #1e3a8a;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Action buttons */
+        .action-btn {
+            padding: 0.375rem 0.625rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.15s ease;
+            border: 1px solid transparent;
+        }
+        
+        .action-btn-edit {
+            color: var(--primary-color);
+            background-color: #eff6ff;
+            border-color: #dbeafe;
+        }
+        
+        .action-btn-edit:hover {
+            background-color: #dbeafe;
+        }
+        
+        .action-btn-delete {
+            color: var(--danger-color);
+            background-color: #fef2f2;
+            border-color: #fee2e2;
+        }
+        
+        .action-btn-delete:hover {
+            background-color: #fee2e2;
+        }
+        
+        /* Badge */
+        .badge {
+            padding: 0.25rem 0.625rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+        
+        .badge-i {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+        
+        .badge-l {
+            background-color: #dbeafe;
+            color: #1e40af;
+        }
+        
+        .badge-u {
+            background-color: #dcfce7;
+            color: #166534;
+        }
+        
+        /* Search */
+        .search-input {
+            border: 1px solid var(--border-color);
+            border-radius: 0.375rem;
+            padding: 0.5rem 1rem 0.5rem 2.5rem;
+            width: 100%;
+            font-size: 0.875rem;
+            transition: all 0.15s ease;
+        }
+        
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+        }
+    </style>
+</head>
+<body>
+    
+    <!-- Navigation -->
+    <nav class="bg-white border-b border-gray-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <span class="text-xl font-semibold text-gray-900">
+                        Système de gestion des formations
+                    </span>
+                </div>
+                <div class="flex items-center gap-6">
+                    <span class="text-sm text-gray-600">
+                        <i class="fas fa-user-circle mr-2 text-gray-400"></i>
+                        {{ request.user.first_name }} {{ request.user.last_name }}
+                    </span>
+                    <div class="h-6 w-px bg-gray-300"></div>
+                    <a href="{% url 'login' %}" class="text-sm text-gray-600 hover:text-gray-900 transition">
+                        <i class="fas fa-sign-out-alt mr-1"></i>
+                        Déconnexion
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- Breadcrumb -->
+        <nav class="flex mb-6" aria-label="Breadcrumb">
+            <ol class="inline-flex items-center space-x-1 text-sm">
+                <li>
+                    <a href="{% url 'matrix_view' %}" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-home"></i>
+                    </a>
+                </li>
+                <li>
+                    <span class="mx-2 text-gray-400">/</span>
+                    <span class="text-gray-700">Enregistrements de formation</span>
+                </li>
+            </ol>
+        </nav>
+
+        <!-- Page Header -->
+        <div class="mb-8">
+            <div class="flex justify-between items-start">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900">
+                        Enregistrements de formation
+                    </h1>
+                    <p class="mt-1 text-sm text-gray-600">
+                        Consultez et gérez tous les enregistrements de formation de votre équipe
+                    </p>
+                </div>
+                <div class="flex gap-3">
+                    <a href="{% url 'matrix_view' %}" class="btn bg-white text-gray-700 border border-gray-300 hover:bg-gray-50">
+                        <i class="fas fa-arrow-left"></i>
+                        Retour
+                    </a>
+                    <a href="{% url 'training_record_create' %}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i>
+                        Nouvel enregistrement
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Table Card -->
+        <div class="card">
+            <!-- Search Bar -->
+            <div class="px-6 py-4 border-b border-gray-200">
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <div class="flex-1 relative">
+                        <input type="text" 
+                               placeholder="Rechercher un enregistrement..." 
+                               class="search-input"
+                               id="searchInput">
+                        <i class="fas fa-search absolute left-3 top-2.5 text-gray-400"></i>
+                    </div>
+                    <!-- <div class="flex gap-2">
+                        <button class="btn bg-white text-gray-700 border border-gray-300 hover:bg-gray-50">
+                            <i class="fas fa-filter"></i>
+                            Filtrer
+                        </button>
+                        <button class="btn bg-white text-gray-700 border border-gray-300 hover:bg-gray-50">
+                            <i class="fas fa-download"></i>
+                            Exporter
+                        </button>
+                    </div> -->
+                </div>
+            </div>
+
+            <!-- Records List -->
+            <div class="divide-y divide-gray-200">
+                {% for record in records %}
+                <div class="record-item">
+                    <div class="flex items-center justify-between">
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-4">
+                                <!-- Employee Avatar -->
+                                <div class="flex-shrink-0 h-10 w-10">
+                                    <div class="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
+                                        <span class="text-sm font-medium text-gray-600">
+                                            {{ record.employee.first_name|slice:":1" }}{{ record.employee.last_name|slice:":1" }}
+                                        </span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Record Info -->
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center gap-3">
+                                        <p class="text-sm font-medium text-gray-900 truncate">
+                                            {{ record.employee.last_name|upper }} {{ record.employee.first_name }}
+                                        </p>
+                                        <span class="text-gray-400">•</span>
+                                        <p class="text-sm text-gray-600 truncate">
+                                            {{ record.task.title }}
+                                        </p>
+                                    </div>
+                                    <div class="flex items-center gap-2 mt-1">
+                                        {% if record.level == 0 %}
+                                            <span class="badge badge-i">
+                                                <i class="fas fa-graduation-cap text-xs"></i>
+                                                En formation
+                                            </span>
+                                        {% elif record.level == 1 %}
+                                            <span class="badge badge-l">
+                                                <i class="fas fa-user-check text-xs"></i>
+                                                Autonome
+                                            </span>
+                                        {% elif record.level == 2 %}
+                                            <span class="badge badge-u">
+                                                <i class="fas fa-user-graduate text-xs"></i>
+                                                Formateur
+                                            </span>
+                                        {% endif %}
+                                        
+                                        <span class="text-xs text-gray-500">
+                                            <i class="far fa-calendar mr-1"></i>
+                                            {{ record.date|date:"d/m/Y" }}
+                                        </span>
+                                        
+                                        {% if record.trainer %}
+                                        <span class="text-xs text-gray-500">
+                                            <i class="fas fa-chalkboard-teacher mr-1"></i>
+                                            {{ record.trainer.first_name }} {{ record.trainer.last_name }}
+                                        </span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Actions -->
+                        <!-- <div class="flex items-center gap-2 ml-4">
+                            <a href="{% url 'training_record_update' record.pk %}" 
+                               class="action-btn action-btn-edit">
+                                <i class="fas fa-edit mr-1"></i>
+                                Modifier
+                            </a>
+                            <a href="{% url 'training_record_delete' record.pk %}" 
+                               class="action-btn action-btn-delete">
+                                <i class="fas fa-trash mr-1"></i>
+                                Supprimer
+                            </a>
+                        </div> -->
+                    </div>
+                </div>
+                {% empty %}
+                <div class="px-6 py-12 text-center">
+                    <div class="text-gray-500">
+                        <i class="fas fa-inbox text-4xl mb-4"></i>
+                        <p class="text-lg font-medium">Aucun enregistrement trouvé</p>
+                        <p class="text-sm mt-2">Commencez par ajouter un enregistrement de formation</p>
+                        <a href="{% url 'training_record_create' %}" class="btn btn-primary mt-4">
+                            <i class="fas fa-plus"></i>
+                            Ajouter le premier enregistrement
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Pagination -->
+            {% if records %}
+            <div class="px-6 py-3 border-t border-gray-200 flex items-center justify-between">
+                <div class="text-sm text-gray-700">
+                    Affichage de <span class="font-medium">{{ records|length }}</span> résultat(s)
+                </div>
+                <div class="flex gap-1">
+                    <button class="px-3 py-1 border border-gray-300 rounded text-sm hover:bg-gray-50" disabled>
+                        Précédent
+                    </button>
+                    <button class="px-3 py-1 bg-blue-600 text-white rounded text-sm">1</button>
+                    <button class="px-3 py-1 border border-gray-300 rounded text-sm hover:bg-gray-50">
+                        Suivant
+                    </button>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- JavaScript pour la recherche -->
+    <script>
+        document.getElementById('searchInput').addEventListener('keyup', function() {
+            const searchValue = this.value.toLowerCase();
+            const recordItems = document.querySelectorAll('.record-item');
+            
+            recordItems.forEach(item => {
+                const text = item.textContent.toLowerCase();
+                item.style.display = text.includes(searchValue) ? '' : 'none';
+            });
+        });
+    </script>
+</body>
+</html>

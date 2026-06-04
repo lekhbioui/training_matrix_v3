@@ -1,0 +1,1192 @@
+<!-- matrix/templates/matrix/quality_operator_detail.html -->
+{% extends 'matrix/quality_base.html' %}
+{% block title %}{{ employee.last_name }} {{ employee.first_name }}{% endblock %}
+{% block page_title %}Fiche Opérateur{% endblock %}
+
+{% block breadcrumb %}
+<li><a href="{% url 'quality_dashboard' %}">Dashboard</a></li>
+<li>›</li>
+<li><a href="{% url 'quality_operators' %}">Opérateurs</a></li>
+<li>›</li>
+<li>{{ employee.last_name }} {{ employee.first_name }}</li>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+
+    /* ══ HERO CARD ═══════════════════════════════════════ */
+    .hero-card {
+        background: linear-gradient(135deg, #0F172A 0%, #1E293B 60%, #1E3A5F 100%);
+        border-radius: 16px;
+        padding: 32px;
+        color: white;
+        position: relative;
+        overflow: hidden;
+        margin-bottom: 24px;
+    }
+
+    .hero-card::before {
+        content: '';
+        position: absolute;
+        top: -60px; right: -60px;
+        width: 200px; height: 200px;
+        background: rgba(59, 130, 246, 0.15);
+        border-radius: 50%;
+    }
+
+    .hero-card::after {
+        content: '';
+        position: absolute;
+        bottom: -40px; right: 80px;
+        width: 140px; height: 140px;
+        background: rgba(99, 102, 241, 0.1);
+        border-radius: 50%;
+    }
+
+    .hero-avatar {
+        width: 72px; height: 72px;
+        border-radius: 16px;
+        background: linear-gradient(135deg, var(--accent-color) 0%, #6366F1 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.6rem;
+        font-weight: 800;
+        color: white;
+        flex-shrink: 0;
+        box-shadow: 0 8px 24px rgba(59, 130, 246, 0.35);
+    }
+
+    .hero-name {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 4px;
+    }
+
+    .hero-matricule {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 3px 12px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+        font-size: 13px;
+        font-family: 'JetBrains Mono', monospace;
+        color: #93C5FD;
+        margin-bottom: 12px;
+    }
+
+    .hero-info-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.7);
+    }
+
+    .hero-info-item i { color: #60A5FA; font-size: 12px; }
+
+    .hero-info-item a {
+        color: #93C5FD;
+        text-decoration: none;
+        font-weight: 500;
+    }
+
+    .hero-info-item a:hover { color: white; }
+
+    /* ══ KPI STRIP ═══════════════════════════════════════ */
+    .kpi-strip {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+        gap: 12px;
+        margin-bottom: 28px;
+    }
+
+    .kpi-mini {
+        background: white;
+        border-radius: 12px;
+        border: 1px solid var(--gray-200);
+        padding: 16px 12px;
+        text-align: center;
+        transition: all .2s;
+    }
+
+    .kpi-mini:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,.06);
+        transform: translateY(-2px);
+    }
+
+    .kpi-mini .kpi-num {
+        font-size: 1.6rem;
+        font-weight: 800;
+        line-height: 1;
+        margin-bottom: 4px;
+    }
+
+    .kpi-mini .kpi-lbl {
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+        color: var(--gray-400);
+    }
+
+    /* ══ TABS ════════════════════════════════════════════ */
+    .tabs-wrapper {
+        background: white;
+        border-radius: 12px 12px 0 0;
+        border: 1px solid var(--gray-200);
+        border-bottom: none;
+        overflow: hidden;
+    }
+
+    .tab-nav {
+        display: flex;
+        border-bottom: 1px solid var(--gray-200);
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+    .tab-nav::-webkit-scrollbar { display: none; }
+
+    .tab-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 14px 20px;
+        border: none;
+        background: none;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--gray-500);
+        cursor: pointer;
+        border-bottom: 3px solid transparent;
+        transition: all .2s;
+        white-space: nowrap;
+        font-family: inherit;
+    }
+
+    .tab-btn:hover { color: var(--gray-700); background: var(--gray-50); }
+
+    .tab-btn.active {
+        color: var(--accent-color);
+        border-bottom-color: var(--accent-color);
+        background: rgba(59, 130, 246, 0.04);
+    }
+
+    .tab-count {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 20px;
+        height: 20px;
+        padding: 0 6px;
+        border-radius: 10px;
+        font-size: 11px;
+        font-weight: 700;
+        background: var(--gray-200);
+        color: var(--gray-600);
+    }
+
+    .tab-btn.active .tab-count {
+        background: var(--accent-color);
+        color: white;
+    }
+
+    /* ══ TAB CONTENT ═════════════════════════════════════ */
+    .tab-panel {
+        display: none;
+        background: white;
+        border: 1px solid var(--gray-200);
+        border-top: none;
+        border-radius: 0 0 12px 12px;
+    }
+
+    .tab-panel.active { display: block; }
+
+    /* ══ LEVELS TABLE ════════════════════════════════════ */
+    .levels-table {
+        font-size: .82rem;
+        border-collapse: separate;
+        border-spacing: 0;
+        width: 100%;
+    }
+
+    .levels-table thead th {
+        font-weight: 600;
+        font-size: .72rem;
+        padding: 12px 10px;
+        text-align: center;
+        white-space: nowrap;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+    }
+
+    .levels-table thead th.th-num {
+        width: 50px;
+        background: var(--gray-800);
+        color: var(--gray-400);
+        text-align: center;
+    }
+
+    .levels-table thead th.th-task {
+        text-align: left;
+        background: var(--gray-800);
+        color: var(--gray-300);
+        min-width: 200px;
+        padding-left: 16px;
+    }
+
+    .levels-table thead th.th-I {
+        background: #7c2d12;
+        color: #fed7aa;
+        min-width: 110px;
+    }
+
+    .levels-table thead th.th-L {
+        background: #14532d;
+        color: #bbf7d0;
+        min-width: 110px;
+    }
+
+    .levels-table thead th.th-U {
+        background: #1e3a8a;
+        color: #bfdbfe;
+        min-width: 110px;
+    }
+
+    .levels-table thead th.th-highest {
+        background: var(--gray-800);
+        color: var(--gray-300);
+        width: 70px;
+    }
+
+    .levels-table thead th.th-lines {
+        background: var(--gray-800);
+        color: var(--gray-300);
+        width: 90px;
+    }
+
+    /* Group row */
+    .group-row td {
+        background: var(--secondary-color) !important;
+        color: white !important;
+        font-weight: 700;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: .08em;
+        padding: 8px 16px !important;
+    }
+
+    /* Data rows */
+    .levels-table tbody tr:hover { background: rgba(59,130,246,.03); }
+
+    .levels-table tbody td {
+        padding: 8px 10px;
+        border-bottom: 1px solid var(--gray-100);
+        vertical-align: middle;
+        text-align: center;
+    }
+
+    .levels-table tbody td.td-num {
+        font-size: .72rem;
+        color: var(--gray-400);
+        font-weight: 600;
+        background: var(--gray-50);
+    }
+
+    .levels-table tbody td.td-task {
+        text-align: left;
+        font-weight: 500;
+        color: var(--gray-700);
+        padding-left: 16px;
+        background: var(--gray-50);
+        font-size: .82rem;
+    }
+
+    /* Level cells */
+    .cell-I {
+        background: rgba(194, 65, 12, 0.08);
+    }
+
+    .cell-L {
+        background: rgba(21, 128, 61, 0.08);
+    }
+
+    .cell-U {
+        background: rgba(29, 78, 216, 0.08);
+    }
+
+    .cell-empty { background: white; }
+
+    .level-val {
+        display: inline-block;
+        width: 26px; height: 26px;
+        line-height: 26px;
+        border-radius: 8px;
+        font-weight: 800;
+        font-size: 13px;
+    }
+
+    .level-val-I { background: #c2410c; color: white; }
+    .level-val-L { background: #15803d; color: white; }
+    .level-val-U { background: #1d4ed8; color: white; }
+
+    .level-date {
+        font-size: 11px;
+        color: var(--gray-400);
+        display: block;
+        margin-top: 2px;
+        line-height: 1;
+    }
+
+    .level-trainer {
+        font-size: 10px;
+        color: var(--gray-400);
+        display: block;
+        margin-top: 2px;
+        font-style: italic;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100px;
+    }
+
+    .empty-dash { color: var(--gray-200); font-size: 18px; }
+
+    /* Highest badge */
+    .highest {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px; height: 28px;
+        border-radius: 50%;
+        font-weight: 800;
+        font-size: 12px;
+    }
+
+    .highest-I { background: #fff7ed; color: #c2410c; border: 2px solid #fed7aa; }
+    .highest-L { background: #f0fdf4; color: #15803d; border: 2px solid #bbf7d0; }
+    .highest-U { background: #eff6ff; color: #1d4ed8; border: 2px solid #bfdbfe; }
+
+    /* Line tags */
+    .line-tag-mini {
+        display: inline-block;
+        padding: 2px 7px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 600;
+        background: rgba(59,130,246,.1);
+        color: var(--accent-color);
+    }
+
+    /* ══ TIMELINE ════════════════════════════════════════ */
+    .timeline { padding: 24px; }
+
+    .timeline-entry {
+        display: flex;
+        gap: 16px;
+        padding-bottom: 20px;
+        position: relative;
+    }
+
+    .timeline-entry:not(:last-child)::before {
+        content: '';
+        position: absolute;
+        left: 19px;
+        top: 38px;
+        bottom: 0;
+        width: 2px;
+        background: var(--gray-100);
+    }
+
+    .timeline-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 13px;
+        flex-shrink: 0;
+        z-index: 1;
+    }
+
+    .timeline-icon-I { background: rgba(194,65,12,.12); color: #c2410c; border: 2px solid #fed7aa; }
+    .timeline-icon-L { background: rgba(21,128,61,.12); color: #15803d; border: 2px solid #bbf7d0; }
+    .timeline-icon-U { background: rgba(29,78,216,.12); color: #1d4ed8; border: 2px solid #bfdbfe; }
+
+    .timeline-body { flex: 1; min-width: 0; }
+
+    .timeline-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 6px;
+    }
+
+    .timeline-task {
+        font-weight: 600;
+        color: var(--gray-800);
+        font-size: 14px;
+    }
+
+    .timeline-date {
+        font-size: 12px;
+        color: var(--gray-400);
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+    .timeline-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        align-items: center;
+    }
+
+    .timeline-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 8px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+
+    .tag-line { background: rgba(5,150,105,.1); color: var(--success-color); }
+    .tag-trainer { background: rgba(217,119,6,.1); color: var(--warning-color); }
+    .tag-note { background: rgba(8,145,178,.1); color: var(--info-color); }
+
+    /* ══ DATA TABLE ══════════════════════════════════════ */
+    .data-table {
+        font-size: .84rem;
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .data-table thead th {
+        padding: 12px 16px;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .06em;
+        color: var(--gray-500);
+        background: var(--gray-50);
+        border-bottom: 2px solid var(--gray-200);
+        white-space: nowrap;
+    }
+
+    .data-table tbody td {
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--gray-100);
+        vertical-align: middle;
+        color: var(--gray-700);
+    }
+
+    .data-table tbody tr:hover { background: rgba(59,130,246,.025); }
+    .data-table tbody tr:last-child td { border-bottom: none; }
+
+    /* Transfer arrow */
+    .transfer-flow {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+    }
+
+    .transfer-from {
+        padding: 3px 10px;
+        border-radius: 6px;
+        background: rgba(220,38,38,.08);
+        color: var(--danger-color);
+        font-weight: 500;
+        font-size: 12px;
+    }
+
+    .transfer-to {
+        padding: 3px 10px;
+        border-radius: 6px;
+        background: rgba(5,150,105,.08);
+        color: var(--success-color);
+        font-weight: 500;
+        font-size: 12px;
+    }
+
+    .transfer-arrow { color: var(--gray-300); font-size: 14px; }
+
+    /* Result badge */
+    .result-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 10px;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    /* ══ PENDING ═════════════════════════════════════════ */
+    .pending-section { padding: 24px; }
+
+    .pending-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        font-weight: 700;
+        margin-bottom: 16px;
+        padding-bottom: 12px;
+        border-bottom: 2px solid var(--gray-100);
+    }
+
+    .pending-title i { font-size: 16px; }
+
+    /* ══ EMPTY ═══════════════════════════════════════════ */
+    .empty-tab {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 60px 20px;
+        text-align: center;
+    }
+
+    .empty-tab-icon {
+        width: 70px; height: 70px;
+        border-radius: 50%;
+        background: var(--gray-100);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 16px;
+    }
+
+    .empty-tab-icon i { font-size: 28px; color: var(--gray-300); }
+
+    .empty-tab-title {
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--gray-500);
+        margin-bottom: 4px;
+    }
+
+    .empty-tab-desc { font-size: 13px; color: var(--gray-400); }
+</style>
+{% endblock %}
+
+
+{% block content %}
+
+<!-- ══ RETOUR ════════════════════════════════════════════════════ -->
+<div class="mb-4">
+    <a href="{% url 'quality_operators' %}"
+       style="display:inline-flex; align-items:center; gap:6px;
+              font-size:13px; font-weight:600; color:var(--accent-color);
+              text-decoration:none; padding:6px 14px;
+              background:rgba(59,130,246,.08); border-radius:8px;
+              transition:all .2s;"
+       onmouseover="this.style.background='rgba(59,130,246,.14)'"
+       onmouseout="this.style.background='rgba(59,130,246,.08)'">
+        <i class="fas fa-arrow-left"></i>
+        Retour à la liste
+    </a>
+</div>
+
+<!-- ══ HERO CARD ══════════════════════════════════════════════════ -->
+<div class="hero-card">
+    <div class="d-flex align-items-start gap-4">
+
+        <!-- Avatar -->
+        <div class="hero-avatar">
+            {{ employee.first_name|first|upper }}{{ employee.last_name|first|upper }}
+        </div>
+
+        <!-- Infos -->
+        <div style="flex:1; z-index:1; position:relative;">
+            <div class="hero-name">
+                {{ employee.last_name }} {{ employee.first_name }}
+            </div>
+
+            <div class="hero-matricule">
+                <i class="fas fa-id-card"></i>
+                {{ employee.matricule }}
+            </div>
+
+            <div class="d-flex flex-wrap gap-4 mt-2">
+                <div class="hero-info-item">
+                    <i class="fas fa-industry"></i>
+                    {% if employee.line %}
+                        <a href="{% url 'quality_line_detail' employee.line.pk %}">
+                            {{ employee.line.name }}
+                        </a>
+                    {% else %}
+                        <span style="color:rgba(255,255,255,.4);">Non assigné</span>
+                    {% endif %}
+                </div>
+
+                <div class="hero-info-item">
+                    <i class="fas fa-user-tie"></i>
+                    {% if employee.manager %}
+                        {{ employee.manager.get_full_name|default:employee.manager.username }}
+                    {% else %}
+                        <span style="color:rgba(255,255,255,.4);">—</span>
+                    {% endif %}
+                </div>
+
+                <div class="hero-info-item">
+                    <i class="fas fa-calendar-alt"></i>
+                    {% if employee.hire_date %}
+                        Embauché le {{ employee.hire_date|date:"d/m/Y" }}
+                    {% else %}
+                        <span style="color:rgba(255,255,255,.4);">Date inconnue</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Badge readonly -->
+        <div style="z-index:1; position:relative;">
+            <span style="display:inline-flex; align-items:center; gap:5px;
+                         padding:6px 14px; border-radius:20px;
+                         background:rgba(8,145,178,.2);
+                         border:1px solid rgba(8,145,178,.3);
+                         font-size:12px; font-weight:600; color:#67E8F9;">
+                <i class="fas fa-eye"></i>Lecture seule
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- ══ KPI STRIP ══════════════════════════════════════════════════ -->
+<div class="kpi-strip">
+
+    <div class="kpi-mini">
+        <div class="kpi-num" style="color:var(--gray-700);">{{ stats.total_tasks }}</div>
+        <div class="kpi-lbl">Tâches</div>
+    </div>
+
+    <div class="kpi-mini">
+        <div class="kpi-num" style="color:#c2410c;">{{ stats.nb_I }}</div>
+        <div class="kpi-lbl">Niveau I</div>
+    </div>
+
+    <div class="kpi-mini">
+        <div class="kpi-num" style="color:#15803d;">{{ stats.nb_L }}</div>
+        <div class="kpi-lbl">Niveau L</div>
+    </div>
+
+    <div class="kpi-mini">
+        <div class="kpi-num" style="color:#1d4ed8;">{{ stats.nb_U }}</div>
+        <div class="kpi-lbl">Niveau U</div>
+    </div>
+
+    <div class="kpi-mini">
+        <div class="kpi-num" style="color:#6d28d9;">{{ stats.total_trainings }}</div>
+        <div class="kpi-lbl">Formations</div>
+    </div>
+
+    <div class="kpi-mini">
+        <div class="kpi-num" style="color:#0e7490;">{{ stats.nb_requalifs }}</div>
+        <div class="kpi-lbl">Requalif.</div>
+    </div>
+
+    <div class="kpi-mini">
+        <div class="kpi-num" style="color:#0f766e;">{{ stats.nb_transfers }}</div>
+        <div class="kpi-lbl">Transferts</div>
+    </div>
+
+    {% if stats.nb_pending > 0 %}
+    <div class="kpi-mini" style="border-color:#fbbf24; background:#fffbeb;">
+        <div class="kpi-num" style="color:#b45309;">{{ stats.nb_pending }}</div>
+        <div class="kpi-lbl" style="color:#b45309;">En attente</div>
+    </div>
+    {% endif %}
+
+</div>
+
+<!-- ══ TABS ════════════════════════════════════════════════════════ -->
+<div class="tabs-wrapper">
+    <div class="tab-nav">
+
+        <button class="tab-btn active" onclick="switchTab(this, 'tab-levels')">
+            <i class="fas fa-table"></i>
+            Niveaux par Tâche
+        </button>
+
+        <button class="tab-btn" onclick="switchTab(this, 'tab-timeline')">
+            <i class="fas fa-history"></i>
+            Historique Chrono
+            <span class="tab-count">{{ training_timeline|length }}</span>
+        </button>
+
+        <button class="tab-btn" onclick="switchTab(this, 'tab-requalif')">
+            <i class="fas fa-redo"></i>
+            Requalifications
+            <span class="tab-count">{{ requalif_history|length }}</span>
+        </button>
+
+        <button class="tab-btn" onclick="switchTab(this, 'tab-transfers')">
+            <i class="fas fa-exchange-alt"></i>
+            Transferts
+            <span class="tab-count">{{ transfer_history|length }}</span>
+        </button>
+
+        {% if stats.nb_pending > 0 %}
+        <button class="tab-btn" onclick="switchTab(this, 'tab-pending')"
+                style="color:#b45309;">
+            <i class="fas fa-clock"></i>
+            En Attente
+            <span class="tab-count" style="background:#f59e0b; color:white;">
+                {{ stats.nb_pending }}
+            </span>
+        </button>
+        {% endif %}
+
+    </div>
+</div>
+
+<!-- ══ TAB : NIVEAUX PAR TÂCHE ══════════════════════════════════ -->
+<div class="tab-panel active" id="tab-levels">
+    {% if training_groups %}
+    <div class="table-responsive">
+        <table class="levels-table">
+            <thead>
+                <tr>
+                    <th class="th-num">N°</th>
+                    <th class="th-task">
+                        <i class="fas fa-tasks me-1"></i>Tâche
+                    </th>
+                    <th class="th-I">
+                        <i class="fas fa-seedling me-1"></i>I — Formation
+                    </th>
+                    <th class="th-L">
+                        <i class="fas fa-check-circle me-1"></i>L — Approuvé
+                    </th>
+                    <th class="th-U">
+                        <i class="fas fa-star me-1"></i>U — Formateur
+                    </th>
+                    <th class="th-highest">Niveau</th>
+                    <th class="th-lines">Lignes</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for group_name, tasks_data in training_groups.items %}
+
+                <tr class="group-row">
+                    <td colspan="7">
+                        <i class="fas fa-layer-group me-1"></i>
+                        {{ group_name }}
+                    </td>
+                </tr>
+
+                {% for item in tasks_data %}
+                <tr>
+                    <td class="td-num">{{ item.task.task_number }}</td>
+                    <td class="td-task">{{ item.task.title }}</td>
+
+                    <!-- I -->
+                    <td class="{% if item.record_I %}cell-I{% else %}cell-empty{% endif %}">
+                        {% if item.record_I %}
+                            <span class="level-val level-val-I">I</span>
+                            <span class="level-date">{{ item.record_I.date|date:"d/m/Y" }}</span>
+                            {% if item.record_I.trainer %}
+                            <span class="level-trainer">
+                                <i class="fas fa-user-graduate"></i>
+                                {{ item.record_I.trainer.first_name|first }}.
+                                {{ item.record_I.trainer.last_name }}
+                            </span>
+                            {% endif %}
+                        {% else %}
+                            <span class="empty-dash">—</span>
+                        {% endif %}
+                    </td>
+
+                    <!-- L -->
+                    <td class="{% if item.record_L %}cell-L{% else %}cell-empty{% endif %}">
+                        {% if item.record_L %}
+                            <span class="level-val level-val-L">L</span>
+                            <span class="level-date">{{ item.record_L.date|date:"d/m/Y" }}</span>
+                            {% if item.record_L.trainer %}
+                            <span class="level-trainer">
+                                <i class="fas fa-user-graduate"></i>
+                                {{ item.record_L.trainer.first_name|first }}.
+                                {{ item.record_L.trainer.last_name }}
+                            </span>
+                            {% endif %}
+                        {% else %}
+                            <span class="empty-dash">—</span>
+                        {% endif %}
+                    </td>
+
+                    <!-- U -->
+                    <td class="{% if item.record_U %}cell-U{% else %}cell-empty{% endif %}">
+                        {% if item.record_U %}
+                            <span class="level-val level-val-U">U</span>
+                            <span class="level-date">{{ item.record_U.date|date:"d/m/Y" }}</span>
+                            {% if item.record_U.trainer %}
+                            <span class="level-trainer">
+                                <i class="fas fa-user-graduate"></i>
+                                {{ item.record_U.trainer.first_name|first }}.
+                                {{ item.record_U.trainer.last_name }}
+                            </span>
+                            {% endif %}
+                        {% else %}
+                            <span class="empty-dash">—</span>
+                        {% endif %}
+                    </td>
+
+                    <!-- Highest -->
+                    <td>
+                        {% if item.highest == 'U' %}
+                            <span class="highest highest-U">U</span>
+                        {% elif item.highest == 'L' %}
+                            <span class="highest highest-L">L</span>
+                        {% elif item.highest == 'I' %}
+                            <span class="highest highest-I">I</span>
+                        {% else %}
+                            <span class="empty-dash">—</span>
+                        {% endif %}
+                    </td>
+
+                    <!-- Lines -->
+                    <td>
+                        {% for line in item.lines %}
+                            <span class="line-tag-mini">{{ line.code }}</span>
+                        {% empty %}
+                            <span class="empty-dash">—</span>
+                        {% endfor %}
+                    </td>
+                </tr>
+                {% endfor %}
+
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-tab">
+        <div class="empty-tab-icon">
+            <i class="fas fa-table"></i>
+        </div>
+        <div class="empty-tab-title">Aucune formation enregistrée</div>
+        <div class="empty-tab-desc">Les formations apparaîtront ici</div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- ══ TAB : HISTORIQUE CHRONO ══════════════════════════════════ -->
+<div class="tab-panel" id="tab-timeline">
+    {% if training_timeline %}
+    <div class="timeline">
+        {% for item in training_timeline %}
+        <div class="timeline-entry">
+
+            <div class="timeline-icon
+                {% if item.level_label == 'I' %}timeline-icon-I
+                {% elif item.level_label == 'L' %}timeline-icon-L
+                {% elif item.level_label == 'U' %}timeline-icon-U
+                {% endif %}">
+                {{ item.level_label }}
+            </div>
+
+            <div class="timeline-body">
+                <div class="timeline-header">
+                    <div class="timeline-task">{{ item.record.task.title }}</div>
+                    <div class="timeline-date">
+                        <i class="fas fa-calendar-alt me-1"></i>
+                        {{ item.date_str }}
+                    </div>
+                </div>
+
+                <div class="timeline-meta">
+                    {% for line in item.lines %}
+                    <span class="timeline-tag tag-line">
+                        <i class="fas fa-industry" style="font-size:10px;"></i>
+                        {{ line.name }}
+                    </span>
+                    {% endfor %}
+
+                    {% if item.record.trainer %}
+                    <span class="timeline-tag tag-trainer">
+                        <i class="fas fa-chalkboard-teacher" style="font-size:10px;"></i>
+                        {{ item.record.trainer.first_name }} {{ item.record.trainer.last_name }}
+                    </span>
+                    {% endif %}
+
+                    {% if item.record.note %}
+                    <span class="timeline-tag tag-note">
+                        <i class="fas fa-sticky-note" style="font-size:10px;"></i>
+                        {{ item.record.note|truncatewords:8 }}
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-tab">
+        <div class="empty-tab-icon"><i class="fas fa-history"></i></div>
+        <div class="empty-tab-title">Aucun historique</div>
+        <div class="empty-tab-desc">L'historique des formations apparaîtra ici</div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- ══ TAB : REQUALIFICATIONS ════════════════════════════════════ -->
+<div class="tab-panel" id="tab-requalif">
+    {% if requalif_history %}
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Tâche</th>
+                    <th class="text-center">Avant</th>
+                    <th class="text-center">Après</th>
+                    <th>Résultat</th>
+                    <th>Requalificateur</th>
+                    <th class="text-center">Jours</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for r in requalif_history %}
+            <tr>
+                <td>
+                    <span style="font-weight:500; font-size:13px;">
+                        {{ r.requalification_date|date:"d/m/Y" }}
+                    </span>
+                </td>
+                <td style="font-weight:500;">
+                    {{ r.task.title|default:"Général" }}
+                </td>
+                <td class="text-center">
+                    {% with prev=r.get_previous_level_display %}
+                    {% if prev == 'I' %}
+                        <span class="highest highest-I">I</span>
+                    {% elif prev == 'L' %}
+                        <span class="highest highest-L">L</span>
+                    {% elif prev == 'U' %}
+                        <span class="highest highest-U">U</span>
+                    {% else %}
+                        <span class="empty-dash">—</span>
+                    {% endif %}
+                    {% endwith %}
+                </td>
+                <td class="text-center">
+                    {% with nxt=r.get_new_level_display %}
+                    {% if nxt == 'I' %}
+                        <span class="highest highest-I">I</span>
+                    {% elif nxt == 'L' %}
+                        <span class="highest highest-L">L</span>
+                    {% elif nxt == 'U' %}
+                        <span class="highest highest-U">U</span>
+                    {% else %}
+                        <span class="empty-dash">—</span>
+                    {% endif %}
+                    {% endwith %}
+                </td>
+                <td>
+                    <span class="result-badge
+                        {% if r.result == 'PASS' %}
+                            " style="background:rgba(5,150,105,.1);color:var(--success-color);">
+                            <i class="fas fa-check-circle"></i>
+                        {% elif r.result == 'UPGRADE' %}
+                            " style="background:rgba(8,145,178,.1);color:var(--info-color);">
+                            <i class="fas fa-arrow-up"></i>
+                        {% elif r.result == 'DOWNGRADE' %}
+                            " style="background:rgba(217,119,6,.1);color:var(--warning-color);">
+                            <i class="fas fa-arrow-down"></i>
+                        {% else %}
+                            " style="background:rgba(220,38,38,.1);color:var(--danger-color);">
+                            <i class="fas fa-redo"></i>
+                        {% endif %}
+                        {{ r.get_result_display }}
+                    </span>
+                </td>
+                <td style="color:var(--gray-500); font-size:13px;">
+                    {{ r.get_requalifier_display }}
+                </td>
+                <td class="text-center">
+                    <span style="font-size:12px; font-weight:600;
+                                 color:var(--gray-500);">
+                        {{ r.days_since_training }}j
+                    </span>
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-tab">
+        <div class="empty-tab-icon"><i class="fas fa-redo"></i></div>
+        <div class="empty-tab-title">Aucune requalification</div>
+        <div class="empty-tab-desc">Les requalifications apparaîtront ici</div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- ══ TAB : TRANSFERTS ══════════════════════════════════════════ -->
+<div class="tab-panel" id="tab-transfers">
+    {% if transfer_history %}
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Mouvement</th>
+                    <th>Raison</th>
+                    <th>Effectué par</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for t in transfer_history %}
+            <tr>
+                <td>
+                    <span style="font-weight:500; font-size:13px;">
+                        {{ t.transfer_date|date:"d/m/Y" }}
+                    </span>
+                </td>
+                <td>
+                    <div class="transfer-flow">
+                        {% if t.from_line %}
+                            <span class="transfer-from">{{ t.from_line.name }}</span>
+                        {% else %}
+                            <span class="transfer-from" style="background:rgba(100,116,139,.1);
+                                  color:var(--gray-500);">Embauche</span>
+                        {% endif %}
+                        <i class="fas fa-arrow-right transfer-arrow"></i>
+                        <span class="transfer-to">{{ t.to_line.name }}</span>
+                    </div>
+                </td>
+                <td style="color:var(--gray-500); font-size:13px;">
+                    {{ t.reason|default:"—"|truncatewords:12 }}
+                </td>
+                <td style="color:var(--gray-500); font-size:13px;">
+                    {% if t.transferred_by %}
+                        <i class="fas fa-user me-1" style="color:var(--gray-300);"></i>
+                        {{ t.transferred_by.get_full_name|default:t.transferred_by.username }}
+                    {% else %}—{% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-tab">
+        <div class="empty-tab-icon"><i class="fas fa-exchange-alt"></i></div>
+        <div class="empty-tab-title">Aucun transfert</div>
+        <div class="empty-tab-desc">L'historique des transferts apparaîtra ici</div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- ══ TAB : EN ATTENTE ══════════════════════════════════════════ -->
+{% if stats.nb_pending > 0 %}
+<div class="tab-panel" id="tab-pending">
+    <div class="pending-section">
+
+        {% if pending_training_req %}
+        <div class="pending-title" style="color:var(--warning-color);">
+            <i class="fas fa-graduation-cap"></i>
+            Demandes de Formation en Attente
+            <span class="tab-count" style="background:#fef3c7; color:#92400e;">
+                {{ pending_training_req|length }}
+            </span>
+        </div>
+        <table class="data-table mb-4">
+            <thead>
+                <tr>
+                    <th>Tâche</th>
+                    <th class="text-center">Niveau demandé</th>
+                    <th>Date demande</th>
+                    <th>Demandé par</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for req in pending_training_req %}
+            <tr>
+                <td style="font-weight:500;">{{ req.task.title }}</td>
+                <td class="text-center">
+                    <span style="display:inline-block; padding:3px 12px;
+                                 border-radius:8px; font-weight:700; font-size:12px;
+                                 background:#fef3c7; color:#92400e;">
+                        {{ req.get_requested_level_display }}
+                    </span>
+                </td>
+                <td style="font-size:13px; color:var(--gray-500);">
+                    {{ req.date_requested|date:"d/m/Y H:i" }}
+                </td>
+                <td style="font-size:13px; color:var(--gray-500);">
+                    {{ req.requested_by.get_full_name|default:req.requested_by.username }}
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+
+        {% if pending_requalif_req %}
+        <div class="pending-title" style="color:var(--info-color);">
+            <i class="fas fa-redo"></i>
+            Demandes de Requalification en Attente
+            <span class="tab-count" style="background:#e0f2fe; color:#0369a1;">
+                {{ pending_requalif_req|length }}
+            </span>
+        </div>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Tâche</th>
+                    <th class="text-center">Résultat demandé</th>
+                    <th class="text-center">Niveau demandé</th>
+                    <th>Date demande</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for req in pending_requalif_req %}
+            <tr>
+                <td style="font-weight:500;">{{ req.task.title|default:"Général" }}</td>
+                <td class="text-center">
+                    <span class="result-badge"
+                          style="background:rgba(8,145,178,.1); color:var(--info-color);">
+                        {{ req.get_result_display }}
+                    </span>
+                </td>
+                <td class="text-center">
+                    {{ req.get_requested_new_level_display }}
+                </td>
+                <td style="font-size:13px; color:var(--gray-500);">
+                    {{ req.date_requested|date:"d/m/Y H:i" }}
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function switchTab(btn, tabId) {
+        // Désactiver tous les boutons
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        // Cacher tous les panels
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        // Activer le bouton cliqué
+        btn.classList.add('active');
+        // Afficher le panel correspondant
+        document.getElementById(tabId).classList.add('active');
+    }
+</script>
+{% endblock %}

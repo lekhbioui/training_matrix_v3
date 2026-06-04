@@ -1,0 +1,33 @@
+<h1 class="text-3xl font-bold mb-6">
+    Matrice de compétences — Ligne : {{ line.name }}
+</h1>
+
+<table class="min-w-full divide-y divide-gray-200">
+    <thead>
+        <tr>
+            <th>Tâche</th>
+            {% for emp in employees %}
+            <th>{{ emp.first_name }} {{ emp.last_name }}</th>
+            {% endfor %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in matrix %}
+        <tr>
+            <td>{{ row.task.title }}</td>
+            {% for cell in row.cells %}
+            <td class="{% if cell %}level-{{ cell.level }}{% else %}level-default{% endif %}">
+                {% if cell %}
+                    {{ cell.get_level_display }}
+                    {% if cell.trainer %} ({{ cell.trainer.last_name }}) {% endif %}
+                    <br>
+                    {{ cell.date|date:"d/m/Y" }}
+                {% else %}
+                    -
+                {% endif %}
+            </td>
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

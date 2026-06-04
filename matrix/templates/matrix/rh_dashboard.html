@@ -1,0 +1,4007 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard RH Ultra Pro | HR Management</title>
+  <link rel="icon" type="image/png" href="{% static 'images/logo.png' %}">
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+
+  <!-- Tailwind CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- Fonts professionnelles -->
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --primary-color: #0F172A;
+      --secondary-color: #1E40AF;
+      --accent-color: #3B82F6;
+      --success-color: #059669;
+      --warning-color: #D97706;
+      --danger-color: #DC2626;
+      --info-color: #0891B2;
+      --gray-50: #F8FAFC;
+      --gray-100: #F1F5F9;
+      --gray-200: #E2E8F0;
+      --gray-300: #CBD5E1;
+      --gray-400: #94A3B8;
+      --gray-500: #64748B;
+      --gray-600: #475569;
+      --gray-700: #334155;
+      --gray-800: #1E293B;
+      --gray-900: #0F172A;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background-attachment: fixed;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    .main-container {
+      background: var(--gray-50);
+      min-height: 100vh;
+    }
+
+    /* SIDEBAR */
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100vh;
+      width: 280px;
+      background: linear-gradient(180deg, #0F172A 0%, #1E293B 100%);
+      color: white;
+      padding: 0;
+      z-index: 1000;
+      box-shadow: 4px 0 24px rgba(0, 0, 0, 0.12);
+      overflow-y: auto;
+    }
+
+    .sidebar-header {
+      padding: 28px 24px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .sidebar-logo {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 0;
+    }
+
+    .company-logo {
+      max-width: 140px;
+      height: auto;
+      display: block;
+    }
+
+    .menu-section {
+      margin-bottom: 24px;
+    }
+
+    .menu-section-title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: rgba(255, 255, 255, 0.5);
+      padding: 0 24px 12px;
+    }
+
+    .menu-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 24px;
+      color: rgba(255, 255, 255, 0.7);
+      text-decoration: none;
+      transition: all 0.2s ease;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .menu-item:hover {
+      background: rgba(255, 255, 255, 0.05);
+      color: white;
+    }
+
+    .menu-item.active {
+      background: rgba(59, 130, 246, 0.15);
+      color: white;
+      border-left: 3px solid #3B82F6;
+    }
+
+    .menu-item i {
+      width: 20px;
+      text-align: center;
+    }
+
+    .menu-badge {
+      margin-left: auto;
+      background: var(--danger-color);
+      color: white;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 10px;
+    }
+
+    /* MAIN CONTENT */
+    .main-content {
+      margin-left: 280px;
+      min-height: 100vh;
+    }
+
+    /* HEADER */
+    .top-header {
+      background: white;
+      border-bottom: 1px solid var(--gray-200);
+      padding: 20px 40px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+    }
+
+    .page-title {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--gray-900);
+      letter-spacing: -0.02em;
+      margin-bottom: 4px;
+    }
+
+    .breadcrumb {
+      display: flex;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--gray-500);
+      align-items: center;
+    }
+
+    .last-update {
+      font-size: 12px;
+      color: var(--gray-400);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* ALERTS BAR */
+    .alerts-bar {
+      display: flex;
+      gap: 12px;
+      padding: 16px 40px;
+      background: white;
+      border-bottom: 1px solid var(--gray-200);
+      overflow-x: auto;
+    }
+
+    .alert-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-decoration: none;
+    }
+
+    .alert-item:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .alert-danger { background: rgba(220, 38, 38, 0.1); color: var(--danger-color); }
+    .alert-warning { background: rgba(217, 119, 6, 0.1); color: var(--warning-color); }
+    .alert-info { background: rgba(8, 145, 178, 0.1); color: var(--info-color); }
+    .alert-success { background: rgba(5, 150, 105, 0.1); color: var(--success-color); }
+    .alert-secondary { background: rgba(100, 116, 139, 0.1); color: var(--gray-600); }
+
+    /* CARDS */
+    .card {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      border: 1px solid var(--gray-200);
+      overflow: hidden;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+    }
+
+    .card-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--gray-200);
+      background: var(--gray-50);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .kpi-card {
+      position: relative;
+      overflow: hidden;
+      padding: 24px;
+    }
+
+    .kpi-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+    }
+
+    .kpi-card.primary::before { background: linear-gradient(90deg, #667eea 0%, #764ba2 100%); }
+    .kpi-card.success::before { background: linear-gradient(90deg, #059669 0%, #10B981 100%); }
+    .kpi-card.warning::before { background: linear-gradient(90deg, #D97706 0%, #F59E0B 100%); }
+    .kpi-card.danger::before { background: linear-gradient(90deg, #DC2626 0%, #EF4444 100%); }
+    .kpi-card.info::before { background: linear-gradient(90deg, #0891B2 0%, #06B6D4 100%); }
+
+    .kpi-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+    }
+
+    .section-title {
+      font-weight: 700;
+      color: var(--gray-900);
+      font-size: 1.125rem;
+      letter-spacing: -0.02em;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .section-title i {
+      color: var(--accent-color);
+      font-size: 20px;
+    }
+
+    .gradient-text {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .stat-number {
+      font-size: 2.25rem;
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: -0.02em;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--gray-600);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 8px;
+    }
+
+    /* HEALTH SCORE */
+    .health-score-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 32px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .health-score-card::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -50%;
+      width: 100%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 60%);
+    }
+
+    .health-score-circle {
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .health-score-inner {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.95);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* PROGRESS BARS */
+    .progress-bar {
+      background: var(--gray-200);
+      border-radius: 9999px;
+      height: 8px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      border-radius: 9999px;
+      transition: width 0.6s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      right: 0;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+      animation: shimmer 2s infinite;
+    }
+
+    @keyframes shimmer {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+
+    /* BADGES */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 12px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.025em;
+    }
+
+    .badge-success { background: rgba(5, 150, 105, 0.1); color: var(--success-color); }
+    .badge-warning { background: rgba(217, 119, 6, 0.1); color: var(--warning-color); }
+    .badge-danger { background: rgba(220, 38, 38, 0.1); color: var(--danger-color); }
+    .badge-info { background: rgba(59, 130, 246, 0.1); color: var(--accent-color); }
+    .badge-secondary { background: var(--gray-100); color: var(--gray-700); }
+
+    /* TABLES */
+    table {
+      border-collapse: separate;
+      border-spacing: 0;
+      width: 100%;
+    }
+
+    table thead th {
+      background: var(--gray-50);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-size: 11px;
+      color: var(--gray-700);
+      padding: 14px 16px;
+      border-bottom: 2px solid var(--gray-200);
+      text-align: left;
+      position: sticky;
+      top: 0;
+    }
+
+    table tbody tr {
+      transition: all 0.2s ease;
+    }
+
+    table tbody tr:hover {
+      background: var(--gray-50);
+    }
+
+    table tbody td {
+      padding: 16px;
+      border-bottom: 1px solid var(--gray-100);
+      font-size: 14px;
+      color: var(--gray-800);
+    }
+
+    /* LIST ITEMS */
+    .list-item {
+      padding: 14px;
+      border-radius: 8px;
+      transition: all 0.2s ease;
+      border: 1px solid transparent;
+    }
+
+    .list-item:hover {
+      background: var(--gray-50);
+      border-color: var(--gray-200);
+    }
+
+    /* SEARCH BOX */
+    .search-box {
+      position: relative;
+    }
+
+    .search-box input {
+      padding: 10px 14px 10px 42px;
+      border: 1px solid var(--gray-300);
+      border-radius: 8px;
+      font-size: 14px;
+      transition: all 0.2s ease;
+      width: 100%;
+    }
+
+    .search-box input:focus {
+      outline: none;
+      border-color: var(--accent-color);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .search-box i {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--gray-400);
+    }
+
+    /* BUTTONS */
+    .btn {
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #1E40AF 0%, #3B82F6 100%);
+      color: white;
+      box-shadow: 0 2px 8px rgba(30, 64, 175, 0.2);
+    }
+
+    .btn-primary:hover {
+      box-shadow: 0 4px 16px rgba(30, 64, 175, 0.3);
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: white;
+      color: var(--gray-700);
+      border: 1px solid var(--gray-300);
+    }
+
+    .btn-secondary:hover {
+      background: var(--gray-50);
+    }
+
+    .btn-sm {
+      padding: 6px 12px;
+      font-size: 12px;
+    }
+
+    /* TABS */
+    .tabs {
+      display: flex;
+      gap: 4px;
+      background: var(--gray-100);
+      padding: 4px;
+      border-radius: 10px;
+    }
+
+    .tab {
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--gray-600);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: none;
+      background: transparent;
+    }
+
+    .tab:hover {
+      color: var(--gray-900);
+    }
+
+    .tab.active {
+      background: white;
+      color: var(--gray-900);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    /* CHART CONTAINER */
+    .chart-container {
+      position: relative;
+      padding: 16px 0;
+    }
+
+    /* AVATAR */
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 14px;
+      color: white;
+    }
+
+    .avatar-sm {
+      width: 32px;
+      height: 32px;
+      font-size: 12px;
+    }
+
+    /* ANIMATIONS */
+    .fade-in {
+      animation: fadeIn 0.5s ease-in;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════
+   STYLES POUR MAÎTRISÉ ET POLYVALENCE
+═══════════════════════════════════════════════════════════════════════ */
+
+/* Indicateur Maîtrisé */
+.mastery-indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.mastery-bar {
+  width: 100%;
+  height: 8px;
+  background: #E5E7EB;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.mastery-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+
+.mastery-fill.excellent {
+  background: linear-gradient(90deg, #10B981, #059669);
+}
+
+.mastery-fill.good {
+  background: linear-gradient(90deg, #3B82F6, #2563EB);
+}
+
+.mastery-fill.warning {
+  background: linear-gradient(90deg, #F59E0B, #D97706);
+}
+
+.mastery-fill.critical {
+  background: linear-gradient(90deg, #EF4444, #DC2626);
+}
+
+.mastery-value {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+/* Indicateur Polyvalence */
+.polyvalence-indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.polyvalence-bar {
+  width: 100%;
+  height: 8px;
+  background: #E5E7EB;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.polyvalence-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+
+.polyvalence-fill.excellent {
+  background: linear-gradient(90deg, #8B5CF6, #7C3AED);
+}
+
+.polyvalence-fill.good {
+  background: linear-gradient(90deg, #06B6D4, #0891B2);
+}
+
+.polyvalence-fill.warning {
+  background: linear-gradient(90deg, #F97316, #EA580C);
+}
+
+.polyvalence-fill.critical {
+  background: linear-gradient(90deg, #EF4444, #DC2626);
+}
+
+.polyvalence-value {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+/* Version alternative avec icônes */
+.mastery-indicator-alt,
+.polyvalence-indicator-alt {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.mastery-indicator-alt i {
+  color: #10B981;
+}
+
+.polyvalence-indicator-alt i {
+  color: #8B5CF6;
+}
+
+.sidebar-footer-compact {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.logout-item {
+  color: #FCA5A5 !important;
+  background: rgba(220, 38, 38, 0.1);
+}
+
+.logout-item:hover {
+  background: rgba(220, 38, 38, 0.2) !important;
+  color: #FEE2E2 !important;
+}
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(15px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    /* RESPONSIVE */
+    @media (max-width: 1280px) {
+      .main-content {
+        margin-left: 0;
+      }
+      .sidebar {
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+      }
+      .sidebar.open {
+        transform: translateX(0);
+      }
+    }
+
+    /* SCROLLBAR */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--gray-100);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--gray-300);
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--gray-400);
+    }
+
+    /* STATUS INDICATORS */
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .status-excellent { background: var(--success-color); }
+    .status-bon { background: var(--info-color); }
+    .status-attention { background: var(--warning-color); }
+    .status-critique { background: var(--danger-color); }
+
+    /* EVOLUTION INDICATOR */
+    .evolution-up { color: var(--success-color); }
+    .evolution-down { color: var(--danger-color); }
+    .evolution-neutral { color: var(--gray-500); }
+
+    /* GRID UTILITIES */
+    .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
+    .grid-5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 20px; }
+    .grid-auto { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; }
+
+    @media (max-width: 1024px) {
+      .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 768px) {
+      .grid-5 { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="main-container">
+    
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">
+          <img src="{% static 'images/logo.png' %}" alt="Logo" class="company-logo">
+        </div>
+      </div>
+
+      <nav style="padding: 16px 0;">
+        <div class="menu-section">
+          <div class="menu-section-title">Principal</div>
+          <a href="#" class="menu-item active">
+            <i class="fas fa-chart-line"></i>
+            <span>Tableau de bord</span>
+          </a>
+          <a href="{% url 'employee_list_rh' %}" class="menu-item">
+            <i class="fas fa-users"></i>
+            <span>Employés</span>
+            <span class="menu-badge" style="background: var(--accent-color);">{{ total_employees }}</span>
+          </a>
+          <a href="{% url 'rh_manage_tasks_lines' %}" class="menu-item">
+            <i class="fas fa-tasks"></i>
+            <span>Tâches & Lignes</span>
+          </a>
+        </div>
+
+        <div class="menu-section">
+          <div class="menu-section-title">Gestion</div>
+          <a href="{% url 'rh_training_approvals' %}" class="menu-item">
+            <i class="fas fa-clock"></i>
+            <span>Demandes Formations</span>
+            {% if pending_count > 0 %}
+            <span class="menu-badge">{{ pending_count }}</span>
+            {% endif %}
+          </a>
+          <a href="{% url 'rh_requalification_approvals' %}" class="menu-item">
+                    <i class="fas fa-clipboard-check"></i>
+                    <span>Demandes Requalifications</span>
+          </a>
+          <a href="{% url 'rh_employees_to_requalify' %}" class="menu-item">
+                    <i class="fas fa-history"></i>
+                    <span>Historique requalifications</span>
+          </a>
+          <a href="{% url 'transfer_employee' %}" class="menu-item">
+            <i class="fas fa-exchange-alt"></i>
+            <span>Transferts</span>
+          </a>
+          <a href="{% url 'rh_transfer_approvals' %}" class="menu-item">
+                    <i class="fas fa-user-check"></i>
+                    <span>Valider Transferts</span>
+                    {% if pending.count > 0 %}
+                    <span style="background: var(--warning-color); color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px; margin-left: auto;">{{ pending.count }}</span>
+                    {% endif %}
+          </a>
+
+        </div>
+      </nav>
+
+      <!-- Version compacte -->
+<div class="sidebar-footer-compact">
+  <a href="{% url 'login' %}" class="menu-item logout-item">
+    <i class="fas fa-sign-out-alt"></i>
+    <span>Déconnexion</span>
+    <span style="margin-left: auto; font-size: 11px; opacity: 0.7;">
+      {{ request.user.username }}
+    </span>
+  </a>
+</div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-content">
+      
+      <!-- HEADER -->
+      <header class="top-header">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+          <div>
+            <h1 class="page-title">Dashboard RH </h1>
+            <div style="display: flex; align-items: center; gap: 16px; margin-top: 8px;">
+              <div class="breadcrumb">
+                <a href="#" style="color: var(--accent-color); text-decoration: none;">
+                  <i class="fas fa-home"></i> Accueil
+                </a>
+                <span>/</span>
+                <span>Dashboard</span>
+              </div>
+              <span class="last-update">
+                <i class="far fa-clock"></i>
+                <!-- Dernière mise à jour : {{ last_update|date:"d/m/Y H:i" }} -->
+                <p>{% now "d/m/Y H:i:s" %}</p>
+              </span>
+            </div>
+          </div>
+          <div style="display: flex; gap: 12px; align-items: center;">
+            <span class="badge badge-info">
+              <i class="far fa-calendar-alt" style="margin-right: 6px;"></i>
+              {{ report_period }}
+            </span>
+            <!-- Remplacer le bouton Exporter simple par un dropdown -->
+<div style="position: relative; display: inline-block;">
+  <button class="btn btn-secondary" onclick="toggleExportMenu()" id="exportBtn">
+    <i class="fas fa-download"></i>
+    Exporter
+    <i class="fas fa-chevron-down" style="margin-left: 4px; font-size: 10px;"></i>
+  </button>
+  <div id="exportMenu" style="display: none; position: absolute; top: 100%; right: 0; background: white; border-radius: 8px; box-shadow: 0 10px 40px rgba(0,0,0,0.15); min-width: 200px; z-index: 1000; margin-top: 8px; overflow: hidden;">
+    <a href="{% url 'export_dashboard_excel' %}" style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; color: var(--gray-700); text-decoration: none; transition: background 0.2s;" onmouseover="this.style.background='var(--gray-50)'" onmouseout="this.style.background='white'">
+      <i class="fas fa-file-excel" style="color: #059669; width: 20px;"></i>
+      <div>
+        <p style="margin: 0; font-weight: 600;">Export Excel</p>
+        <p style="margin: 0; font-size: 11px; color: var(--gray-500);">Toutes les données</p>
+      </div>
+    </a>
+    <a href="{% url 'export_dashboard_pdf' %}" style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; color: var(--gray-700); text-decoration: none; transition: background 0.2s;" onmouseover="this.style.background='var(--gray-50)'" onmouseout="this.style.background='white'">
+      <i class="fas fa-file-pdf" style="color: #DC2626; width: 20px;"></i>
+      <div>
+        <p style="margin: 0; font-weight: 600;">Export PDF</p>
+        <p style="margin: 0; font-size: 11px; color: var(--gray-500);">Rapport de synthèse</p>
+      </div>
+    </a>
+  </div>
+</div>
+
+<script>
+function toggleExportMenu() {
+  const menu = document.getElementById('exportMenu');
+  menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+}
+
+// Fermer le menu si on clique ailleurs
+document.addEventListener('click', function(e) {
+  const menu = document.getElementById('exportMenu');
+  const btn = document.getElementById('exportBtn');
+  if (!menu.contains(e.target) && !btn.contains(e.target)) {
+    menu.style.display = 'none';
+  }
+});
+</script>
+            <button class="btn btn-primary" onclick="location.reload()">
+              <i class="fas fa-sync-alt"></i>
+              Actualiser
+            </button>
+            <!-- Notifications Dropdown -->
+<div style="position: relative; display: inline-block;">
+  <button class="btn btn-secondary" onclick="toggleNotifications()" style="position: relative;">
+    <i class="fas fa-bell"></i>
+    {% if total_alerts > 0 %}
+    <span style="position: absolute; top: -5px; right: -5px; background: var(--danger-color); color: white; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 10px;">
+      {{ total_alerts }}
+    </span>
+    {% endif %}
+  </button>
+  
+  <div id="notificationsPanel" style="display: none; position: absolute; top: 100%; right: 0; width: 360px; background: white; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.15); margin-top: 12px; z-index: 1000; overflow: hidden;">
+    <div style="padding: 16px 20px; border-bottom: 1px solid var(--gray-200); display: flex; justify-content: space-between; align-items: center;">
+      <h4 style="margin: 0; font-size: 14px; font-weight: 700;">Notifications</h4>
+      <span class="badge badge-danger">{{ total_alerts }} alertes</span>
+    </div>
+    
+    <div style="max-height: 400px; overflow-y: auto;">
+      {% for alert in alerts %}
+      <a href="{{ alert.link }}" style="display: flex; gap: 12px; padding: 14px 20px; border-bottom: 1px solid var(--gray-100); text-decoration: none; transition: background 0.2s;" onmouseover="this.style.background='var(--gray-50)'" onmouseout="this.style.background='white'">
+        <div style="width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+          background: {% if alert.type == 'danger' %}rgba(220, 38, 38, 0.1){% elif alert.type == 'warning' %}rgba(217, 119, 6, 0.1){% elif alert.type == 'success' %}rgba(5, 150, 105, 0.1){% else %}rgba(59, 130, 246, 0.1){% endif %};
+          color: {% if alert.type == 'danger' %}var(--danger-color){% elif alert.type == 'warning' %}var(--warning-color){% elif alert.type == 'success' %}var(--success-color){% else %}var(--info-color){% endif %};">
+          <i class="{{ alert.icon }}"></i>
+        </div>
+        <div style="flex: 1;">
+          <p style="margin: 0; font-size: 13px; font-weight: 600; color: var(--gray-900);">{{ alert.title }}</p>
+          <p style="margin: 4px 0 0 0; font-size: 12px; color: var(--gray-500);">{{ alert.message }}</p>
+        </div>
+      </a>
+      {% empty %}
+      <div style="padding: 40px; text-align: center;">
+        <i class="fas fa-check-circle" style="font-size: 40px; color: var(--success-color); opacity: 0.5;"></i>
+        <p style="color: var(--gray-500); margin-top: 12px;">Aucune notification</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<script>
+function toggleNotifications() {
+  const panel = document.getElementById('notificationsPanel');
+  panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+}
+
+document.addEventListener('click', function(e) {
+  const panel = document.getElementById('notificationsPanel');
+  if (!panel.contains(e.target) && !e.target.closest('[onclick="toggleNotifications()"]')) {
+    panel.style.display = 'none';
+  }
+});
+</script>
+
+          </div>
+        </div>
+      </header>
+
+      <!-- ALERTS BAR -->
+      {% if alerts %}
+      <div class="alerts-bar">
+        {% for alert in alerts %}
+        <a href="{{ alert.link }}" class="alert-item alert-{{ alert.type }}">
+          <i class="{{ alert.icon }}"></i>
+          <span>{{ alert.title }}</span>
+        </a>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <!-- CONTENT -->
+      <div style="padding: 32px 40px; max-width: 1900px;">
+
+        <!-- HEALTH SCORE + MAIN KPIs -->
+        <div style="display: grid; grid-template-columns: 380px 1fr; gap: 24px; margin-bottom: 32px;">
+          
+
+
+{% if is_first_visit_health %}
+
+{% else %}
+
+<div class="card health-score-card fade-in" style="position: relative;">
+  
+  <!-- Bouton Aide -->
+  <button onclick="showHealthExplanation()" style="position: absolute; top: 16px; right: 16px; background: rgba(255,255,255,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; z-index: 10; transition: all 0.2s;" title="Comprendre le score">
+    <i class="fas fa-question"></i>
+  </button>
+  
+  <div style="display: flex; align-items: center; gap: 24px; position: relative; z-index: 1;">
+    <div class="health-score-circle">
+      <div class="health-score-inner">
+        <span style="font-size: 36px; font-weight: 800; color: 
+          {% if health_color == 'success' %}var(--success-color)
+          {% elif health_color == 'info' %}var(--info-color)
+          {% elif health_color == 'warning' %}var(--warning-color)
+          {% else %}var(--danger-color){% endif %};">{{ health_score }}</span>
+        <span style="font-size: 12px; color: var(--gray-500); font-weight: 600;">/ 100</span>
+      </div>
+    </div>
+    <div>
+      <h3 style="font-size: 14px; opacity: 0.8; margin-bottom: 8px;">Score de Santé Global</h3>
+      <p style="font-size: 24px; font-weight: 700; margin-bottom: 4px;">{{ health_status }}</p>
+      <p style="font-size: 13px; opacity: 0.7; cursor: pointer;" onclick="showHealthExplanation()">
+        <i class="fas fa-info-circle"></i>
+        Basé sur 4 indicateurs clés
+        <i class="fas fa-external-link-alt" style="font-size: 10px; margin-left: 4px;"></i>
+      </p>
+    </div>
+  </div>
+  
+  <!-- Les 5 indicateurs en version compacte -->
+  <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.2); position: relative; z-index: 1;">
+    <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; text-align: center;">
+      
+      <!-- Maîtrise -->
+      <div style="cursor: help;" title="35% du score - Niveau L et U atteint">
+        <div style="display: flex; align-items: center; justify-content: center; gap: 6px; margin-bottom: 4px;">
+          <i class="fas fa-award" style="font-size: 12px; color: #4ade80;"></i>
+          <p style="font-size: 18px; font-weight: 700; margin: 0;">{{ mastery_rate }}%</p>
+        </div>
+        <p style="font-size: 10px; opacity: 0.7; margin: 0;">Maîtrise</p>
+        <div style="width: 100%; height: 3px; background: rgba(255,255,255,0.2); border-radius: 2px; margin-top: 6px; overflow: hidden;">
+          <div style="width: 30%; height: 100%; background: #4ade80;"></div>
+        </div>
+      </div>
+      
+      <!-- Polyvalence -->
+      <div style="cursor: help;" title="25% du score - Multi-compétences">
+        <div style="display: flex; align-items: center; justify-content: center; gap: 6px; margin-bottom: 4px;">
+          <i class="fas fa-users-cog" style="font-size: 12px; color: #a78bfa;"></i>
+          <p style="font-size: 18px; font-weight: 700; margin: 0;">{{ polyvalence_rate }}%</p>
+        </div>
+        <p style="font-size: 10px; opacity: 0.7; margin: 0;">Polyvalence</p>
+        <div style="width: 100%; height: 3px; background: rgba(255,255,255,0.2); border-radius: 2px; margin-top: 6px; overflow: hidden;">
+          <div style="width: 20%; height: 100%; background: #a78bfa;"></div>
+        </div>
+      </div>
+      
+      <!-- Couverture -->
+      <div style="cursor: help;" title="25% du score - Étendue des formations">
+        <div style="display: flex; align-items: center; justify-content: center; gap: 6px; margin-bottom: 4px;">
+          <i class="fas fa-chart-pie" style="font-size: 12px; color: #60a5fa;"></i>
+          <p style="font-size: 18px; font-weight: 700; margin: 0;">{{ global_coverage_rate }}%</p>
+        </div>
+        <p style="font-size: 10px; opacity: 0.7; margin: 0;">Couverture</p>
+        <div style="width: 100%; height: 3px; background: rgba(255,255,255,0.2); border-radius: 2px; margin-top: 6px; overflow: hidden;">
+          <div style="width: 20%; height: 100%; background: #60a5fa;"></div>
+        </div>
+      </div>
+      
+      <!-- Formateurs -->
+      <!-- <div style="cursor: help;" title="15% du score - Capacité à former">
+        <div style="display: flex; align-items: center; justify-content: center; gap: 6px; margin-bottom: 4px;">
+          <i class="fas fa-chalkboard-teacher" style="font-size: 12px; color: #fbbf24;"></i>
+          <p style="font-size: 18px; font-weight: 700; margin: 0;">{{ unique_trainers }}</p>
+        </div>
+        <p style="font-size: 10px; opacity: 0.7; margin: 0;">Formateurs</p>
+        <div style="width: 100%; height: 3px; background: rgba(255,255,255,0.2); border-radius: 2px; margin-top: 6px; overflow: hidden;">
+          <div style="width: 15%; height: 100%; background: #fbbf24;"></div>
+        </div>
+      </div> -->
+      
+      <!-- Risques -->
+      <div style="cursor: help;" title="15% du score - Tâches critiques">
+        <div style="display: flex; align-items: center; justify-content: center; gap: 6px; margin-bottom: 4px;">
+          <i class="fas fa-shield-alt" style="font-size: 12px; color: #f87171;"></i>
+          <p style="font-size: 18px; font-weight: 700; margin: 0;">{{ total_critical_tasks }}</p>
+        </div>
+        <p style="font-size: 10px; opacity: 0.7; margin: 0;">Critiques</p>
+        <div style="width: 100%; height: 3px; background: rgba(255,255,255,0.2); border-radius: 2px; margin-top: 6px; overflow: hidden;">
+          <div style="width: 15%; height: 100%; background: #f87171;"></div>
+        </div>
+      </div>
+      
+    </div>
+  </div>
+  
+</div>
+
+{% endif %}
+
+<div id="healthExplanationModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 9999; overflow-y: auto; padding: 20px; backdrop-filter: blur(4px);">
+  <div style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%); max-width: 900px; margin: 40px auto; border-radius: 20px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); color: white;">
+    
+    <!-- Header -->
+    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 24px 32px; display: flex; justify-content: space-between; align-items: center;">
+      <h2 style="margin: 0; font-size: 22px; display: flex; align-items: center; gap: 12px;">
+        <i class="fas fa-heartbeat"></i>
+        Score de Santé - Les 4 Indicateurs
+      </h2>
+      <button onclick="closeHealthExplanation()" style="background: rgba(255,255,255,0.2); border: none; color: white; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 18px;">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    
+    <!-- Contenu -->
+    <div style="padding: 32px;">
+      
+      <!-- Score actuel -->
+      <div style="text-align: center; margin-bottom: 32px;">
+        <div style="display: inline-flex; align-items: center; justify-content: center; width: 100px; height: 100px; background: rgba(255,255,255,0.1); border-radius: 50%; margin-bottom: 12px;">
+          <span style="font-size: 42px; font-weight: 800; color: 
+            {% if health_color == 'success' %}#4ade80
+            {% elif health_color == 'info' %}#60a5fa
+            {% elif health_color == 'warning' %}#fbbf24
+            {% else %}#f87171{% endif %};">{{ health_score }}</span>
+        </div>
+        <p style="margin: 0; font-size: 18px; font-weight: 600;">{{ health_status }}</p>
+      </div>
+      
+      <!-- Les 5 indicateurs -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 32px;">
+        
+        <!-- Maîtrise -->
+        <div style="background: rgba(34, 197, 94, 0.15); border-radius: 12px; padding: 16px; border: 1px solid rgba(34, 197, 94, 0.3); text-align: center;">
+          <i class="fas fa-award" style="font-size: 28px; color: #4ade80; margin-bottom: 8px;"></i>
+          <h4 style="margin: 0 0 4px 0; font-size: 14px;">Maîtrise</h4>
+          <p style="margin: 0 0 8px 0; font-size: 24px; font-weight: 800; color: #4ade80;">{{ mastery_rate }}%</p>
+          <span style="background: #22c55e; color: white; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;">35% du score</span>
+        </div>
+        
+        <!-- Polyvalence -->
+        <div style="background: rgba(139, 92, 246, 0.15); border-radius: 12px; padding: 16px; border: 1px solid rgba(139, 92, 246, 0.3); text-align: center;">
+          <i class="fas fa-users-cog" style="font-size: 28px; color: #a78bfa; margin-bottom: 8px;"></i>
+          <h4 style="margin: 0 0 4px 0; font-size: 14px;">Polyvalence</h4>
+          <p style="margin: 0 0 8px 0; font-size: 24px; font-weight: 800; color: #a78bfa;">{{ polyvalence_rate }}%</p>
+          <span style="background: #8b5cf6; color: white; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;">25% du score</span>
+        </div>
+        
+        <!-- Couverture -->
+        <div style="background: rgba(59, 130, 246, 0.15); border-radius: 12px; padding: 16px; border: 1px solid rgba(59, 130, 246, 0.3); text-align: center;">
+          <i class="fas fa-chart-pie" style="font-size: 28px; color: #60a5fa; margin-bottom: 8px;"></i>
+          <h4 style="margin: 0 0 4px 0; font-size: 14px;">Couverture</h4>
+          <p style="margin: 0 0 8px 0; font-size: 24px; font-weight: 800; color: #60a5fa;">{{ global_coverage_rate }}%</p>
+          <span style="background: #3b82f6; color: white; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;">25% du score</span>
+        </div>
+        
+        
+        <!-- Risques -->
+        <div style="background: rgba(239, 68, 68, 0.15); border-radius: 12px; padding: 16px; border: 1px solid rgba(239, 68, 68, 0.3); text-align: center;">
+          <i class="fas fa-shield-alt" style="font-size: 28px; color: #f87171; margin-bottom: 8px;"></i>
+          <h4 style="margin: 0 0 4px 0; font-size: 14px;">Tâches Critiques</h4>
+          <p style="margin: 0 0 8px 0; font-size: 24px; font-weight: 800; color: #f87171;">{{ total_critical_tasks }}</p>
+          <span style="background: #ef4444; color: white; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;">15% du score</span>
+        </div>
+        
+      </div>
+      
+      <!-- Formule -->
+      <div style="background: rgba(0,0,0,0.3); border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+        <h4 style="margin: 0 0 12px 0; font-size: 13px; opacity: 0.7; text-align: center;">
+          <i class="fas fa-calculator" style="margin-right: 8px;"></i>
+          FORMULE DE CALCUL
+        </h4>
+        <p style="margin: 0; text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 2;">
+          Score = 
+          <span style="color: #4ade80;">({{ mastery_rate }} × 0.30)</span> + 
+          <span style="color: #a78bfa;">({{ polyvalence_rate }} × 0.20)</span> + 
+          <span style="color: #60a5fa;">({{ global_coverage_rate }} × 0.20)</span> + 
+          <span style="color: #f87171;">(100 - Critiques × 0.15)</span>
+        </p>
+      </div>
+      
+      <!-- Échelle -->
+      <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
+        <span class="badge" style="background: #ef4444; color: white; padding: 8px 16px;">
+          <i class="fas fa-times-circle" style="margin-right: 6px;"></i>
+          Critique (0-39)
+        </span>
+        <span class="badge" style="background: #f59e0b; color: white; padding: 8px 16px;">
+          <i class="fas fa-exclamation-circle" style="margin-right: 6px;"></i>
+          Moyen (40-59)
+        </span>
+        <span class="badge" style="background: #3b82f6; color: white; padding: 8px 16px;">
+          <i class="fas fa-info-circle" style="margin-right: 6px;"></i>
+          Bon (60-79)
+        </span>
+        <span class="badge" style="background: #22c55e; color: white; padding: 8px 16px;">
+          <i class="fas fa-check-circle" style="margin-right: 6px;"></i>
+          Excellent (80-100)
+        </span>
+      </div>
+      
+    </div>
+    
+    <!-- Footer -->
+    <div style="padding: 16px 32px; background: rgba(0,0,0,0.2); text-align: right;">
+      <button onclick="closeHealthExplanation()" class="btn" style="background: white; color: #1e293b; padding: 12px 28px; border: none; border-radius: 10px; font-weight: 600; cursor: pointer;">
+        <i class="fas fa-check" style="margin-right: 8px;"></i>
+        Compris
+      </button>
+    </div>
+    
+  </div>
+</div>
+
+<script>
+function showHealthExplanation() {
+  document.getElementById('healthExplanationModal').style.display = 'block';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeHealthExplanation() {
+  document.getElementById('healthExplanationModal').style.display = 'none';
+  document.body.style.overflow = 'auto';
+}
+
+// Fermer en cliquant à l'extérieur
+document.getElementById('healthExplanationModal').addEventListener('click', function(e) {
+  if (e.target === this) {
+    closeHealthExplanation();
+  }
+});
+
+// Fermer avec Escape
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    closeHealthExplanation();
+  }
+});
+</script>
+
+          <!-- Main KPIs Grid -->
+          <div class="grid-5 fade-in">
+            
+            <!-- Total Employés -->
+            <div class="card kpi-card primary">
+              <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 16px;">
+                <div class="kpi-icon" style="background: rgba(59, 130, 246, 0.1); color: var(--accent-color);">
+                  <i class="fas fa-users"></i>
+                </div>
+              </div>
+              <p class="stat-label">Employés</p>
+              <p class="stat-number gradient-text">{{ total_employees }}</p>
+              <p style="font-size: 12px; color: var(--gray-500); margin-top: 8px;">
+                <span style="color: var(--success-color);"><i class="fas fa-check"></i> {{ employees_with_training }}</span> formés
+              </p>
+            </div>
+
+            <!-- Total Formations -->
+            <div class="card kpi-card info">
+              <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 16px;">
+                <div class="kpi-icon" style="background: rgba(139, 92, 246, 0.1); color: #8B5CF6;">
+                  <i class="fas fa-graduation-cap"></i>
+                </div>
+              </div>
+              <p class="stat-label">Formations</p>
+              <p class="stat-number" style="color: #8B5CF6;">{{ total_records }}</p>
+              <p style="font-size: 12px; color: var(--gray-500); margin-top: 8px;">
+                {% if month_evolution >= 0 %}
+                <span class="evolution-up"><i class="fas fa-arrow-up"></i> +{{ month_evolution }}</span>
+                {% else %}
+                <span class="evolution-down"><i class="fas fa-arrow-down"></i> {{ month_evolution }}</span>
+                {% endif %}
+                ce mois
+              </p>
+            </div>
+
+            <!-- Niveau I -->
+            <div class="card kpi-card warning">
+              <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 16px;">
+                <div class="kpi-icon" style="background: rgba(251, 191, 36, 0.15); color: #D97706;">
+                  <i class="fas fa-user-clock"></i>
+                </div>
+              </div>
+              <p class="stat-label">Niveau I</p>
+              <p class="stat-number" style="color: #D97706;">{{ level_counts.i_count }}</p>
+              <p style="font-size: 12px; color: var(--gray-500); margin-top: 8px;">
+                {{ level_distribution.i_pct }}% du total
+              </p>
+            </div>
+
+            <!-- Niveau L -->
+            <div class="card kpi-card primary">
+              <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 16px;">
+                <div class="kpi-icon" style="background: rgba(59, 130, 246, 0.15); color: var(--accent-color);">
+                  <i class="fas fa-user-check"></i>
+                </div>
+              </div>
+              <p class="stat-label">Niveau L</p>
+              <p class="stat-number" style="color: var(--accent-color);">{{ level_counts.l_count }}</p>
+              <p style="font-size: 12px; color: var(--gray-500); margin-top: 8px;">
+                {{ level_distribution.l_pct }}% du total
+              </p>
+            </div>
+
+            <!-- Niveau U -->
+            <div class="card kpi-card success">
+              <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 16px;">
+                <div class="kpi-icon" style="background: rgba(5, 150, 105, 0.15); color: var(--success-color);">
+                  <i class="fas fa-user-tie"></i>
+                </div>
+              </div>
+              <p class="stat-label">Niveau U </p>
+              <p class="stat-number" style="color: var(--success-color);">{{ level_counts.u_count }}</p>
+              <p style="font-size: 12px; color: var(--gray-500); margin-top: 8px;">
+                {{ level_distribution.u_pct }} % du total
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECONDARY KPIs -->
+        <div class="grid-4 fade-in" style="margin-bottom: 32px;">
+          
+          <div class="card" style="padding: 20px;">
+            <div style="display: flex; align-items: center; gap: 16px;">
+              <div class="kpi-icon" style="background: rgba(139, 92, 246, 0.1); color: #8B5CF6;">
+                <i class="fas fa-industry"></i>
+              </div>
+              <div>
+                <p class="stat-label">Lignes de production</p>
+                <p style="font-size: 28px; font-weight: 700; color: var(--gray-900);">{{ total_lines }}</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="card" style="padding: 20px;">
+            <div style="display: flex; align-items: center; gap: 16px;">
+              <div class="kpi-icon" style="background: rgba(59, 130, 246, 0.1); color: var(--accent-color);">
+                <i class="fas fa-tasks"></i>
+              </div>
+              <div>
+                <p class="stat-label">Tâches totales</p>
+                <p style="font-size: 28px; font-weight: 700; color: var(--gray-900);">{{ total_tasks }}</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="card" style="padding: 20px;">
+            <div style="display: flex; align-items: center; gap: 16px;">
+              <div class="kpi-icon" style="background: rgba(220, 38, 38, 0.1); color: var(--danger-color);">
+                <i class="fas fa-exclamation-triangle"></i>
+              </div>
+              <div>
+                <p class="stat-label">Tâches critiques</p>
+                <p style="font-size: 28px; font-weight: 700; color: var(--danger-color);">{{ total_critical_tasks }}</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="card" style="padding: 20px;">
+            <div style="display: flex; align-items: center; gap: 16px;">
+              <div class="kpi-icon" style="background: rgba(217, 119, 6, 0.1); color: var(--warning-color);">
+                <i class="fas fa-hourglass-half"></i>
+              </div>
+              <div>
+                <p class="stat-label">Demandes en attente</p>
+                <p style="font-size: 28px; font-weight: 700; color: var(--warning-color);">{{ pending_count }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CHARTS ROW -->
+        <div class="grid-2 fade-in" style="margin-bottom: 32px;">
+          
+          <!-- Répartition par niveau (Doughnut) -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="section-title">
+                <i class="fas fa-chart-pie"></i>
+                Répartition par niveau
+              </h3>
+            </div>
+            <div style="padding: 24px;">
+              <div class="chart-container" style="height: 300px;">
+                <canvas id="pieLevels"></canvas>
+              </div>
+              <div style="display: flex; justify-content: center; gap: 24px; margin-top: 16px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span style="width: 12px; height: 12px; border-radius: 3px; background: #F59E0B;"></span>
+                  <span style="font-size: 13px; color: var(--gray-600);">I - En formation</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span style="width: 12px; height: 12px; border-radius: 3px; background: #3B82F6;"></span>
+                  <span style="font-size: 13px; color: var(--gray-600);">L - Autonome</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span style="width: 12px; height: 12px; border-radius: 3px; background: #059669;"></span>
+                  <span style="font-size: 13px; color: var(--gray-600);">U - Formateur</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Évolution mensuelle (Line Chart) -->
+
+          <div class="card">
+            <div class="card-header">
+              <h3 class="section-title">
+                <i class="fas fa-chart-line"></i>
+                Évolution mensuelle (12 mois)
+              </h3>
+              <div style="display: flex; gap: 8px;">
+                <span class="badge badge-success">
+                  <i class="fas fa-arrow-up" style="margin-right: 4px;"></i>
+                  {{ month_evolution_pct }}%
+                </span>
+              </div>
+            </div>
+            <div style="padding: 24px;">
+              <div class="chart-container" style="height: 300px;">
+                <canvas id="lineChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- LINE STATS TABLE -->
+        <!-- <div class="card fade-in" style="margin-bottom: 32px;" id="lines-section">
+  <div class="card-header">
+    <h3 class="section-title">
+      <i class="fas fa-industry"></i>
+      Performance par Ligne de Production
+    </h3>
+    <div style="display: flex; gap: 12px; align-items: center;">
+      <span class="badge badge-secondary">
+        Moy. Maîtrise: {{ avg_line_mastery }}%
+      </span>
+      <span class="badge badge-secondary">
+        Moy. Polyvalence: {{ avg_line_polyvalence }}%
+      </span>
+    </div>
+  </div>
+  
+ 
+  <div style="background: #f8fafc; border-bottom: 1px solid #e2e8f0; padding: 12px 16px; display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start; font-size: 11px;">
+    
+   
+    <div style="display: flex; align-items: flex-start; gap: 8px;">
+      <i class="fas fa-users-cog" style="color: #8b5cf6; margin-top: 2px;"></i>
+      <div>
+        <strong style="color: #6d28d9;">Polyvalence</strong>
+        <span style="color: #64748b;"> = Moyenne des tâches que chaque employé sait faire</span>
+      </div>
+    </div>
+    
+   
+    <div style="margin-left: auto; display: flex; gap: 12px; align-items: center;">
+      <span style="color: #64748b; font-weight: 600;">Seuils :</span>
+      <span style="display: inline-flex; align-items: center; gap: 3px;">
+        <span style="width: 8px; height: 8px; border-radius: 50%; background: #10b981;"></span>
+        <span style="color: #059669;">≥70%</span>
+      </span>
+      <span style="display: inline-flex; align-items: center; gap: 3px;">
+        <span style="width: 8px; height: 8px; border-radius: 50%; background: #3b82f6;"></span>
+        <span style="color: #2563eb;">50-69%</span>
+      </span>
+      <span style="display: inline-flex; align-items: center; gap: 3px;">
+        <span style="width: 8px; height: 8px; border-radius: 50%; background: #f59e0b;"></span>
+        <span style="color: #d97706;">40-49%</span>
+      </span>
+      <span style="display: inline-flex; align-items: center; gap: 3px;">
+        <span style="width: 8px; height: 8px; border-radius: 50%; background: #ef4444;"></span>
+        <span style="color: #dc2626;">&lt;40%</span>
+      </span>
+    </div>
+  </div>
+  
+  <div style="overflow-x: auto;">
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 60px;">Rang</th>
+          <th>Ligne</th>
+          <th style="text-align: center;">Employés</th>
+          <th style="text-align: center;">Tâches</th>
+          <th style="text-align: center;">I</th>
+          <th style="text-align: center;">L</th>
+          <th style="text-align: center;">U</th>
+         
+          <th style="width: 140px;">
+            <i class="fas fa-users-cog" style="color: #8b5cf6;"></i>
+            Polyvalence
+         
+          </th>
+          <th style="text-align: center;">Statut</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for line in line_stats %}
+        <tr>
+          <td style="text-align: center;">
+            {% if forloop.counter == 1 %}
+            <span style="width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #fbbf24, #f59e0b); display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: white;">
+              <i class="fas fa-trophy" style="font-size: 10px;"></i>
+            </span>
+            {% elif forloop.counter == 2 %}
+            <span style="width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #9ca3af, #6b7280); display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: white;">
+              <i class="fas fa-medal" style="font-size: 10px;"></i>
+            </span>
+            {% elif forloop.counter == 3 %}
+            <span style="width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #cd7f32, #b8860b); display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: white;">
+              <i class="fas fa-award" style="font-size: 10px;"></i>
+            </span>
+            {% else %}
+            <span style="width: 28px; height: 28px; border-radius: 50%; background: var(--gray-100); display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: var(--gray-600);">
+              {{ forloop.counter }}
+            </span>
+            {% endif %}
+          </td>
+          <td>
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <span class="badge badge-info">{{ line.code }}</span>
+              <div>
+                <strong style="font-size: 14px;">{{ line.name }}</strong>
+                {% if line.team_leaders != "N/A" %}
+                <p style="font-size: 12px; color: var(--gray-500); margin-top: 2px;">
+                  <i class="fas fa-user-tie"></i> {{ line.team_leaders }}
+                </p>
+                {% endif %}
+              </div>
+            </div>
+          </td>
+          <td style="text-align: center;">
+            <span class="badge badge-secondary">{{ line.employees }}</span>
+          </td>
+          <td style="text-align: center;">
+            <span class="badge badge-secondary">{{ line.tasks }}</span>
+          </td>
+          <td style="text-align: center;">
+            <span style="color: var(--warning-color); font-weight: 600;">{{ line.i_count }}</span>
+          </td>
+          <td style="text-align: center;">
+            <span style="color: var(--accent-color); font-weight: 600;">{{ line.l_count }}</span>
+          </td>
+          <td style="text-align: center;">
+            <span style="color: var(--success-color); font-weight: 600;">{{ line.u_count }}</span>
+          </td>
+          
+        
+          <td>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <div class="progress-bar" style="flex: 1; height: 6px;">
+                <div class="progress-bar-fill" style="background: linear-gradient(90deg, #8B5CF6 0%, #A78BFA 100%); width: {{ line.polyvalence_index }}%"></div>
+              </div>
+              <span style="font-size: 12px; font-weight: 600; color: #7c3aed; min-width: 40px; text-align: right;">{{ line.polyvalence_index }}%</span>
+            </div>
+          </td>
+          
+          <td style="text-align: center;">
+            <span class="badge badge-{{ line.status_color }}">
+              <span class="status-dot status-{{ line.status }}" style="margin-right: 6px;"></span>
+              {{ line.status|title }}
+            </span>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="10" style="text-align: center; padding: 60px;">
+            <i class="fas fa-inbox" style="font-size: 48px; color: var(--gray-300); margin-bottom: 16px;"></i>
+            <p style="color: var(--gray-500);">Aucune ligne de production disponible</p>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div> -->
+
+        <!-- TASKS & EMPLOYEES GRID -->
+        <div class="grid-2 fade-in" style="margin-bottom: 32px;">
+          
+          <!-- Critical Tasks -->
+          <div class="card" id="tasks-section">
+            <div class="card-header">
+              <h3 class="section-title">
+                <i class="fas fa-exclamation-triangle" style="color: var(--danger-color);"></i>
+                Postes Critiques
+              </h3>
+              <span class="badge badge-danger">{{ critical_tasks|length }} tâches</span>
+            </div>
+            <div style="padding: 20px; max-height: 400px; overflow-y: auto;">
+              {% for task in critical_tasks %}
+              <div class="list-item" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  <span class="badge badge-{{ task.criticality_color }}">
+                    <i class="fas fa-{{ task.criticality_icon }}" style="margin-right: 4px;"></i>
+                    {{ task.criticality }}
+                  </span>
+                  <div>
+                    <p style="font-weight: 600; font-size: 14px;">{{ task.code }} - {{ task.title }}</p>
+                    <p style="font-size: 12px; color: var(--gray-500);">
+                      Lignes: {{ task.lines_str|default:"Toutes" }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              {% empty %}
+              <div style="text-align: center; padding: 40px;">
+                <i class="fas fa-check-circle" style="font-size: 48px; color: var(--success-color); opacity: 0.5; margin-bottom: 16px;"></i>
+                <p style="color: var(--gray-500);">Aucune tâche critique</p>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+
+          <!-- Top Polyvalent Employees (Niveau U uniquement) -->
+<div class="card">
+  <div class="card-header">
+    <h3 class="section-title">
+      <i class="fas fa-trophy" style="color: #F59E0B;"></i>
+      Top 10 Employés Polyvalents (Niveau U)
+    </h3>
+  </div>
+  <div style="padding: 20px; max-height: 450px; overflow-y: auto;">
+    {% for group in top_polyvalent_grouped %}
+    <div class="list-item" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; padding: 12px; background: {% if group.rank <= 3 %}linear-gradient(135deg, rgba(251, 191, 36, 0.05), rgba(251, 191, 36, 0.02)){% else %}transparent{% endif %}; border-radius: 8px;">
+      
+      <!-- Rang -->
+      <div style="display: flex; align-items: flex-start; gap: 12px; flex: 1;">
+        <span style="width: 32px; height: 32px; border-radius: 50%; background: 
+          {% if group.rank == 1 %}linear-gradient(135deg, #F59E0B 0%, #EAB308 100%)
+          {% elif group.rank == 2 %}linear-gradient(135deg, #94A3B8 0%, #CBD5E1 100%)
+          {% elif group.rank == 3 %}linear-gradient(135deg, #CD7F32 0%, #B8860B 100%)
+          {% else %}var(--gray-200){% endif %}; 
+          display: inline-flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: {% if group.rank <= 3 %}white{% else %}var(--gray-600){% endif %}; flex-shrink: 0;">
+          {% if group.rank == 1 %}
+            <i class="fas fa-trophy" style="font-size: 12px;"></i>
+          {% elif group.rank == 2 %}
+            <i class="fas fa-medal" style="font-size: 12px;"></i>
+          {% elif group.rank == 3 %}
+            <i class="fas fa-award" style="font-size: 12px;"></i>
+          {% else %}
+            {{ group.rank }}
+          {% endif %}
+        </span>
+        
+        <!-- Liste des employés de ce rang -->
+        <div style="flex: 1;">
+          {% for emp in group.employees %}
+          <div style="display: flex; align-items: center; gap: 10px; {% if not forloop.last %}margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px dashed var(--gray-200);{% endif %}">
+            <div class="avatar avatar-sm" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); flex-shrink: 0;">
+              {{ emp.name|slice:":1" }}
+            </div>
+            <div style="flex: 1; min-width: 0;">
+              <p style="font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ emp.name }}</p>
+              <p style="font-size: 11px; color: var(--gray-500);">{{ emp.line }} • {{ emp.matricule }}</p>
+            </div>
+            {% if emp.l_count > 0 %}
+            <span class="badge badge-info" style="font-size: 10px;" title="Niveau Supervisé (L)">{{ emp.l_count }} L</span>
+            {% endif %}
+          </div>
+          {% endfor %}
+          
+          <!-- Indicateur si plusieurs employés -->
+          {% if group.employees|length > 1 %}
+          <p style="font-size: 10px; color: var(--gray-400); margin-top: 4px; font-style: italic;">
+            <i class="fas fa-equals"></i> {{ group.employees|length }} employés ex-æquo
+          </p>
+          {% endif %}
+        </div>
+      </div>
+      
+      <!-- Stats (communes au groupe) -->
+      <div style="text-align: right; flex-shrink: 0; margin-left: 12px;">
+        <span class="badge badge-success" style="font-size: 12px; padding: 6px 10px;" title="Niveau Formateur (U)">
+          <i class="fas fa-user-tie"></i> {{ group.u_count }} U
+        </span>
+        <p style="font-size: 15px; font-weight: 700; color: var(--gray-700); margin-top: 6px;">{{ group.progress_pct }}%</p>
+      </div>
+    </div>
+    {% empty %}
+    <div style="text-align: center; padding: 40px;">
+      <i class="fas fa-user-graduate" style="font-size: 48px; color: var(--gray-300); margin-bottom: 16px;"></i>
+      <p style="color: var(--gray-500);">Aucun employé avec niveau Formateur (U)</p>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+        </div>
+        <!-- TRAINERS & RECENT TRAININGS -->
+       <!-- ═══════════════════════════════════════════════════════════════════════════════
+     TOP CHEFS D'ÉQUIPE - DOUBLE VUE (PAR CHEF & PAR LIGNE)
+═══════════════════════════════════════════════════════════════════════════════ -->
+<div class="card fade-in" style="margin-bottom: 32px;" id="team-leaders-section">
+  
+  <!-- Header avec onglets -->
+  <div class="card-header" style="flex-wrap: wrap; gap: 16px;">
+    <div style="display: flex; align-items: center; gap: 16px;">
+      <h3 class="section-title">
+        <i class="fas fa-user-tie"></i>
+        Performance des Équipes
+      </h3>
+      
+      <!-- Tabs pour basculer entre les vues -->
+      <div class="view-tabs">
+        <button class="view-tab active" data-view="by-leader" onclick="switchLeaderView('by-leader')">
+          <i class="fas fa-user"></i>
+          Par Chef
+        </button>
+        <button class="view-tab" data-view="by-line" onclick="switchLeaderView('by-line')">
+          <i class="fas fa-industry"></i>
+          Par Ligne
+        </button>
+      </div>
+    </div>
+    
+    <!-- Stats résumées -->
+    <div style="display: flex; gap: 16px; align-items: center;">
+      <div class="mini-stat">
+        <span class="mini-stat-value">{{ team_leader_summary.total_leaders }}</span>
+        <span class="mini-stat-label">Chefs</span>
+      </div>
+      <div class="mini-stat">
+        <span class="mini-stat-value">{{ team_leader_summary.total_formations }}</span>
+        <span class="mini-stat-label">Formations</span>
+      </div>
+      <div class="mini-stat">
+        <span class="mini-stat-value text-success">+{{ team_leader_summary.total_this_month }}</span>
+        <span class="mini-stat-label">Ce mois</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       ENCADRÉ FORMULES DE CALCUL (SIMPLE)
+  ═══════════════════════════════════════════════════════════════════════ -->
+  <div style="background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border: 1px solid #bae6fd; border-radius: 8px; padding: 16px 20px; margin: 16px; display: flex; flex-wrap: wrap; gap: 24px; align-items: center;">
+    
+    <div style="display: flex; align-items: center; gap: 8px; color: #0369a1;">
+      <i class="fas fa-calculator"></i>
+      <strong style="font-size: 13px;">Formules :</strong>
+    </div>
+    
+    <!-- Couverture -->
+    <div style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: white; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+      <span style="font-size: 12px; color: #64748b;">Couverture =</span>
+      <code style="background: #f1f5f9; padding: 4px 8px; border-radius: 4px; font-size: 12px; color: #334155;">
+        (Employés formés / Employés total) × 100
+      </code>
+    </div>
+    
+    <!-- Performance -->
+     <div style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: white; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+    <span style="font-size: 12px; color: #64748b;">
+      <i class="fas fa-graduation-cap" style="color: #334155;"></i> Maîtrisé =
+    </span>
+    <code style="background: #f1f5f9; padding: 4px 8px; border-radius: 4px; font-size: 12px; color: #334155;">
+      ( L uniques) / (Employés × Tâches) × 100
+    </code>
+  </div>
+  </div>
+
+  <!-- Détails supplémentaires (caché par défaut) -->
+  
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     VUE PAR CHEF D'ÉQUIPE AVEC TÂCHES
+═══════════════════════════════════════════════════════════════════════ -->
+<div id="view-by-leader" class="leader-view active">
+  <div style="overflow-x: auto;">
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 60px;">#</th>
+          <th>Chef d'Équipe</th>
+          <th style="text-align: center;">Lignes</th>
+          <th style="text-align: center;">Employés</th>
+          <th style="text-align: center;">Tâches</th> 
+          <th style="text-align: center;">Formations</th>
+          <th style="text-align: center;">I / L / U</th>
+          <th style="text-align: center;">Couverture</th>
+          <th style="width: 130px; text-align: center;">Maîtrisé</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for leader in team_leader_stats %}
+        <tr class="{% if forloop.counter <= 3 %}top-performer{% endif %}">
+          <td style="text-align: center;">
+            {% if forloop.counter == 1 %}
+            <div class="rank-badge gold">
+              <i class="fas fa-trophy"></i>
+            </div>
+            {% elif forloop.counter == 2 %}
+            <div class="rank-badge silver">
+              <i class="fas fa-medal"></i>
+            </div>
+            {% elif forloop.counter == 3 %}
+            <div class="rank-badge bronze">
+              <i class="fas fa-award"></i>
+            </div>
+            {% else %}
+            <span class="rank-number">{{ forloop.counter }}</span>
+            {% endif %}
+          </td>
+          <td>
+            <div class="leader-info">
+              <div class="leader-avatar" style="background: linear-gradient(135deg, 
+                {% if forloop.counter == 1 %}#F59E0B, #EAB308
+                {% elif forloop.counter == 2 %}#6B7280, #9CA3AF
+                {% elif forloop.counter == 3 %}#CD7F32, #B8860B
+                {% else %}#6366F1, #8B5CF6{% endif %});">
+                {{ leader.name|slice:":1"|upper }}
+              </div>
+              <div>
+                <p class="leader-name">{{ leader.name }}</p>
+                <p class="leader-lines">
+                  <i class="fas fa-industry"></i>
+                  {{ leader.lines|default:"N/A" }}
+                </p>
+              </div>
+            </div>
+          </td>
+          <td style="text-align: center;">
+            <span class="badge badge-secondary">{{ leader.lines_count }}</span>
+          </td>
+          <td style="text-align: center;">
+            <span class="badge badge-info">{{ leader.employees_count }}</span>
+          </td>
+          
+          <!-- ✅ NOUVELLE COLONNE TÂCHES -->
+          <td style="text-align: center;">
+            <span class="badge badge-task">
+             {{ leader.tasks_count }}
+            </span>
+          </td>
+          
+          <td style="text-align: center;">
+            <span class="formations-count">{{ leader.formations_total }}</span>
+          </td>
+          <td style="text-align: center;">
+            <div class="level-badges">
+              <span class="level-mini level-i" title="En formation">{{ leader.i_count }}</span>
+              <span class="level-mini level-l" title="Autonome">{{ leader.l_count }}</span>
+              <span class="level-mini level-u" title="Formateur">{{ leader.u_count }}</span>
+            </div>
+          </td>
+          <td style="text-align: center;">
+            <div class="coverage-indicator">
+              <div class="coverage-bar">
+                <div class="coverage-fill 
+                  {% if leader.coverage_rate >= 80 %}success
+                  {% elif leader.coverage_rate >= 50 %}info
+                  {% elif leader.coverage_rate >= 30 %}warning
+                  {% else %}danger{% endif %}" 
+                  style="width: {{ leader.coverage_rate }}%"></div>
+              </div>
+              <span class="coverage-value">{{ leader.coverage_rate }}%</span>
+            </div>
+          </td>
+          <td style="text-align: center;">
+            <div class="mastery-indicator">
+              <div class="mastery-bar">
+                <div class="mastery-fill 
+                  {% if leader.mastery_rate >= 70 %}excellent
+                  {% elif leader.mastery_rate >= 50 %}good
+                  {% elif leader.mastery_rate >= 30 %}warning
+                  {% else %}critical{% endif %}" 
+                  style="width: {{ leader.mastery_rate }}%"></div>
+              </div>
+              <span class="mastery-value">{{ leader.mastery_rate }}%</span>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="10" class="empty-state">
+            <i class="fas fa-user-tie"></i>
+            <p>Aucun chef d'équipe trouvé</p>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       VUE PAR LIGNE
+  ═══════════════════════════════════════════════════════════════════════ -->
+  <div id="view-by-line" class="leader-view">
+ 
+    <div style="overflow-x: auto;">
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 60px;">#</th>
+            <th>Ligne</th>
+            <th>Chef(s) d'Équipe</th>
+            <th style="text-align: center;">Employés</th>
+            <th style="text-align: center;">Tâches</th>
+            <th style="text-align: center;">Formations</th>
+            <th style="text-align: center;">I / L / U</th>
+            <!-- <th style="text-align: center;">Ce mois</th> -->
+            <th style="text-align: center;">Maîtrise</th>
+            <th style="width: 100px;">Statut</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for line in team_leader_stats_by_line %}
+          <tr class="{% if forloop.counter <= 3 %}top-performer{% endif %}">
+            <td style="text-align: center;">
+              {% if forloop.counter == 1 %}
+              <div class="rank-badge gold">
+                <i class="fas fa-trophy"></i>
+              </div>
+              {% elif forloop.counter == 2 %}
+              <div class="rank-badge silver">
+                <i class="fas fa-medal"></i>
+              </div>
+              {% elif forloop.counter == 3 %}
+              <div class="rank-badge bronze">
+                <i class="fas fa-award"></i>
+              </div>
+              {% else %}
+              <span class="rank-number">{{ forloop.counter }}</span>
+              {% endif %}
+            </td>
+            <td>
+              <div class="line-info">
+                <div class="line-code-badge">{{ line.line_code }}</div>
+                <div>
+                  <p class="line-name">{{ line.line_name }}</p>
+                  <p class="line-meta">
+                    <i class="fas fa-users"></i> {{ line.employees_count }} emp.
+                    <span class="separator">•</span>
+                    <i class="fas fa-tasks"></i> {{ line.tasks_count }} tâches
+                  </p>
+                </div>
+              </div>
+            </td>
+            <td>
+              <div class="leaders-cell">
+                {% for leader_name in line.leaders_names %}
+                <div class="leader-chip">
+                  <div class="leader-chip-avatar">{{ leader_name|slice:":1"|upper }}</div>
+                  <span>{{ leader_name }}</span>
+                </div>
+                {% endfor %}
+              </div>
+            </td>
+            <td style="text-align: center;">
+              <span class="badge badge-info">{{ line.employees_count }}</span>
+            </td>
+            <td style="text-align: center;">
+              <span class="badge badge-secondary">{{ line.tasks_count }}</span>
+            </td>
+            <td style="text-align: center;">
+              <span class="formations-count">{{ line.formations_total }}</span>
+            </td>
+            <td style="text-align: center;">
+              <div class="level-badges">
+                <span class="level-mini level-i" title="En formation">{{ line.i_count }}</span>
+                <span class="level-mini level-l" title="Autonome">{{ line.l_count }}</span>
+                <span class="level-mini level-u" title="Formateur">{{ line.u_count }}</span>
+              </div>
+            </td>
+            <!-- <td style="text-align: center;">
+              {% if line.this_month > 0 %}
+              <div class="this-month-stat">
+                <span class="badge badge-success">
+                  <i class="fas fa-arrow-up"></i> {{ line.this_month }}
+                </span>
+                {% if line.evolution_pct > 0 %}
+                <span class="evolution-mini up">+{{ line.evolution_pct }}%</span>
+                {% elif line.evolution_pct < 0 %}
+                <span class="evolution-mini down">{{ line.evolution_pct }}%</span>
+                {% endif %}
+              </div>
+              {% else %}
+              <span class="text-muted">0</span>
+              {% endif %}
+            </td> -->
+            <td style="text-align: center;">
+              <div class="mastery-indicator">
+                <div class="mastery-ring" style="--progress: {{ line.mastery_rate }}; --color: 
+                  {% if line.mastery_rate >= 70 %}#10B981
+                  {% elif line.mastery_rate >= 50 %}#3B82F6
+                  {% elif line.mastery_rate >= 30 %}#F59E0B
+                  {% else %}#EF4444{% endif %}">
+                  <span>{{ line.mastery_rate }}%</span>
+                </div>
+              </div>
+            </td>
+            <td style="text-align: center;">
+              <span class="status-badge status-{{ line.status }}">
+                <span class="status-dot"></span>
+                {{ line.status|title }}
+              </span>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="10" class="empty-state">
+              <i class="fas fa-industry"></i>
+              <p>Aucune ligne trouvée</p>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Footer avec légende -->
+  <div class="card-footer-legend">
+    <div class="legend-section">
+      <span class="legend-title">Niveaux :</span>
+      <div class="legend-items">
+        <span class="legend-item"><span class="level-mini level-i">I</span> En formation</span>
+        <span class="legend-item"><span class="level-mini level-l">L</span> Autonome</span>
+        <span class="legend-item"><span class="level-mini level-u">U</span> Formateur</span>
+      </div>
+    </div>
+    <div class="legend-section">
+      <span class="legend-title">Performance :</span>
+      <div class="legend-items">
+        <span class="legend-item"><span class="status-dot-inline excellent"></span> ≥70 Excellent</span>
+        <span class="legend-item"><span class="status-dot-inline good"></span> ≥50 Bon</span>
+        <span class="legend-item"><span class="status-dot-inline warning"></span> ≥30 Attention</span>
+        <span class="legend-item"><span class="status-dot-inline critical"></span> <30 Critique</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Script pour toggle les détails -->
+<script>
+function toggleFormulaDetails() {
+  const details = document.getElementById('formula-details');
+  if (details.style.display === 'none') {
+    details.style.display = 'block';
+  } else {
+    details.style.display = 'none';
+  }
+}
+</script>
+
+<style>
+/* View Tabs */
+.view-tabs {
+  display: flex;
+  background: var(--gray-100);
+  border-radius: 10px;
+  padding: 4px;
+  gap: 4px;
+}
+
+.view-tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gray-500);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.view-tab:hover {
+  color: var(--gray-700);
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.view-tab.active {
+  background: white;
+  color: var(--accent-color);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.view-tab i {
+  font-size: 14px;
+}
+
+/* Mini Stats */
+.mini-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 16px;
+  background: var(--gray-50);
+  border-radius: 8px;
+  border: 1px solid var(--gray-200);
+}
+
+.mini-stat-value {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--gray-900);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.mini-stat-value.text-success {
+  color: var(--success-color);
+}
+
+.mini-stat-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Leader Views */
+.leader-view {
+  display: none;
+}
+
+.leader-view.active {
+  display: block;
+}
+
+/* Rank Badges */
+.rank-badge {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  margin: 0 auto;
+}
+
+.rank-badge.gold {
+  background: linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+}
+
+.rank-badge.silver {
+  background: linear-gradient(135deg, #6B7280 0%, #9CA3AF 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(107, 114, 128, 0.4);
+}
+
+.rank-badge.bronze {
+  background: linear-gradient(135deg, #CD7F32 0%, #B8860B 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(205, 127, 50, 0.4);
+}
+
+.rank-number {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--gray-100);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--gray-600);
+  margin: 0 auto;
+}
+
+/* Top Performer Row */
+tr.top-performer {
+  background: linear-gradient(90deg, rgba(99, 102, 241, 0.03) 0%, transparent 100%);
+}
+
+tr.top-performer:hover {
+  background: linear-gradient(90deg, rgba(99, 102, 241, 0.08) 0%, var(--gray-50) 100%);
+}
+
+/* Leader Info */
+.leader-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.leader-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 16px;
+  color: white;
+  flex-shrink: 0;
+}
+
+.leader-name {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--gray-900);
+  margin: 0;
+}
+
+.leader-lines {
+  font-size: 12px;
+  color: var(--gray-500);
+  margin: 4px 0 0 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.leader-lines i {
+  font-size: 10px;
+}
+
+/* Formations Count */
+.formations-count {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--accent-color);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Level Mini Badges */
+.level-badges {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+}
+
+.level-mini {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: white;
+}
+
+.level-mini.level-i {
+  background: linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%);
+}
+
+.level-mini.level-l {
+  background: linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%);
+}
+
+.level-mini.level-u {
+  background: linear-gradient(135deg, #10B981 0%, #34D399 100%);
+}
+
+/* Coverage Indicator */
+.coverage-indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.coverage-bar {
+  width: 60px;
+  height: 6px;
+  background: var(--gray-200);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.coverage-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.6s ease;
+}
+
+.coverage-fill.success { background: var(--success-color); }
+.coverage-fill.info { background: var(--accent-color); }
+.coverage-fill.warning { background: var(--warning-color); }
+.coverage-fill.danger { background: var(--danger-color); }
+
+.coverage-value {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--gray-600);
+}
+
+/* Evolution Badge */
+.evolution-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.evolution-badge.up {
+  background: rgba(16, 185, 129, 0.1);
+  color: #059669;
+}
+
+.evolution-badge.down {
+  background: rgba(239, 68, 68, 0.1);
+  color: #DC2626;
+}
+
+.evolution-badge.neutral {
+  background: var(--gray-100);
+  color: var(--gray-500);
+}
+
+.evolution-mini {
+  font-size: 10px;
+  font-weight: 700;
+  margin-top: 2px;
+}
+
+.evolution-mini.up { color: #059669; }
+.evolution-mini.down { color: #DC2626; }
+
+/* Performance Score */
+.performance-score {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.score-bar {
+  flex: 1;
+  height: 8px;
+  background: var(--gray-200);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.score-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.8s ease;
+}
+
+.score-fill.excellent { background: linear-gradient(90deg, #10B981, #34D399); }
+.score-fill.good { background: linear-gradient(90deg, #3B82F6, #60A5FA); }
+.score-fill.warning { background: linear-gradient(90deg, #F59E0B, #FBBF24); }
+.score-fill.critical { background: linear-gradient(90deg, #EF4444, #F87171); }
+
+.score-value {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--gray-700);
+  min-width: 24px;
+  text-align: right;
+}
+
+/* Line Info */
+.line-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.line-code-badge {
+  padding: 8px 14px;
+  background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
+  color: white;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 13px;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+.line-name {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--gray-900);
+  margin: 0;
+}
+
+.line-meta {
+  font-size: 11px;
+  color: var(--gray-500);
+  margin: 4px 0 0 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.line-meta i {
+  font-size: 10px;
+}
+
+.line-meta .separator {
+  color: var(--gray-300);
+}
+
+/* Leaders Cell */
+.leaders-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.leader-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px 4px 4px;
+  background: var(--gray-100);
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--gray-700);
+}
+
+.leader-chip-avatar {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+/* This Month Stat */
+.this-month-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+/* Mastery Ring */
+.mastery-indicator {
+  display: flex;
+  justify-content: center;
+}
+
+.mastery-ring {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: conic-gradient(
+    var(--color) calc(var(--progress) * 3.6deg),
+    var(--gray-200) 0deg
+  );
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.mastery-ring::before {
+  content: '';
+  position: absolute;
+  width: 38px;
+  height: 38px;
+  background: white;
+  border-radius: 50%;
+}
+
+.mastery-ring span {
+  position: relative;
+  z-index: 1;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--gray-700);
+}
+
+/* Status Badge */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.status-badge .status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.status-badge.status-excellent {
+  background: rgba(16, 185, 129, 0.1);
+  color: #059669;
+}
+
+.status-badge.status-excellent .status-dot {
+  background: #10B981;
+}
+
+.status-badge.status-bon {
+  background: rgba(59, 130, 246, 0.1);
+  color: #2563EB;
+}
+
+.status-badge.status-bon .status-dot {
+  background: #3B82F6;
+}
+
+.status-badge.status-attention {
+  background: rgba(245, 158, 11, 0.1);
+  color: #D97706;
+}
+
+.status-badge.status-attention .status-dot {
+  background: #F59E0B;
+}
+
+.status-badge.status-critique {
+  background: rgba(239, 68, 68, 0.1);
+  color: #DC2626;
+}
+
+.status-badge.status-critique .status-dot {
+  background: #EF4444;
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px !important;
+}
+
+.empty-state i {
+  font-size: 48px;
+  color: var(--gray-300);
+  margin-bottom: 16px;
+  display: block;
+}
+
+.empty-state p {
+  color: var(--gray-500);
+  margin: 0;
+  font-size: 14px;
+}
+
+/* Card Footer Legend */
+.card-footer-legend {
+  padding: 16px 24px;
+  border-top: 1px solid var(--gray-200);
+  background: var(--gray-50);
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.legend-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.legend-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.legend-items {
+  display: flex;
+  gap: 16px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--gray-600);
+}
+
+.status-dot-inline {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.status-dot-inline.excellent { background: #10B981; }
+.status-dot-inline.good { background: #3B82F6; }
+.status-dot-inline.warning { background: #F59E0B; }
+.status-dot-inline.critical { background: #EF4444; }
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .card-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .card-footer-legend {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 768px) {
+  .view-tabs {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .mini-stat {
+    display: none;
+  }
+}
+</style>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════════
+     JAVASCRIPT
+═══════════════════════════════════════════════════════════════════════════════ -->
+<script>
+function switchLeaderView(view) {
+  // Update tabs
+  document.querySelectorAll('.view-tab').forEach(tab => {
+    tab.classList.toggle('active', tab.dataset.view === view);
+  });
+  
+  // Update views
+  document.querySelectorAll('.leader-view').forEach(v => {
+    v.classList.toggle('active', v.id === 'view-' + view);
+  });
+  
+  // Save preference
+  localStorage.setItem('leaderViewPreference', view);
+}
+
+// Load saved preference
+document.addEventListener('DOMContentLoaded', function() {
+  const savedView = localStorage.getItem('leaderViewPreference');
+  if (savedView) {
+    switchLeaderView(savedView);
+  }
+});
+</script>
+    
+          <div class="card">
+            <div class="card-header">
+              <h3 class="section-title">
+                <i class="fas fa-history"></i>
+                Dernières Formations
+              </h3>
+              <span class="badge badge-info">{{ recent_trainings|length }} récentes</span>
+            </div>
+            <div style="padding: 20px; max-height: 400px; overflow-y: auto;">
+              {% for record in recent_trainings %}
+              <div class="list-item training-item {% if forloop.counter > 5 %}hidden{% endif %}" data-index="{{ forloop.counter }}" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  <div style="width: 24px; text-align: center; font-size: 12px; color: var(--gray-400);">{{ forloop.counter }}</div>
+                  <div class="avatar avatar-sm" style="background: 
+                    {% if record.level.value == 'I' %}linear-gradient(135deg, #F59E0B 0%, #EAB308 100%)
+                    {% elif record.level.value == 'L' %}linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)
+                    {% else %}linear-gradient(135deg, #059669 0%, #10B981 100%){% endif %};">
+                    {{ record.level.value }}
+                  </div>
+                  <div>
+                    <p style="font-weight: 600; font-size: 14px;">{{ record.employee.first_name }} {{ record.employee.last_name }}</p>
+                    <p style="font-size: 12px; color: var(--gray-500);">
+                      <span class="badge badge-secondary" style="padding: 2px 6px; font-size: 10px;">{{ record.task.code }}</span>
+                      {{ record.task.title|truncatewords:4 }}
+                    </p>
+                  </div>
+                </div>
+                <div style="text-align: right;">
+                  <p style="font-size: 12px; color: var(--gray-500);">{{ record.date|date:"d/m/Y" }}</p>
+                  <p style="font-size: 11px; color: var(--gray-400);">{{ record.date|timesince }}</p>
+                </div>
+              </div>
+              {% empty %}
+              <div style="text-align: center; padding: 40px;">
+                <i class="fas fa-inbox" style="font-size: 48px; color: var(--gray-300); margin-bottom: 16px;"></i>
+                <p style="color: var(--gray-500);">Aucune formation récente</p>
+              </div>
+              {% endfor %}
+              
+              {% if recent_trainings|length > 5 %}
+              <div style="margin-top: 16px; text-align: center;">
+                <button onclick="toggleTrainings()" class="btn btn-secondary btn-sm" id="toggleTrainingsBtn">
+                  <i class="fas fa-chevron-down" id="toggleIcon"></i>
+                  <span id="toggleText">Voir tout ({{ recent_trainings|length }})</span>
+                </button>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <!-- PENDING REQUESTS & EMPLOYEES NEEDING TRAINING -->
+        <div class="grid-2 fade-in" style="margin-bottom: 32px;">
+          
+          <!-- Pending Requests -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="section-title">
+                <i class="fas fa-clock" style="color: var(--warning-color);"></i>
+                Demandes en Attente
+              </h3>
+              {% if pending_count > 0 %}
+              <a href="{% url 'rh_training_approvals' %}" class="btn btn-primary btn-sm">
+                <i class="fas fa-arrow-right"></i>
+                Voir toutes
+              </a>
+              {% endif %}
+            </div>
+            <div style="padding: 20px; max-height: 350px; overflow-y: auto;">
+              {% for request in pending_requests %}
+              <div class="list-item" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  <div class="avatar avatar-sm" style="background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);">
+                    {{ request.employee.first_name|slice:":1" }}
+                  </div>
+                  <div>
+                    <p style="font-weight: 600; font-size: 14px;">{{ request.employee.first_name }} {{ request.employee.last_name }}</p>
+                    <p style="font-size: 12px; color: var(--gray-500);">
+                      {{ request.task.code }} → Niveau {{ request.requested_level }}
+                    </p>
+                  </div>
+                </div>
+                <div style="text-align: right;">
+                  <p style="font-size: 12px; color: var(--gray-500);">{{ request.date_requested|date:"d/m/Y" }}</p>
+                </div>
+              </div>
+              {% empty %}
+              <div style="text-align: center; padding: 40px;">
+                <i class="fas fa-check-circle" style="font-size: 48px; color: var(--success-color); opacity: 0.5; margin-bottom: 16px;"></i>
+                <p style="color: var(--gray-500);">Aucune demande en attente</p>
+              </div>
+              {% endfor %}
+            </div>
+            {% if pending_count > 0 or approved_this_month > 0 or rejected_this_month > 0 %}
+            <div style="padding: 16px 20px; border-top: 1px solid var(--gray-200); background: var(--gray-50);">
+              <div style="display: flex; justify-content: space-around; text-align: center;">
+                <div>
+                  <p style="font-size: 20px; font-weight: 700; color: var(--warning-color);">{{ pending_count }}</p>
+                  <p style="font-size: 11px; color: var(--gray-500);">En attente</p>
+                </div>
+                <div>
+                  <p style="font-size: 20px; font-weight: 700; color: var(--success-color);">{{ approved_this_month }}</p>
+                  <p style="font-size: 11px; color: var(--gray-500);">Approuvées ce mois</p>
+                </div>
+                <div>
+                  <p style="font-size: 20px; font-weight: 700; color: var(--danger-color);">{{ rejected_this_month }}</p>
+                  <p style="font-size: 11px; color: var(--gray-500);">Rejetées ce mois</p>
+                </div>
+              </div>
+            </div>
+            {% endif %}
+          </div>
+
+          <!-- Employees Needing Training -->
+          <div class="card" id="employees-section">
+            <div class="card-header">
+              <h3 class="section-title">
+                <i class="fas fa-user-graduate" style="color: var(--info-color);"></i>
+                Employés Nécessitant Formation
+              </h3>
+              <span class="badge badge-warning">{{ employees_needing_training|length }} employés</span>
+            </div>
+            <div style="padding: 20px; max-height: 350px; overflow-y: auto;">
+              {% for emp in employees_needing_training %}
+              <div class="list-item" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  <div class="avatar avatar-sm" style="background: var(--gray-300); color: var(--gray-600);">
+                    {{ emp.name|slice:":1" }}
+                  </div>
+                  <div>
+                    <p style="font-weight: 600; font-size: 14px;">{{ emp.name }}</p>
+                    <p style="font-size: 12px; color: var(--gray-500);">{{ emp.line }} • {{ emp.matricule }}</p>
+                  </div>
+                </div>
+                <div style="text-align: right;">
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <div class="progress-bar" style="width: 80px; height: 6px;">
+                      <div class="progress-bar-fill" style="background: linear-gradient(90deg, #DC2626 0%, #F59E0B 100%); width: {{ emp.progress_pct }}%"></div>
+                    </div>
+                    <span style="font-size: 12px; font-weight: 600; color: var(--gray-600);">{{ emp.progress_pct }}%</span>
+                  </div>
+                </div>
+              </div>
+              {% empty %}
+              <div style="text-align: center; padding: 40px;">
+                <i class="fas fa-check-circle" style="font-size: 48px; color: var(--success-color); opacity: 0.5; margin-bottom: 16px;"></i>
+                <p style="color: var(--gray-500);">Tous les employés sont bien formés</p>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+
+        <!-- DAILY ACTIVITY & INACTIVE EMPLOYEES -->
+        <div class="grid-2 fade-in" style="margin-bottom: 32px;">
+          
+          <!-- Daily Activity -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="section-title">
+                <i class="fas fa-calendar-week"></i>
+                Activité des 7 derniers jours
+              </h3>
+            </div>
+            <div style="padding: 24px;">
+              <div class="chart-container" style="height: 250px;">
+                <canvas id="dailyActivityChart"></canvas>
+              </div>
+            </div>
+          </div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════════
+     SECTION - EMPLOYÉS DÉJÀ REQUALIFIÉS
+═══════════════════════════════════════════════════════════════════════════════ -->
+
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden" id="requalified-section">
+  
+  
+  <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100 bg-gray-50/50">
+    <h3 class="flex items-center gap-2 text-base font-semibold text-gray-800">
+      <i class="fas fa-clipboard-check text-emerald-500"></i>
+      Employés Requalifiés
+    </h3>
+    <span class="px-3 py-1 text-xs font-semibold bg-slate-100 text-slate-600 rounded-full">
+      {{ requalification_stats.total }} employés
+    </span>
+  </div>
+
+
+  <div class="flex items-center gap-4 px-5 py-3 bg-gray-50 border-b border-gray-100">
+    <div class="flex items-center gap-1.5">
+      <span class="w-2 h-2 bg-emerald-500 rounded-full"></span>
+      <span class="text-xs text-gray-600"><strong class="text-gray-800">{{ requalification_stats.pass }}</strong> Maintien</span>
+    </div>
+    <div class="flex items-center gap-1.5">
+      <span class="w-2 h-2 bg-blue-500 rounded-full"></span>
+      <span class="text-xs text-gray-600"><strong class="text-gray-800">{{ requalification_stats.upgrade }}</strong> Montée</span>
+    </div>
+    <div class="flex items-center gap-1.5">
+      <span class="w-2 h-2 bg-amber-500 rounded-full"></span>
+      <span class="text-xs text-gray-600"><strong class="text-gray-800">{{ requalification_stats.downgrade }}</strong> Descente</span>
+    </div>
+    <div class="flex items-center gap-1.5">
+      <span class="w-2 h-2 bg-rose-500 rounded-full"></span>
+      <span class="text-xs text-gray-600"><strong class="text-gray-800">{{ requalification_stats.retrain }}</strong> À reformer</span>
+    </div>
+  </div>
+  
+
+  <div class="p-5 max-h-[400px] overflow-y-auto space-y-3">
+    
+    {% for req in requalified_employees %}
+    <div class="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors duration-150 border border-gray-100">
+      
+    
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-full bg-slate-700 text-gray-800 flex items-center justify-center text-sm font-semibold shadow-sm">
+          {{ req.employee.first_name|slice:":1" }}{{ req.employee.last_name|slice:":1" }}
+        </div>
+        <div>
+          <p class="text-sm font-semibold text-gray-800">{{ req.employee.first_name }} {{ req.employee.last_name }}</p>
+          <div class="flex items-center gap-2 mt-0.5">
+            <span class="text-xs text-gray-500">{{ req.employee.matricule }}</span>
+            <span class="text-gray-300">•</span>
+            <span class="text-xs font-medium text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded">{{ req.line.code }}</span>
+            {% if req.task %}
+            <span class="text-gray-300">•</span>
+            <span class="text-xs text-gray-500">{{ req.task.title|truncatechars:15 }}</span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      
+      
+      
+     
+      <div class="text-right">
+        {% if req.result == 'PASS' %}
+          <span class="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold bg-emerald-100 text-emerald-700 rounded-full">
+            <i class="fas fa-check text-[10px]"></i> Maintien
+          </span>
+        {% elif req.result == 'UPGRADE' %}
+          <span class="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold bg-blue-100 text-blue-700 rounded-full">
+            <i class="fas fa-arrow-up text-[10px]"></i> Montée
+          </span>
+        {% elif req.result == 'DOWNGRADE' %}
+          <span class="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold bg-amber-100 text-amber-700 rounded-full">
+            <i class="fas fa-arrow-down text-[10px]"></i> Descente
+          </span>
+        {% elif req.result == 'RETRAIN' %}
+          <span class="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold bg-rose-100 text-rose-700 rounded-full">
+            <i class="fas fa-redo text-[10px]"></i> Reformer
+          </span>
+        {% endif %}
+        <p class="text-[11px] text-gray-400 mt-1">{{ req.requalification_date|date:"d/m/Y" }}</p>
+      </div>
+      
+    </div>
+    {% empty %}
+    
+    
+    <div class="text-center py-12">
+      <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
+        <i class="fas fa-inbox text-3xl text-gray-300"></i>
+      </div>
+      <p class="text-gray-500 font-medium">Aucune requalification enregistrée</p>
+      <p class="text-gray-400 text-sm mt-1">Les données apparaîtront ici</p>
+    </div>
+    
+    {% endfor %}
+    
+  </div>
+
+</div>
+        </div>
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<!-- SECTION : EMPLOYÉS À REQUALIFIER -->
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<div class="card" id="requalification-section">
+  <div class="card-header">
+    <h3 class="section-title">
+      <i class="fas fa-user-clock"></i>
+      Requalification Périodique au Poste
+      <span class="badge badge-secondary" style="margin-left: 8px; font-size: 12px;">
+        > {{ threshold_days }} jours
+      </span>
+    </h3>
+    <div style="display: flex; gap: 10px; align-items: center;">
+      <span class="badge badge-danger" style="padding: 6px 12px; font-size: 12px;">
+        <i class="fas fa-exclamation-triangle"></i> {{ requalification_stats.critical }} critique(s)
+      </span>
+      <span class="badge badge-warning" style="padding: 6px 12px; font-size: 12px;">
+        <i class="fas fa-exclamation-circle"></i> {{ requalification_stats.warning }} attention
+      </span>
+      <span class="badge badge-info" style="padding: 6px 12px; font-size: 12px;">
+        <i class="fas fa-info-circle"></i> {{ requalification_stats.info }} à surveiller
+      </span>
+      <!-- <span class="badge badge-secondary" style="padding: 6px 12px; font-size: 12px;">
+        <i class="fas fa-users"></i> Total: {{ requalification_stats.total }}
+      </span> -->
+    </div>
+  </div>
+  
+  <!-- Encadré explicatif -->
+  <div style="background: #f8fafc; border-bottom: 1px solid #e2e8f0; padding: 12px 16px; display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start; font-size: 11px;">
+    
+    <!-- Explication Requalification -->
+    <div style="display: flex; align-items: flex-start; gap: 8px;">
+      <i class="fas fa-clock" style="color: #f59e0b; margin-top: 2px;"></i>
+      <div>
+        <strong style="color: #d97706;">Requalification</strong>
+        <span style="color: #64748b;"> = Formation dépassant {{ threshold_days }} jours sans mise à jour</span>
+      </div>
+    </div>
+    
+    <!-- Taux de conformité -->
+    <div style="display: flex; align-items: flex-start; gap: 8px;">
+      <i class="fas fa-chart-pie" style="color: #10b981; margin-top: 2px;"></i>
+      <div>
+        <strong style="color: #059669;">Conformité</strong>
+        <span style="color: #64748b;"> = </span>
+        <span style="font-weight: 700; color: {% if requalification_stats.compliance_rate >= 90 %}#059669{% elif requalification_stats.compliance_rate >= 70 %}#d97706{% else %}#dc2626{% endif %};">
+          {{ requalification_stats.compliance_rate }}%
+        </span>
+        <span style="color: #64748b;"> des employés à jour</span>
+      </div>
+    </div>
+    
+    <!-- Seuils d'urgence -->
+    <div style="margin-left: auto; display: flex; gap: 12px; align-items: center;">
+      <span style="color: #64748b; font-weight: 600;">Seuils :</span>
+      <span style="display: inline-flex; align-items: center; gap: 3px;">
+        <span style="width: 8px; height: 8px; border-radius: 50%; background: #ef4444;"></span>
+        <span style="color: #dc2626;">&gt;250j</span>
+      </span>
+      <span style="display: inline-flex; align-items: center; gap: 3px;">
+        <span style="width: 8px; height: 8px; border-radius: 50%; background: #f59e0b;"></span>
+        <span style="color: #d97706;">200-250j</span>
+      </span>
+      <span style="display: inline-flex; align-items: center; gap: 3px;">
+        <span style="width: 8px; height: 8px; border-radius: 50%; background: #3b82f6;"></span>
+        <span style="color: #2563eb;">188-200j</span>
+      </span>
+    </div>
+  </div>
+  
+  <!-- Statistiques par ligne -->
+  <div style="background: #f8fafc; border-bottom: 1px solid #e2e8f0; padding: 10px 16px; display: flex; flex-wrap: wrap; gap: 6px;">
+    {% for line_stat in requalification_by_line %}
+    <div style="background: white; border: 1px solid {% if line_stat.critical > 0 %}#fecaca{% elif line_stat.warning > 0 %}#fde68a{% elif line_stat.total > 0 %}#bfdbfe{% else %}#e2e8f0{% endif %}; border-radius: 6px; padding: 4px 10px; display: flex; align-items: center; gap: 6px; min-width: 80px;">
+      <span class="badge badge-info" style="font-size: 9px; padding: 2px 5px;">{{ line_stat.code }}</span>
+      {% if line_stat.total > 0 %}
+      <div style="display: flex; gap: 4px; font-size: 10px; font-weight: 600;">
+        {% if line_stat.critical > 0 %}
+        <span style="color: #dc2626;">{{ line_stat.critical }}</span>
+        {% endif %}
+        {% if line_stat.warning > 0 %}
+        <span style="color: #d97706;">{{ line_stat.warning }}</span>
+        {% endif %}
+        {% if line_stat.info > 0 %}
+        <span style="color: #2563eb;">{{ line_stat.info }}</span>
+        {% endif %}
+      </div>
+      {% else %}
+      <span style="color: #10b981; font-size: 11px;"><i class="fas fa-check"></i></span>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  
+  <!-- ✅ CONTENEUR AVEC SCROLL - Hauteur max 500px -->
+  <div style="max-height: 500px; overflow-y: auto; overflow-x: auto;">
+    <table style="width: 100%;">
+      <thead style="position: sticky; top: 0; background: #f8fafc; z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <tr>
+          <th style="width: 50px; text-align: center;">Rang</th>
+          <!-- <th style="width: 50px; text-align: center;">Urgence</th> -->
+          <th>Employé</th>
+          <th style="text-align: center;">Ligne</th>
+          <th>Chef d'équipe</th>
+          <th>Dernière Tâche</th>
+          <th style="text-align: center;">Niveau</th>
+          <th style="text-align: center;">Dernière Formation</th>
+          <th style="width: 130px;">
+            <i class="fas fa-hourglass-half" style="color: #f59e0b;"></i>
+            Jours écoulés
+          </th>
+          <th style="text-align: center;">Dépassement</th>
+          <th style="text-align: center;">Statut</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in employees_to_requalify_global %}
+        <tr style="{% if item.urgency == 'critical' %}background: #fef2f2;{% elif item.urgency == 'warning' %}background: #fffbeb;{% endif %}">
+          
+          <!-- Rang -->
+          <td style="text-align: center;">
+            {% if forloop.counter == 1 %}
+            <span style="width: 26px; height: 26px; border-radius: 50%; background: linear-gradient(135deg, #ef4444, #dc2626); display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: white;">
+              1
+            </span>
+            {% elif forloop.counter == 2 %}
+            <span style="width: 26px; height: 26px; border-radius: 50%; background: linear-gradient(135deg, #f59e0b, #d97706); display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: white;">
+              2
+            </span>
+            {% elif forloop.counter == 3 %}
+            <span style="width: 26px; height: 26px; border-radius: 50%; background: linear-gradient(135deg, #fbbf24, #f59e0b); display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: white;">
+              3
+            </span>
+            {% else %}
+            <span style="width: 26px; height: 26px; border-radius: 50%; background: var(--gray-100); display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: var(--gray-600);">
+              {{ forloop.counter }}
+            </span>
+            {% endif %}
+          </td>
+          
+          <!-- Indicateur d'urgence -->
+          <!-- <td style="text-align: center;">
+            {% if item.urgency == 'critical' %}
+            <span style="width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #ef4444, #dc2626); display: inline-flex; align-items: center; justify-content: center; color: white; box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);">
+              <i class="fas fa-exclamation-triangle" style="font-size: 11px;"></i>
+            </span>
+            {% elif item.urgency == 'warning' %}
+            <span style="width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #f59e0b, #d97706); display: inline-flex; align-items: center; justify-content: center; color: white; box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3);">
+              <i class="fas fa-exclamation-circle" style="font-size: 11px;"></i>
+            </span>
+            {% else %}
+            <span style="width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6, #2563eb); display: inline-flex; align-items: center; justify-content: center; color: white; box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);">
+              <i class="fas fa-info-circle" style="font-size: 11px;"></i>
+            </span>
+            {% endif %}
+          </td> -->
+          
+          <!-- Employé -->
+          <td>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <div style="width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #8b5cf6); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 11px;">
+                {{ item.employee.first_name|slice:":1" }}{{ item.employee.last_name|slice:":1" }}
+              </div>
+              <div>
+                <strong style="font-size: 13px; color: #1e293b;">{{ item.employee.first_name }} {{ item.employee.last_name }}</strong>
+                <p style="font-size: 10px; color: var(--gray-500); margin-top: 1px;">
+                  <code style="background: #f1f5f9; padding: 1px 5px; border-radius: 3px; font-size: 10px;">{{ item.employee.matricule }}</code>
+                </p>
+              </div>
+            </div>
+          </td>
+          
+          <!-- Ligne -->
+          <td style="text-align: center;">
+            <span class="badge badge-info" style="font-size: 10px;">{{ item.line.code }}</span>
+          </td>
+          
+          <!-- Chef d'équipe -->
+          <td>
+            {% if item.manager %}
+            <div style="display: flex; align-items: center; gap: 5px;">
+              <i class="fas fa-user-tie" style="color: #64748b; font-size: 10px;"></i>
+              <span style="font-size: 11px; color: #475569;">{{ item.manager.first_name }} {{ item.manager.last_name|slice:":1" }}.</span>
+            </div>
+            {% else %}
+            <span style="color: #94a3b8; font-style: italic; font-size: 11px;">Non assigné</span>
+            {% endif %}
+          </td>
+          
+          <!-- Dernière tâche -->
+          <td>
+            {% if item.task %}
+            <div style="display: flex; align-items: center; gap: 5px;">
+              <span class="badge badge-primary" style="font-size: 9px; padding: 2px 5px;">{{ item.task.code }}</span>
+              <span style="font-size: 11px; color: #334155;">{{ item.task.title|truncatechars:18 }}</span>
+            </div>
+            {% else %}
+            <span style="color: #94a3b8; font-style: italic; font-size: 11px;">N/A</span>
+            {% endif %}
+          </td>
+          
+          <!-- Niveau actuel -->
+          <td style="text-align: center;">
+            {% if item.current_level == 0 %}
+            <span class="badge" style="background: linear-gradient(135deg, #fecaca, #fca5a5); color: #991b1b; font-weight: 600; padding: 3px 8px; font-size: 11px;">
+              I
+            </span>
+            {% elif item.current_level == 1 %}
+            <span class="badge" style="background: linear-gradient(135deg, #fef3c7, #fde68a); color: #92400e; font-weight: 600; padding: 3px 8px; font-size: 11px;">
+              L
+            </span>
+            {% elif item.current_level == 3 %}
+            <span class="badge" style="background: linear-gradient(135deg, #d1fae5, #a7f3d0); color: #065f46; font-weight: 600; padding: 3px 8px; font-size: 11px;">
+              U
+            </span>
+            {% else %}
+            <span class="badge badge-secondary" style="font-size: 11px;">{{ item.current_level_display }}</span>
+            {% endif %}
+          </td>
+          
+          <!-- Dernière formation -->
+          <td style="text-align: center;">
+            <span style="font-size: 11px; color: #64748b;">
+              {{ item.last_training_date|date:"d/m/Y" }}
+            </span>
+          </td>
+          
+          <!-- Jours écoulés avec barre de progression -->
+          <td>
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <div class="progress-bar" style="flex: 1; height: 5px; background: #e2e8f0; border-radius: 3px;">
+                <div class="progress-bar-fill" style="
+                  background: linear-gradient(90deg, 
+                    {% if item.days_since > 250 %}#ef4444, #f87171
+                    {% elif item.days_since > 200 %}#f59e0b, #fbbf24
+                    {% else %}#3b82f6, #60a5fa{% endif %}); 
+                  width: {% widthratio item.days_since 365 100 %}%;
+                  border-radius: 3px;"></div>
+              </div>
+              <span style="font-size: 11px; font-weight: 700; min-width: 40px; text-align: right;
+                color: {% if item.days_since > 250 %}#dc2626{% elif item.days_since > 200 %}#d97706{% else %}#2563eb{% endif %};">
+                {{ item.days_since }}j
+              </span>
+            </div>
+          </td>
+          
+          <!-- Dépassement -->
+          <td style="text-align: center;">
+            <span class="badge" style="
+              {% if item.days_overdue > 62 %}background: #fee2e2; color: #991b1b;
+              {% elif item.days_overdue > 12 %}background: #fef3c7; color: #92400e;
+              {% else %}background: #dbeafe; color: #1e40af;{% endif %}
+              font-weight: 600; padding: 3px 8px; font-size: 10px;">
+              +{{ item.days_overdue }}j
+            </span>
+          </td>
+          
+          <!-- Statut -->
+          <td style="text-align: center;">
+            {% if item.has_pending_request %}
+            <span class="badge" style="background: #fef3c7; color: #92400e; padding: 4px 8px; font-size: 10px;">
+              <i class="fas fa-hourglass-half" style="margin-right: 3px;"></i> Attente
+            </span>
+            {% else %}
+            <span class="badge" style="background: #fee2e2; color: #991b1b; padding: 4px 8px; font-size: 10px;">
+              <i class="fas fa-clock" style="margin-right: 3px;"></i> À traiter
+            </span>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="11" style="text-align: center; padding: 50px;">
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 12px;">
+              <div style="width: 70px; height: 70px; border-radius: 50%; background: linear-gradient(135deg, #d1fae5, #a7f3d0); display: flex; align-items: center; justify-content: center;">
+                <i class="fas fa-check-circle" style="font-size: 35px; color: #059669;"></i>
+              </div>
+              <div>
+                <h4 style="color: #065f46; margin-bottom: 4px; font-size: 16px;">Aucun employé à requalifier</h4>
+                <p style="color: #64748b; font-size: 13px;">Tous les employés sont à jour dans leurs formations.</p>
+              </div>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  
+  <!-- Footer -->
+  {% if requalification_stats.total > 0 %}
+  <div style="background: #f8fafc; border-top: 1px solid #e2e8f0; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center;">
+    <div style="display: flex; gap: 20px; font-size: 12px; color: #64748b;">
+      <span>
+        <i class="fas fa-chart-pie" style="margin-right: 4px; color: #10b981;"></i>
+        Conformité: <strong style="color: {% if requalification_stats.compliance_rate >= 90 %}#059669{% elif requalification_stats.compliance_rate >= 70 %}#d97706{% else %}#dc2626{% endif %};">{{ requalification_stats.compliance_rate }}%</strong>
+      </span>
+      <span>
+        <i class="fas fa-users" style="margin-right: 4px;"></i>
+        {{ requalification_stats.total_employees }} employés au total
+      </span>
+      {% if pending_requalification_count > 0 %}
+      <span>
+        <i class="fas fa-clipboard-list" style="margin-right: 4px; color: #f59e0b;"></i>
+        <strong style="color: #d97706;">{{ pending_requalification_count }}</strong> demande(s) en attente
+      </span>
+      {% endif %}
+    </div>
+    <a href="{% url 'rh_employees_to_requalify' %}" style="font-size: 12px; color: #3b82f6; text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; padding: 6px 12px; background: #eff6ff; border-radius: 6px; transition: all 0.2s;"
+       onmouseover="this.style.background='#dbeafe';"
+       onmouseout="this.style.background='#eff6ff';">
+      Voir tous les détails
+      <i class="fas fa-arrow-right"></i>
+    </a>
+  </div>
+  {% endif %}
+</div>
+
+
+        <!-- RADAR CHART -->
+<!-- ═══════════════════════════════════════════════════════════════════════════════ -->
+<!-- SECTION RADAR / GUIDE PREMIÈRE VISITE -->
+<!-- ═══════════════════════════════════════════════════════════════════════════════ -->
+
+<div class="card fade-in" style="margin-bottom: 32px;" id="radar-section">
+  <div class="card-header">
+    <h3 class="section-title">
+      {% if is_first_visit %}
+      <i class="fas fa-info-circle"></i>
+      Comprendre les Indicateurs
+      {% else %}
+      <i class="fas fa-chart-radar"></i>
+      Comparaison Multi-Critères par Ligne
+      {% endif %}
+    </h3>
+    {% if not is_first_visit %}
+    <button class="btn btn-sm btn-outline" onclick="showExplanation()" title="Voir les explications">
+      <i class="fas fa-question-circle"></i>
+    </button>
+    {% endif %}
+  </div>
+  
+  {% if is_first_visit %}
+  <!-- ═══════════════════════════════════════════════════════════════════════════ -->
+  <!-- GUIDE PREMIÈRE VISITE -->
+  <!-- ═══════════════════════════════════════════════════════════════════════════ -->
+  
+  
+  
+  {% else %}
+  
+  <!-- ═══════════════════════════════════════════════════════════════════════════ -->
+  <!-- GRAPHIQUE RADAR NORMAL -->
+  <!-- ═══════════════════════════════════════════════════════════════════════════ -->
+  
+  <div style="padding: 24px;">
+    <div class="chart-container" style="height: 400px; max-width: 600px; margin: 0 auto;">
+      <canvas id="radarChart"></canvas>
+    </div>
+    
+    <!-- Légende -->
+    <div style="display: flex; justify-content: center; gap: 24px; margin-top: 20px; flex-wrap: wrap;">
+      <div style="display: flex; align-items: center; gap: 8px; cursor: help;" title="Capacité des employés à effectuer plusieurs tâches">
+        <div style="width: 16px; height: 16px; background: rgba(139, 92, 246, 0.6); border: 2px solid #8b5cf6; border-radius: 4px;"></div>
+        <span style="font-size: 13px; color: var(--gray-600); font-weight: 500;">Polyvalence</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px; cursor: help;" title="Pourcentage de formations avec niveau L ou U">
+        <div style="width: 16px; height: 16px; background: rgba(59, 130, 246, 0.6); border: 2px solid #3b82f6; border-radius: 4px;"></div>
+        <span style="font-size: 13px; color: var(--gray-600); font-weight: 500;">Maîtrise</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px; cursor: help;" title="Pourcentage d'employés ayant au moins une formation">
+        <div style="width: 16px; height: 16px; background: rgba(34, 197, 94, 0.6); border: 2px solid #22c55e; border-radius: 4px;"></div>
+        <span style="font-size: 13px; color: var(--gray-600); font-weight: 500;">Couverture</span>
+      </div>
+    </div>
+  </div>
+  
+  {% endif %}
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════════ -->
+<!-- MODAL EXPLICATION (pour revoir) -->
+<!-- ═══════════════════════════════════════════════════════════════════════════════ -->
+
+<div id="explanationModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 9999; overflow-y: auto; padding: 20px; backdrop-filter: blur(4px);">
+  <div style="background: white; max-width: 800px; margin: 40px auto; border-radius: 20px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);">
+    
+    <!-- Header -->
+    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 24px 32px; color: white; display: flex; justify-content: space-between; align-items: center;">
+      <h2 style="margin: 0; font-size: 20px; display: flex; align-items: center; gap: 12px;">
+        <i class="fas fa-chart-radar"></i>
+        Comprendre les Indicateurs
+      </h2>
+      <button onclick="closeExplanation()" style="background: rgba(255,255,255,0.2); border: none; color: white; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; font-size: 16px; transition: all 0.2s;">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    
+    <!-- Contenu -->
+    <div style="padding: 32px;">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px;">
+        
+        <!-- Polyvalence -->
+        <div style="background: #f5f3ff; border-radius: 12px; padding: 20px; border-left: 4px solid #8b5cf6;">
+          <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+            <i class="fas fa-users-cog" style="color: #8b5cf6; font-size: 24px;"></i>
+            <h4 style="margin: 0; color: #5b21b6;">Polyvalence</h4>
+          </div>
+          <p style="margin: 0 0 12px 0; font-size: 13px; color: #6d28d9; line-height: 1.6;">
+            Capacité des employés à effectuer <strong>plusieurs tâches</strong>.
+          </p>
+          <div style="background: white; padding: 10px; border-radius: 8px; font-size: 11px; font-family: 'JetBrains Mono', monospace; color: var(--gray-600);">
+            Moy. tâches (L+U) / Total tâches
+          </div>
+        </div>
+        
+        <!-- Maîtrise -->
+        <div style="background: #f0fdf4; border-radius: 12px; padding: 20px; border-left: 4px solid #22c55e;">
+          <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+            <i class="fas fa-award" style="color: #22c55e; font-size: 24px;"></i>
+            <h4 style="margin: 0; color: #166534;">Maîtrise</h4>
+          </div>
+          <p style="margin: 0 0 12px 0; font-size: 13px; color: #15803d; line-height: 1.6;">
+            % de formations avec niveau <strong>L</strong> ou <strong>U</strong>.
+          </p>
+          <div style="background: white; padding: 10px; border-radius: 8px; font-size: 11px; font-family: 'JetBrains Mono', monospace; color: var(--gray-600);">
+            (L + U) / Total formations
+          </div>
+        </div>
+        
+        <!-- Couverture -->
+        <div style="background: #eff6ff; border-radius: 12px; padding: 20px; border-left: 4px solid #3b82f6;">
+          <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+            <i class="fas fa-chart-pie" style="color: #3b82f6; font-size: 24px;"></i>
+            <h4 style="margin: 0; color: #1e40af;">Couverture</h4>
+          </div>
+          <p style="margin: 0 0 12px 0; font-size: 13px; color: #1d4ed8; line-height: 1.6;">
+            % d'employés ayant <strong>au moins une</strong> formation.
+          </p>
+          <div style="background: white; padding: 10px; border-radius: 8px; font-size: 11px; font-family: 'JetBrains Mono', monospace; color: var(--gray-600);">
+            Employés formés / Total
+          </div>
+        </div>
+        
+      </div>
+    </div>
+    
+    <!-- Footer -->
+    <div style="padding: 16px 32px; background: var(--gray-50); text-align: right;">
+      <button onclick="closeExplanation()" class="btn btn-primary" style="padding: 10px 24px;">
+        <i class="fas fa-check" style="margin-right: 8px;"></i>
+        Compris
+      </button>
+    </div>
+    
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════════ -->
+<!-- JAVASCRIPT -->
+<!-- ═══════════════════════════════════════════════════════════════════════════════ -->
+
+<script>
+function showExplanation() {
+  document.getElementById('explanationModal').style.display = 'block';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeExplanation() {
+  document.getElementById('explanationModal').style.display = 'none';
+  document.body.style.overflow = 'auto';
+}
+
+// Fermer en cliquant à l'extérieur
+document.getElementById('explanationModal').addEventListener('click', function(e) {
+  if (e.target === this) {
+    closeExplanation();
+  }
+});
+
+// Fermer avec Escape
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    closeExplanation();
+  }
+});
+</script>
+        <!-- TASK ANALYSIS TABLE -->
+<div class="card fade-in" style="margin-bottom: 32px;" id="task-analysis-section">
+  <div class="card-header">
+    <h3 class="section-title">
+      <i class="fas fa-tasks"></i>
+      Analyse par Poste
+    </h3>
+    <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+      <span class="badge badge-danger">
+        <i class="fas fa-exclamation-triangle" style="margin-right: 4px;"></i>
+        {{ tasks_with_no_trainer }} sans formateur
+      </span>
+      <span class="badge badge-warning">
+        <i class="fas fa-user-times" style="margin-right: 4px;"></i>
+        {{ total_employees_not_trained_global }} non formés
+      </span>
+      <span class="badge badge-success">
+        <i class="fas fa-check" style="margin-right: 4px;"></i>
+        {{ tasks_fully_covered }} couvertes ≥80%
+      </span>
+      <span class="badge badge-info">
+        Moy: {{ avg_coverage_pct }}% couverture
+      </span>
+    </div>
+  </div>
+  
+  <!-- Search & Filter Bar -->
+  <div style="padding: 16px 24px; border-bottom: 1px solid var(--gray-200); background: var(--gray-50);">
+    <div style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">
+      <div class="search-box" style="flex: 1; min-width: 250px;">
+        <i class="fas fa-search"></i>
+        <input type="text" id="taskSearch" placeholder="Rechercher une tâche..." onkeyup="filterTasks()">
+      </div>
+      <div class="tabs">
+        <button class="tab active" onclick="filterByStatus('all', this)">Toutes ({{ total_tasks }})</button>
+        <button class="tab" onclick="filterByStatus('CRITIQUE', this)">
+          <i class="fas fa-exclamation-triangle"></i> Critiques ({{ tasks_with_no_trainer }})
+        </button>
+        <button class="tab" onclick="filterByStatus('RISQUE', this)">
+          <i class="fas fa-exclamation-circle"></i> Risque
+        </button>
+        <button class="tab" onclick="filterByStatus('OK', this)">
+          <i class="fas fa-check-circle"></i> OK ({{ tasks_fully_covered }})
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ✅ CONTENEUR AVEC SCROLL - Hauteur max 500px -->
+  <div style="max-height: 500px; overflow-y: auto; overflow-x: auto;">
+    <table id="taskAnalysisTable" style="width: 100%;">
+      <thead style="position: sticky; top: 0; background: #f8fafc; z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <tr>
+          <th style="width: 80px;">Code</th>
+          <th style="min-width: 200px;">Titre de la Tâche</th>
+          <th style="text-align: center; width: 70px;">Lignes</th>
+          <th style="text-align: center; background: #f0fdf4; width: 90px;">
+            <i class="fas fa-users" style="color: var(--gray-600);"></i>
+            <span style="display: block; font-size: 10px;">Assignés</span>
+          </th>
+          <th style="text-align: center; width: 50px;">
+            <span style="color: #F59E0B; font-weight: 700;">I</span>
+            <span style="display: block; font-size: 9px; color: var(--gray-400);">En cours</span>
+          </th>
+          <th style="text-align: center; width: 50px;">
+            <span style="color: #3B82F6; font-weight: 700;">L</span>
+            <span style="display: block; font-size: 9px; color: var(--gray-400);">Autonome</span>
+          </th>
+          <th style="text-align: center; width: 50px;">
+            <span style="color: #059669; font-weight: 700;">U</span>
+            <span style="display: block; font-size: 9px; color: var(--gray-400);">Formateur</span>
+          </th>
+          <th style="text-align: center; background: #fef2f2; width: 90px;">
+            <i class="fas fa-user-times" style="color: #DC2626;"></i>
+            <span style="display: block; font-size: 10px;">Non formés</span>
+          </th>
+          <th style="text-align: center; width: 100px;">Statut</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for task in task_analysis %}
+        <tr class="task-row" data-status="{{ task.criticality }}" data-search="{{ task.code|lower }} {{ task.title|lower }}">
+          <!-- Code -->
+          <td>
+            <span class="badge badge-secondary" style="font-family: 'JetBrains Mono', monospace; font-weight: 600;">
+              {{ task.code }}
+            </span>
+          </td>
+          
+          <!-- Titre -->
+          <td>
+            <div>
+              <p style="font-weight: 600; margin: 0; font-size: 14px;">{{ task.title }}</p>
+              {% if task.lines_str != "Aucune" %}
+              <p style="font-size: 11px; color: var(--gray-500); margin: 4px 0 0 0;">
+                <i class="fas fa-industry" style="margin-right: 4px;"></i>{{ task.lines_str }}
+              </p>
+              {% endif %}
+            </div>
+          </td>
+          
+          <!-- Nombre de lignes -->
+          <td style="text-align: center;">
+            <span class="badge badge-info">{{ task.lines_count }}</span>
+          </td>
+          
+          <!-- Nombre total d'employés assignés -->
+          <td style="text-align: center; background: #f0fdf4;">
+            <div style="display: flex; flex-direction: column; align-items: center;">
+              <span style="font-size: 20px; font-weight: 800; color: var(--gray-800);">
+                {{ task.total_employees_assigned }}
+              </span>
+            </div>
+          </td>
+          
+          <!-- Niveau I -->
+          <td style="text-align: center;">
+            <span style="font-weight: 700; color: #D97706; font-size: 18px;">{{ task.i_count }}</span>
+          </td>
+          
+          <!-- Niveau L -->
+          <td style="text-align: center;">
+            <span style="font-weight: 700; color: #3B82F6; font-size: 18px;">{{ task.l_count }}</span>
+          </td>
+          
+          <!-- Niveau U -->
+          <td style="text-align: center;">
+            <div>
+              <span style="font-weight: 700; color: #059669; font-size: 18px;">{{ task.u_count }}</span>
+            </div>
+          </td>
+          
+          <!-- Non formés -->
+          <td style="text-align: center; background: #fef2f2;">
+            <div style="display: flex; flex-direction: column; align-items: center;">
+              <span style="font-size: 18px; font-weight: 800; color: {% if task.total_employees_not_trained > 0 %}#DC2626{% else %}var(--success-color){% endif %};">
+                {{ task.total_employees_not_trained }}
+              </span>
+              <span style="font-size: 10px; color: var(--gray-500);">
+                ({{ task.not_trained_pct }}%)
+              </span>
+            </div>
+          </td>
+          
+          <!-- Statut -->
+          <td style="text-align: center;">
+            <div>
+              <span class="badge badge-{{ task.criticality_color }}" style="padding: 6px 12px; font-size: 11px;">
+                <i class="fas fa-{{ task.criticality_icon }}" style="margin-right: 4px;"></i>
+                {{ task.criticality }}
+              </span>
+              {% if task.last_training_date %}
+              <p style="font-size: 10px; color: var(--gray-400); margin: 6px 0 0 0;">
+                <i class="fas fa-calendar-alt" style="margin-right: 2px;"></i>
+                {{ task.last_training_date|date:"d/m/Y" }}
+              </p>
+              {% endif %}
+              {% if task.trainings_this_month > 0 %}
+              <span class="badge badge-success" style="margin-top: 4px; font-size: 9px; padding: 2px 6px;">
+                <i class="fas fa-plus"></i> {{ task.trainings_this_month }} ce mois
+              </span>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="9" style="text-align: center; padding: 60px;">
+            <i class="fas fa-tasks" style="font-size: 48px; color: var(--gray-300); margin-bottom: 16px; display: block;"></i>
+            <p style="color: var(--gray-500); margin: 0;">Aucune tâche trouvée</p>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  
+  <!-- Summary Footer -->
+  <div style="padding: 20px 24px; border-top: 1px solid var(--gray-200); background: var(--gray-50);">
+    <div style="display: flex; justify-content: space-around; text-align: center; flex-wrap: wrap; gap: 16px;">
+      <div>
+        <p style="font-size: 24px; font-weight: 700; color: var(--gray-900); margin: 0;">{{ total_tasks }}</p>
+        <p style="font-size: 12px; color: var(--gray-500); margin: 4px 0 0 0;">Total Tâches</p>
+      </div>
+      <div style="border-left: 1px solid var(--gray-300); padding-left: 24px;">
+        <p style="font-size: 24px; font-weight: 700; color: var(--success-color); margin: 0;">{{ tasks_fully_covered }}</p>
+        <p style="font-size: 12px; color: var(--gray-500); margin: 4px 0 0 0;">Couvertes ≥80%</p>
+      </div>
+      <div style="border-left: 1px solid var(--gray-300); padding-left: 24px;">
+        <p style="font-size: 24px; font-weight: 700; color: var(--warning-color); margin: 0;">{{ tasks_partially_covered }}</p>
+        <p style="font-size: 12px; color: var(--gray-500); margin: 4px 0 0 0;">Partielles 30-80%</p>
+      </div>
+      <div style="border-left: 1px solid var(--gray-300); padding-left: 24px;">
+        <p style="font-size: 24px; font-weight: 700; color: var(--danger-color); margin: 0;">{{ tasks_poorly_covered }}</p>
+        <p style="font-size: 12px; color: var(--gray-500); margin: 4px 0 0 0;">Faibles &lt;30%</p>
+      </div>
+      <div style="border-left: 1px solid var(--gray-300); padding-left: 24px;">
+        <p style="font-size: 24px; font-weight: 700; color: #DC2626; margin: 0;">{{ tasks_with_no_trainer }}</p>
+        <p style="font-size: 12px; color: var(--gray-500); margin: 4px 0 0 0;">Sans Formateur</p>
+      </div>
+      <div style="border-left: 1px solid var(--gray-300); padding-left: 24px;">
+        <p style="font-size: 24px; font-weight: 700; color: #7C3AED; margin: 0;">{{ unique_trainers }}</p>
+        <p style="font-size: 12px; color: var(--gray-500); margin: 4px 0 0 0;">Formateurs Uniques</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+      </div>
+      
+
+      <!-- FOOTER -->
+      <footer style="padding: 24px 40px; background: white; border-top: 1px solid var(--gray-200); text-align: center;">
+        <p style="font-size: 13px; color: var(--gray-500);">
+          Dashboard RH  © {{ last_update|date:"Y" }} | LEKHBIOUI
+        </p>
+      </footer>
+
+    </div>
+  </div>
+
+  <!-- SCRIPTS -->
+  <script>
+// Task Table Search & Filter
+function filterTasks() {
+  const searchValue = document.getElementById('taskSearch').value.toLowerCase();
+  const rows = document.querySelectorAll('.task-row');
+  
+  rows.forEach(row => {
+    const searchText = row.getAttribute('data-search');
+    const matchesSearch = searchText.includes(searchValue);
+    const currentFilter = document.querySelector('.tabs .tab.active').textContent.trim();
+    const status = row.getAttribute('data-status');
+    
+    let matchesFilter = true;
+    if (currentFilter === 'Critiques') matchesFilter = status === 'CRITIQUE';
+    else if (currentFilter === 'Risque') matchesFilter = status === 'RISQUE';
+    else if (currentFilter === 'OK') matchesFilter = status === 'OK';
+    
+    row.style.display = (matchesSearch && matchesFilter) ? '' : 'none';
+  });
+  
+  updateTaskCount();
+}
+
+function filterByStatus(status, btn) {
+  // Update active tab
+  document.querySelectorAll('.tabs .tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  
+  const rows = document.querySelectorAll('.task-row');
+  const searchValue = document.getElementById('taskSearch').value.toLowerCase();
+  
+  rows.forEach(row => {
+    const rowStatus = row.getAttribute('data-status');
+    const searchText = row.getAttribute('data-search');
+    const matchesSearch = searchText.includes(searchValue);
+    
+    let matchesFilter = true;
+    if (status === 'CRITIQUE') matchesFilter = rowStatus === 'CRITIQUE';
+    else if (status === 'RISQUE') matchesFilter = rowStatus === 'RISQUE';
+    else if (status === 'OK') matchesFilter = rowStatus === 'OK';
+    
+    row.style.display = (matchesSearch && matchesFilter) ? '' : 'none';
+  });
+  
+  updateTaskCount();
+}
+
+function updateTaskCount() {
+  const visibleRows = document.querySelectorAll('.task-row[style=""], .task-row:not([style])').length;
+  // Optionally update a counter display
+}
+
+    // Safe JSON parsing
+    function safeJSON(data) {
+      try { 
+        return data ? JSON.parse(data) : []; 
+      } catch (e) { 
+        console.warn("Invalid JSON:", data); 
+        return []; 
+      }
+    }
+
+    // Data from Django
+    const labels = safeJSON('{{ months_labels_json|escapejs }}');
+    const seriesTotal = safeJSON('{{ series_total_json|escapejs }}');
+    const seriesI = safeJSON('{{ series_i_json|escapejs }}');
+    const seriesL = safeJSON('{{ series_l_json|escapejs }}');
+    const seriesU = safeJSON('{{ series_u_json|escapejs }}');
+    const seriesCumulative = safeJSON('{{ series_cumulative_json|escapejs }}');
+    const pieData = safeJSON('{{ pie_levels_json|escapejs }}');
+    const radarData = safeJSON('{{ radar_data_json|escapejs }}');
+    const barData = safeJSON('{{ bar_lines_json|escapejs }}');
+
+    // Daily activity data
+    const dailyActivity = [
+      {% for day in daily_activity %}
+      { date: "{{ day.day_name }}", count: {{ day.count }} }{% if not forloop.last %},{% endif %}
+      {% endfor %}
+    ].reverse();
+
+    // Chart.js Global Config
+    Chart.defaults.font.family = "'IBM Plex Sans', sans-serif";
+    Chart.defaults.color = '#64748B';
+    Chart.defaults.borderColor = '#E2E8F0';
+
+    // Pie Chart - Level Distribution
+    new Chart(document.getElementById('pieLevels'), {
+      type: 'doughnut',
+      data: {
+        labels: pieData.labels || ['Niveau I', 'Niveau L', 'Niveau U'],
+        datasets: [{
+          data: pieData.data || [{{ level_counts.i_count }}, {{ level_counts.l_count }}, {{ level_counts.u_count }}],
+          backgroundColor: pieData.colors || ['#F59E0B', '#3B82F6', '#059669'],
+          borderColor: '#fff',
+          borderWidth: 4,
+          hoverOffset: 8
+        }]
+      },
+      options: { 
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { 
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: 'rgba(15, 23, 42, 0.95)',
+            padding: 14,
+            cornerRadius: 8,
+            callbacks: {
+              label: function(context) {
+                const value = context.parsed || 0;
+                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                const percentage = ((value / total) * 100).toFixed(1);
+                return `${context.label}: ${value} (${percentage}%)`;
+              }
+            }
+          }
+        },
+        cutout: '70%'
+      }
+    });
+
+    // Line Chart - Monthly Evolution
+    new Chart(document.getElementById('lineChart'), {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          { 
+            label: "Total", 
+            data: seriesTotal, 
+            borderColor: '#1E40AF',
+            backgroundColor: 'rgba(30, 64, 175, 0.05)', 
+            fill: true,
+            tension: 0.4,
+            borderWidth: 3,
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            pointBackgroundColor: '#1E40AF',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2
+          },
+          { 
+            label: "Niveau I", 
+            data: seriesI, 
+            borderColor: '#F59E0B',
+            backgroundColor: 'transparent', 
+            tension: 0.4,
+            borderWidth: 2,
+            pointRadius: 3,
+            borderDash: [5, 5]
+          },
+          { 
+            label: "Niveau L", 
+            data: seriesL, 
+            borderColor: '#3B82F6',
+            backgroundColor: 'transparent', 
+            tension: 0.4,
+            borderWidth: 2,
+            pointRadius: 3
+          },
+          { 
+            label: "Niveau U", 
+            data: seriesU, 
+            borderColor: '#059669',
+            backgroundColor: 'transparent', 
+            tension: 0.4,
+            borderWidth: 2,
+            pointRadius: 3
+          }
+        ]
+      },
+      options: { 
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { 
+          legend: { 
+            position: 'bottom',
+            labels: {
+              usePointStyle: true,
+              padding: 16,
+              font: { size: 12, weight: '500' }
+            }
+          },
+          tooltip: {
+            backgroundColor: 'rgba(15, 23, 42, 0.95)',
+            padding: 12,
+            cornerRadius: 8,
+            mode: 'index',
+            intersect: false
+          }
+        }, 
+        scales: { 
+          y: { 
+            beginAtZero: true,
+            grid: { color: 'rgba(0, 0, 0, 0.04)', drawBorder: false },
+            ticks: { font: { size: 11 }, padding: 8 }
+          },
+          x: {
+            grid: { display: false },
+            ticks: { font: { size: 11 }, padding: 8, maxRotation: 45 }
+          }
+        },
+        interaction: { intersect: false, mode: 'index' }
+      }
+    });
+
+    // Daily Activity Bar Chart
+    new Chart(document.getElementById('dailyActivityChart'), {
+      type: 'bar',
+      data: {
+        labels: dailyActivity.map(d => d.date),
+        datasets: [{
+          label: 'Formations',
+          data: dailyActivity.map(d => d.count),
+          backgroundColor: 'rgba(59, 130, 246, 0.8)',
+          borderColor: '#3B82F6',
+          borderWidth: 1,
+          borderRadius: 6,
+          borderSkipped: false
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: 'rgba(15, 23, 42, 0.95)',
+            padding: 12,
+            cornerRadius: 8
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            grid: { color: 'rgba(0, 0, 0, 0.04)', drawBorder: false },
+            ticks: { stepSize: 1 }
+          },
+          x: {
+            grid: { display: false }
+          }
+        }
+      }
+    });
+
+    // Radar Chart - Multi-Criteria Comparison
+    if (radarData.labels && radarData.labels.length > 0) {
+      new Chart(document.getElementById('radarChart'), {
+        type: 'radar',
+        data: {
+          labels: radarData.labels,
+          datasets: [
+            {
+              label: 'Polyvalence',
+              data: radarData.polyvalence,
+              borderColor: '#8B5CF6',
+              backgroundColor: 'rgba(139, 92, 246, 0.2)',
+              borderWidth: 2,
+              pointBackgroundColor: '#8B5CF6'
+            },
+            {
+              label: 'Maîtrise',
+              data: radarData.mastery,
+              borderColor: '#3B82F6',
+              backgroundColor: 'rgba(59, 130, 246, 0.2)',
+              borderWidth: 2,
+              pointBackgroundColor: '#3B82F6'
+            },
+            {
+              label: 'Couverture',
+              data: radarData.coverage,
+              borderColor: '#059669',
+              backgroundColor: 'rgba(5, 150, 105, 0.2)',
+              borderWidth: 2,
+              pointBackgroundColor: '#059669'
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: { usePointStyle: true, padding: 16 }
+            }
+          },
+          scales: {
+            r: {
+              beginAtZero: true,
+              max: 100,
+              ticks: { stepSize: 20 },
+              pointLabels: { font: { size: 12, weight: '500' } }
+            }
+          }
+        }
+      });
+    }
+
+    // Toggle Trainings
+    let showingAllTrainings = false;
+    function toggleTrainings() {
+      const items = document.querySelectorAll('.training-item');
+      const toggleText = document.getElementById('toggleText');
+      const toggleIcon = document.getElementById('toggleIcon');
+      
+      showingAllTrainings = !showingAllTrainings;
+      
+      items.forEach((item, index) => {
+        if (index >= 5) {
+          item.classList.toggle('hidden', !showingAllTrainings);
+        }
+      });
+      
+      if (showingAllTrainings) {
+        toggleText.textContent = 'Voir moins';
+        toggleIcon.classList.replace('fa-chevron-down', 'fa-chevron-up');
+      } else {
+        toggleText.textContent = `Voir tout (${items.length})`;
+        toggleIcon.classList.replace('fa-chevron-up', 'fa-chevron-down');
+      }
+    }
+
+    // Fade-in Animation on Scroll
+    const observerOptions = { threshold: 0.05, rootMargin: '0px 0px -50px 0px' };
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry, index) => {
+        if (entry.isIntersecting) {
+          setTimeout(() => {
+            entry.target.style.opacity = '1';
+            entry.target.style.transform = 'translateY(0)';
+          }, index * 50);
+          observer.unobserve(entry.target);
+        }
+      });
+    }, observerOptions);
+
+    document.querySelectorAll('.fade-in').forEach(el => {
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(15px)';
+      el.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+      observer.observe(el);
+    });
+
+    // Mobile Sidebar Toggle
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('open');
+    }
+  </script>
+
+</body>
+</html>

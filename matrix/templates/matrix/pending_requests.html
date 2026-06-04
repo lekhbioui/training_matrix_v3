@@ -1,0 +1,34 @@
+<!-- 
+{% block content %}
+<h2 class="text-xl font-bold mb-4">Demandes de formation en attente</h2>
+
+<table class="min-w-full border border-gray-200">
+    <thead>
+        <tr class="bg-gray-100">
+            <th class="px-4 py-2 border">Employé</th>
+            <th class="px-4 py-2 border">Tâche</th>
+            <th class="px-4 py-2 border">Niveau demandé</th>
+            <th class="px-4 py-2 border">Date demande</th>
+            <th class="px-4 py-2 border">Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for req in requests %}
+        <tr class="hover:bg-gray-50">
+            <td class="px-4 py-2 border">{{ req.employee.first_name }} {{ req.employee.last_name }}</td>
+            <td class="px-4 py-2 border">{{ req.task.code }} - {{ req.task.title }}</td>
+            <td class="px-4 py-2 border">{{ req.get_requested_level_display }}</td>
+            <td class="px-4 py-2 border">{{ req.created_at|date:"d/m/Y H:i" }}</td>
+            <td class="px-4 py-2 border space-x-2">
+                <a href="{% url 'review_training_request' req.id 'approve' %}" class="px-2 py-1 bg-green-500 text-white rounded">Accepter</a>
+                <a href="{% url 'review_training_request' req.id 'reject' %}" class="px-2 py-1 bg-red-500 text-white rounded">Refuser</a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="5" class="px-4 py-2 text-center text-gray-500">Aucune demande en attente</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %} -->

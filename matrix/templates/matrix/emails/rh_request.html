@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demande de Formation - {{ company_name }}</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f4f4f4; font-family: Arial, sans-serif;">
+    
+    <!--[if mso]>
+    <style type="text/css">
+        body, table, td {font-family: Arial, Helvetica, sans-serif !important;}
+    </style>
+    <![endif]-->
+    
+    <!-- Wrapper -->
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f4f4f4;">
+        <tr>
+            <td align="center" style="padding: 20px 10px;">
+                
+                <!-- Email Container -->
+                <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff; border: 1px solid #dddddd;">
+                    
+                    <!-- ════════════════════════════════════════════════════════ -->
+                    <!-- HEADER AVEC LOGO - Fond bleu foncé -->
+                    <!-- ════════════════════════════════════════════════════════ -->
+                    <tr>
+                        <td bgcolor="#1a5276" style="background-color: #1a5276; padding: 30px 40px; text-align: center; border-bottom: 4px solid #f39c12;">
+                            
+                            <!-- Logo -->
+                            <img src="cid:company_logo" 
+                                 alt="{{ company_name }}"
+                                 width="180"
+                                 style="display: block; margin: 0 auto 15px auto; max-width: 180px; height: auto;">
+                            
+                            <!-- Titre - TEXTE VISIBLE -->
+                            <!--[if mso]>
+                            <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-family: Arial, sans-serif;">Demande de Formation</h1>
+                            <![endif]-->
+                            <!--[if !mso]><!-->
+                            <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: bold; font-family: Arial, sans-serif; mso-line-height-rule: exactly; line-height: 30px;">
+                                Demande de Formation
+                            </h1>
+                            <!--<![endif]-->
+                            
+                            <p style="color: #bdc3c7; margin: 8px 0 0 0; font-size: 14px; font-family: Arial, sans-serif;">
+                                Validation requise
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- ════════════════════════════════════════════════════════ -->
+                    <!-- BADGE NIVEAU - Fond coloré selon niveau -->
+                    <!-- ════════════════════════════════════════════════════════ -->
+                    <tr>
+                        <td style="padding: 25px 40px 15px 40px; text-align: center;">
+                            <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center">
+                                <tr>
+                                    <td bgcolor="{{ level_color }}" style="background-color: {{ level_color }}; padding: 12px 30px; border-radius: 25px;">
+                                        <span style="color: #ffffff; font-size: 16px; font-weight: bold; font-family: Arial, sans-serif;">
+                                            Niveau demande : {{ level_name }}
+                                        </span>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- ════════════════════════════════════════════════════════ -->
+                    <!-- MESSAGE DE CONFIRMATION -->
+                    <!-- ════════════════════════════════════════════════════════ -->
+                    <tr>
+                        <td style="padding: 5px 40px 20px 40px; text-align: center;">
+                            <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center">
+                                <tr>
+                                    <td bgcolor="#d4edda" style="background-color: #d4edda; padding: 10px 20px; border: 1px solid #28a745; border-radius: 5px;">
+                                        <span style="color: #155724; font-size: 14px; font-weight: bold; font-family: Arial, sans-serif;">
+                                            &#10004; Le delai minimum a ete respecte
+                                        </span>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- ════════════════════════════════════════════════════════ -->
+                    <!-- TABLEAU DES DETAILS - Fond clair, texte foncé -->
+                    <!-- ════════════════════════════════════════════════════════ -->
+                    <tr>
+                        <td style="padding: 0 40px 25px 40px;">
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border: 2px solid #1a5276;">
+                                
+                                <!-- Titre du tableau -->
+                                <tr>
+                                    <td colspan="2" bgcolor="#1a5276" style="background-color: #1a5276; padding: 12px 15px;">
+                                        <span style="color: #ffffff; font-size: 15px; font-weight: bold; font-family: Arial, sans-serif;">
+                                            DETAILS DE LA DEMANDE
+                                        </span>
+                                    </td>
+                                </tr>
+                                
+                                <!-- Ligne 1 : Employé -->
+                                <tr>
+                                    <td width="40%" bgcolor="#f8f9fa" style="background-color: #f8f9fa; padding: 12px 15px; border-bottom: 1px solid #dee2e6;">
+                                        <span style="color: #495057; font-weight: bold; font-family: Arial, sans-serif;">Employe :</span>
+                                    </td>
+                                    <td bgcolor="#ffffff" style="background-color: #ffffff; padding: 12px 15px; border-bottom: 1px solid #dee2e6;">
+                                        <span style="color: #212529; font-family: Arial, sans-serif;">{{ employee_name }}</span>
+                                    </td>
+                                </tr>
+                                
+                                <!-- Ligne 2 : Tâche -->
+                                <tr>
+                                    <td bgcolor="#f8f9fa" style="background-color: #f8f9fa; padding: 12px 15px; border-bottom: 1px solid #dee2e6;">
+                                        <span style="color: #495057; font-weight: bold; font-family: Arial, sans-serif;">Tache :</span>
+                                    </td>
+                                    <td bgcolor="#ffffff" style="background-color: #ffffff; padding: 12px 15px; border-bottom: 1px solid #dee2e6;">
+                                        <span style="color: #212529; font-family: Arial, sans-serif;">{{ task_name }}</span>
+                                    </td>
+                                </tr>
+                                
+                                <!-- Ligne 3 : Ligne de production -->
+                                <tr>
+                                    <td bgcolor="#f8f9fa" style="background-color: #f8f9fa; padding: 12px 15px; border-bottom: 1px solid #dee2e6;">
+                                        <span style="color: #495057; font-weight: bold; font-family: Arial, sans-serif;">Ligne :</span>
+                                    </td>
+                                    <td bgcolor="#ffffff" style="background-color: #ffffff; padding: 12px 15px; border-bottom: 1px solid #dee2e6;">
+                                        <span style="color: #212529; font-family: Arial, sans-serif;">{{ production_line }}</span>
+                                    </td>
+                                </tr>
+                                
+                                <!-- Ligne 4 : Demandé par -->
+                                <tr>
+                                    <td bgcolor="#f8f9fa" style="background-color: #f8f9fa; padding: 12px 15px; border-bottom: 1px solid #dee2e6;">
+                                        <span style="color: #495057; font-weight: bold; font-family: Arial, sans-serif;">Demande par :</span>
+                                    </td>
+                                    <td bgcolor="#ffffff" style="background-color: #ffffff; padding: 12px 15px; border-bottom: 1px solid #dee2e6;">
+                                        <span style="color: #212529; font-family: Arial, sans-serif;">{{ requester_name }}</span>
+                                    </td>
+                                </tr>
+                                
+                                <!-- Ligne 5 : Date -->
+                                <tr>
+                                    <td bgcolor="#f8f9fa" style="background-color: #f8f9fa; padding: 12px 15px; border-bottom: 1px solid #dee2e6;">
+                                        <span style="color: #495057; font-weight: bold; font-family: Arial, sans-serif;">Date :</span>
+                                    </td>
+                                    <td bgcolor="#ffffff" style="background-color: #ffffff; padding: 12px 15px; border-bottom: 1px solid #dee2e6;">
+                                        <span style="color: #212529; font-family: Arial, sans-serif;">{{ request_date }}</span>
+                                    </td>
+                                </tr>
+                                
+                                <!-- Ligne 6 : Jours écoulés -->
+                                <tr>
+                                    <td bgcolor="#f8f9fa" style="background-color: #f8f9fa; padding: 12px 15px;">
+                                        <span style="color: #495057; font-weight: bold; font-family: Arial, sans-serif;">Jours ecoules :</span>
+                                    </td>
+                                    <td bgcolor="#ffffff" style="background-color: #ffffff; padding: 12px 15px;">
+                                        <span style="color: #28a745; font-weight: bold; font-family: Arial, sans-serif;">{{ days_elapsed }} jours</span>
+                                        <span style="color: #6c757d; font-family: Arial, sans-serif;">(minimum : {{ required_days }})</span>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- ════════════════════════════════════════════════════════ -->
+                    <!-- BOUTONS D'ACTION - Style bulletproof -->
+                    <!-- ════════════════════════════════════════════════════════ -->
+                    <tr>
+                        <td style="padding: 10px 40px 30px 40px;">
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                                <tr>
+                                    <!-- Bouton APPROUVER -->
+                                    <td width="48%" align="center" valign="top">
+                                        <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                                            <tr>
+                                                <td bgcolor="#28a745" style="background-color: #28a745; border-radius: 5px; text-align: center;">
+                                                    <!--[if mso]>
+                                                    <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="{{ approval_url }}" style="height:50px;v-text-anchor:middle;width:200px;" arcsize="10%" strokecolor="#28a745" fillcolor="#28a745">
+                                                    <w:anchorlock/>
+                                                    <center style="color:#ffffff;font-family:Arial,sans-serif;font-size:16px;font-weight:bold;">APPROUVER</center>
+                                                    </v:roundrect>
+                                                    <![endif]-->
+                                                    <!--[if !mso]><!-->
+                                                    <a href="{{ approval_url }}" style="display: inline-block; padding: 15px 40px; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: bold; font-family: Arial, sans-serif;">
+                                                        APPROUVER
+                                                    </a>
+                                                    <!--<![endif]-->
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                    
+                                    <!-- Espace -->
+                                    <td width="4%">&nbsp;</td>
+                                    
+                                    <!-- Bouton REFUSER -->
+                                    <td width="48%" align="center" valign="top">
+                                        <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                                            <tr>
+                                                <td bgcolor="#dc3545" style="background-color: #dc3545; border-radius: 5px; text-align: center;">
+                                                    <!--[if mso]>
+                                                    <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="{{ reject_url }}" style="height:50px;v-text-anchor:middle;width:200px;" arcsize="10%" strokecolor="#dc3545" fillcolor="#dc3545">
+                                                    <w:anchorlock/>
+                                                    <center style="color:#ffffff;font-family:Arial,sans-serif;font-size:16px;font-weight:bold;">REFUSER</center>
+                                                    </v:roundrect>
+                                                    <![endif]-->
+                                                    <!--[if !mso]><!-->
+                                                    <a href="{{ reject_url }}" style="display: inline-block; padding: 15px 40px; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: bold; font-family: Arial, sans-serif;">
+                                                        REFUSER
+                                                    </a>
+                                                    <!--<![endif]-->
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                            
+                            <!-- Lien Dashboard -->
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top: 20px;">
+                                <tr>
+                                    <td align="center">
+                                        <a href="{{ dashboard_url }}" style="color: #007bff; text-decoration: underline; font-size: 14px; font-family: Arial, sans-serif;">
+                                            Voir toutes les demandes en attente
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- ════════════════════════════════════════════════════════ -->
+                    <!-- FOOTER - Fond gris foncé, texte clair -->
+                    <!-- ════════════════════════════════════════════════════════ -->
+                    <tr>
+                        <td bgcolor="#343a40" style="background-color: #343a40; padding: 25px 40px; text-align: center; border-top: 4px solid #f39c12;">
+                            
+                            <!-- Logo footer -->
+                            <img src="cid:company_logo" 
+                                 alt="{{ company_name }}"
+                                 width="120"
+                                 style="display: block; margin: 0 auto 15px auto; max-width: 120px; height: auto; opacity: 0.9;">
+                            
+                            <!-- Copyright - COULEUR VISIBLE -->
+                            <p style="color: #adb5bd; margin: 0; font-size: 13px; font-family: Arial, sans-serif;">
+                                &copy; {{ current_year }} {{ company_name }}
+                            </p>
+                            <p style="color: #adb5bd; margin: 5px 0 0 0; font-size: 13px; font-family: Arial, sans-serif;">
+                                Systeme de Gestion des Formations
+                            </p>
+                            
+                            <!-- Info auto -->
+                            <p style="color: #6c757d; margin: 15px 0 0 0; font-size: 11px; font-family: Arial, sans-serif;">
+                                Cet email a ete envoye automatiquement - Demande #{{ request_id }}
+                            </p>
+                        </td>
+                    </tr>
+
+                </table>
+                <!-- Fin Email Container -->
+                
+            </td>
+        </tr>
+    </table>
+    <!-- Fin Wrapper -->
+
+</body>
+</html>

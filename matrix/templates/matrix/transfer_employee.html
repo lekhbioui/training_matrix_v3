@@ -1,0 +1,2156 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transfert d'Employé | HR Management</title>
+    <link rel="icon" type="image/png" href="{% static 'images/logo.png' %}">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Fonts professionnelles -->
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-color: #0F172A;
+            --secondary-color: #1E40AF;
+            --accent-color: #3B82F6;
+            --success-color: #059669;
+            --warning-color: #D97706;
+            --danger-color: #DC2626;
+            --gray-50: #F8FAFC;
+            --gray-100: #F1F5F9;
+            --gray-200: #E2E8F0;
+            --gray-300: #CBD5E1;
+            --gray-400: #94A3B8;
+            --gray-500: #64748B;
+            --gray-600: #475569;
+            --gray-700: #334155;
+            --gray-800: #1E293B;
+            --gray-900: #0F172A;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background-attachment: fixed;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .main-container {
+            background: var(--gray-50);
+            min-height: 100vh;
+        }
+
+        /* SIDEBAR */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: 280px;
+            background: linear-gradient(180deg, #0F172A 0%, #1E293B 100%);
+            color: white;
+            z-index: 1000;
+            box-shadow: 4px 0 24px rgba(0, 0, 0, 0.12);
+            overflow-y: auto;
+        }
+
+        .sidebar-header {
+            padding: 28px 24px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar-logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 0;
+        }
+
+        .company-logo {
+            max-width: 140px;
+            height: auto;
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 24px;
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            transition: all 0.2s ease;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .menu-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+        }
+
+        .menu-item.active {
+            background: rgba(59, 130, 246, 0.15);
+            color: white;
+            border-left: 3px solid #3B82F6;
+        }
+
+        .menu-item i { width: 20px; text-align: center; }
+
+        .menu-badge {
+            margin-left: auto;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        /* MAIN CONTENT */
+        .main-content {
+            margin-left: 280px;
+            min-height: 100vh;
+        }
+
+        /* HEADER */
+        .top-header {
+            background: white;
+            border-bottom: 1px solid var(--gray-200);
+            padding: 20px 40px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .page-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--gray-900);
+            margin-bottom: 4px;
+        }
+
+        .breadcrumb {
+            display: flex;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--gray-500);
+        }
+
+        /* CARDS */
+        .card {
+            background: white;
+            border-radius: 12px;
+            border: 1px solid var(--gray-200);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 24px;
+            border-bottom: 1px solid var(--gray-200);
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.03) 0%, rgba(99, 102, 241, 0.03) 100%);
+        }
+
+        .card-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--gray-900);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-title i { color: var(--accent-color); font-size: 24px; }
+        .card-body { padding: 32px; }
+
+        /* FORMS */
+        .form-group { margin-bottom: 24px; }
+
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--gray-700);
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* SEARCH CONTAINER */
+        .search-container { position: relative; }
+
+        .search-input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .search-input-wrapper .search-icon {
+            position: absolute;
+            left: 16px;
+            color: var(--gray-400);
+            pointer-events: none;
+            transition: color 0.2s ease;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 14px 44px 14px 44px;
+            border: 2px solid var(--gray-200);
+            border-radius: 10px;
+            font-size: 15px;
+            color: var(--gray-800);
+            background: white;
+            transition: all 0.2s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+        }
+
+        .search-input:focus + .search-icon,
+        .search-input:focus ~ .search-icon {
+            color: var(--accent-color);
+        }
+
+        .search-input::placeholder { color: var(--gray-400); }
+
+        .clear-search {
+            position: absolute;
+            right: 12px;
+            background: var(--gray-100);
+            border: none;
+            color: var(--gray-500);
+            cursor: pointer;
+            padding: 6px 8px;
+            border-radius: 6px;
+            display: none;
+            transition: all 0.2s ease;
+        }
+
+        .clear-search:hover {
+            color: var(--gray-700);
+            background: var(--gray-200);
+        }
+
+        .clear-search.visible { display: flex; align-items: center; gap: 4px; }
+
+        /* DROPDOWN */
+        .search-dropdown {
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid var(--gray-200);
+            border-radius: 12px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+            max-height: 400px;
+            overflow: hidden;
+            z-index: 1000;
+            display: none;
+        }
+
+        .search-dropdown.active {
+            display: block;
+            animation: dropdownSlide 0.2s ease;
+        }
+
+        @keyframes dropdownSlide {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .search-dropdown-header {
+            padding: 14px 18px;
+            background: var(--gray-50);
+            border-bottom: 1px solid var(--gray-200);
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--gray-500);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .results-count {
+            background: var(--accent-color);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+        }
+
+        .search-results-list {
+            max-height: 320px;
+            overflow-y: auto;
+        }
+
+        .search-result-item {
+            padding: 14px 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            transition: all 0.15s ease;
+            border-bottom: 1px solid var(--gray-100);
+        }
+
+        .search-result-item:last-child { border-bottom: none; }
+
+        .search-result-item:hover,
+        .search-result-item.highlighted {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(99, 102, 241, 0.05) 100%);
+        }
+
+        .search-result-item.selected {
+            background: rgba(59, 130, 246, 0.12);
+            border-left: 3px solid var(--accent-color);
+        }
+
+        .result-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--accent-color) 0%, #6366F1 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 15px;
+            flex-shrink: 0;
+        }
+
+        .result-info { flex: 1; min-width: 0; }
+
+        .result-name {
+            font-weight: 600;
+            color: var(--gray-800);
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+        .result-meta {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .result-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 3px 10px;
+            background: var(--gray-100);
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--gray-600);
+        }
+
+        .result-badge.matricule {
+            background: rgba(59, 130, 246, 0.1);
+            color: var(--accent-color);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .result-badge.line {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success-color);
+        }
+
+        .no-results {
+            padding: 40px 20px;
+            text-align: center;
+        }
+
+        .no-results-icon {
+            width: 60px;
+            height: 60px;
+            background: var(--gray-100);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+        }
+
+        .no-results-icon i { font-size: 24px; color: var(--gray-400); }
+
+        /* SELECTED EMPLOYEE CARD */
+        .selected-employee {
+            display: none;
+            margin-top: 16px;
+            padding: 20px;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.06) 0%, rgba(99, 102, 241, 0.04) 100%);
+            border: 2px solid rgba(59, 130, 246, 0.2);
+            border-radius: 12px;
+        }
+
+        .selected-employee.visible {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .selected-employee .employee-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, var(--accent-color) 0%, #6366F1 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 20px;
+            flex-shrink: 0;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        .selected-employee .employee-info { flex: 1; }
+
+        .selected-employee .employee-name {
+            font-weight: 700;
+            color: var(--gray-800);
+            font-size: 17px;
+            margin-bottom: 6px;
+        }
+
+        .selected-employee .employee-meta {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .selected-employee .meta-item {
+            font-size: 13px;
+            color: var(--gray-600);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .selected-employee .meta-item i { color: var(--accent-color); }
+
+        .selected-employee .remove-btn {
+            padding: 10px 12px;
+            border: none;
+            background: rgba(220, 38, 38, 0.1);
+            color: var(--danger-color);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .selected-employee .remove-btn:hover {
+            background: rgba(220, 38, 38, 0.2);
+            transform: scale(1.05);
+        }
+
+        /* HIGHLIGHT */
+        .highlight {
+            background: rgba(59, 130, 246, 0.25);
+            padding: 1px 3px;
+            border-radius: 3px;
+            font-weight: 600;
+        }
+
+        /* SELECT STYLING */
+        select {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid var(--gray-200);
+            border-radius: 10px;
+            font-size: 15px;
+            color: var(--gray-800);
+            background: white;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+        }
+
+        /* TEXTAREA */
+        textarea {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid var(--gray-200);
+            border-radius: 10px;
+            font-size: 14px;
+            color: var(--gray-800);
+            background: white;
+            resize: vertical;
+            min-height: 100px;
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+        }
+
+        /* BUTTONS */
+        .btn {
+            padding: 14px 28px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #1E40AF 0%, #3B82F6 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(30, 64, 175, 0.25);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            box-shadow: 0 6px 20px rgba(30, 64, 175, 0.35);
+            transform: translateY(-2px);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: white;
+            color: var(--gray-700);
+            border: 2px solid var(--gray-300);
+        }
+
+        .btn-secondary:hover {
+            background: var(--gray-50);
+            border-color: var(--gray-400);
+        }
+
+        /* PROCESS STEPS */
+        .process-steps {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 32px;
+            position: relative;
+        }
+
+        .process-steps::before {
+            content: '';
+            position: absolute;
+            top: 24px;
+            left: 60px;
+            right: 60px;
+            height: 3px;
+            background: var(--gray-200);
+            z-index: 0;
+        }
+
+        .step {
+            flex: 1;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .step-circle {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: white;
+            border: 3px solid var(--gray-300);
+            margin: 0 auto 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            color: var(--gray-400);
+            transition: all 0.3s ease;
+        }
+
+        .step.active .step-circle {
+            background: var(--accent-color);
+            border-color: var(--accent-color);
+            color: white;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        .step.completed .step-circle {
+            background: var(--success-color);
+            border-color: var(--success-color);
+            color: white;
+        }
+
+        .step-label {
+            font-size: 13px;
+            color: var(--gray-500);
+            font-weight: 500;
+        }
+
+        .step.active .step-label {
+            color: var(--accent-color);
+            font-weight: 600;
+        }
+
+        /* PREVIEW */
+        .preview-card {
+            background: var(--gray-50);
+            border: 2px dashed var(--gray-300);
+            border-radius: 12px;
+            padding: 24px;
+            margin-top: 24px;
+        }
+
+        .preview-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 0;
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        .preview-item:last-child { border-bottom: none; }
+
+        .preview-arrow {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px;
+            background: white;
+            border-radius: 10px;
+            margin-top: 16px;
+        }
+
+        .preview-arrow .from {
+            flex: 1;
+            padding: 12px;
+            background: rgba(220, 38, 38, 0.1);
+            border-radius: 8px;
+            text-align: center;
+            color: var(--danger-color);
+            font-weight: 600;
+        }
+
+        .preview-arrow .arrow {
+            color: var(--gray-400);
+            font-size: 20px;
+        }
+
+        .preview-arrow .to {
+            flex: 1;
+            padding: 12px;
+            background: rgba(16, 185, 129, 0.1);
+            border-radius: 8px;
+            text-align: center;
+            color: var(--success-color);
+            font-weight: 600;
+        }
+
+        /* MESSAGES */
+        .messages {
+            margin-bottom: 24px;
+        }
+
+        .alert {
+            padding: 16px 20px;
+            border-radius: 10px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .alert-success {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: var(--success-color);
+        }
+
+        .alert-error {
+            background: rgba(220, 38, 38, 0.1);
+            border: 1px solid rgba(220, 38, 38, 0.3);
+            color: var(--danger-color);
+        }
+
+        /* ========== TEAM LEADER SELECTION ========== */
+        .team-leader-section {
+            display: none;
+            margin-top: 20px;
+            padding: 24px;
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(251, 191, 36, 0.05) 100%);
+            border: 2px solid rgba(245, 158, 11, 0.3);
+            border-radius: 12px;
+            animation: slideDown 0.3s ease;
+        }
+
+        .team-leader-section.visible {
+            display: block;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .team-leader-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .team-leader-header i {
+            color: var(--warning-color);
+            font-size: 20px;
+        }
+
+        .team-leader-header h4 {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--gray-800);
+            margin: 0;
+        }
+
+        .team-leader-header .count-badge {
+            background: var(--warning-color);
+            color: white;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .team-leader-info {
+            font-size: 13px;
+            color: var(--gray-600);
+            margin-bottom: 16px;
+            padding: 10px 14px;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .team-leader-info i {
+            color: var(--warning-color);
+        }
+
+        /* Team Leader Cards */
+        .team-leaders-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .team-leader-card {
+            padding: 16px;
+            background: white;
+            border: 2px solid var(--gray-200);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .team-leader-card:hover {
+            border-color: var(--accent-color);
+            background: rgba(59, 130, 246, 0.03);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .team-leader-card.selected {
+            border-color: var(--success-color);
+            background: rgba(16, 185, 129, 0.08);
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+        }
+
+        .team-leader-card .tl-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--gray-400) 0%, var(--gray-500) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+            flex-shrink: 0;
+            transition: all 0.2s ease;
+        }
+
+        .team-leader-card.selected .tl-avatar {
+            background: linear-gradient(135deg, var(--success-color) 0%, #10B981 100%);
+        }
+
+        .team-leader-card .tl-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .team-leader-card .tl-name {
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--gray-800);
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .team-leader-card .tl-matricule {
+            font-size: 12px;
+            color: var(--gray-500);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .team-leader-card .tl-check {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 2px solid var(--gray-300);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: transparent;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+
+        .team-leader-card.selected .tl-check {
+            background: var(--success-color);
+            border-color: var(--success-color);
+            color: white;
+        }
+
+        /* Single Team Leader Display */
+        .single-team-leader {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 16px;
+            background: rgba(16, 185, 129, 0.08);
+            border: 2px solid rgba(16, 185, 129, 0.25);
+            border-radius: 10px;
+        }
+
+        .single-team-leader .stl-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--success-color) 0%, #10B981 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .single-team-leader .stl-info {
+            flex: 1;
+        }
+
+        .single-team-leader .stl-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--success-color);
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .single-team-leader .stl-name {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--gray-800);
+        }
+
+        .single-team-leader .stl-badge {
+            padding: 6px 12px;
+            background: var(--success-color);
+            color: white;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* No Team Leader Warning */
+        .no-team-leader-warning {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px;
+            background: rgba(220, 38, 38, 0.08);
+            border: 2px solid rgba(220, 38, 38, 0.25);
+            border-radius: 10px;
+        }
+
+        .no-team-leader-warning i {
+            font-size: 24px;
+            color: var(--danger-color);
+        }
+
+        .no-team-leader-warning .warning-text {
+            flex: 1;
+        }
+
+        .no-team-leader-warning .warning-title {
+            font-weight: 600;
+            color: var(--danger-color);
+            font-size: 14px;
+            margin-bottom: 2px;
+        }
+
+        .no-team-leader-warning .warning-desc {
+            font-size: 13px;
+            color: var(--gray-600);
+        }
+
+        /* Validation Error */
+        .team-leader-error {
+            display: none;
+            margin-top: 12px;
+            padding: 10px 14px;
+            background: rgba(220, 38, 38, 0.1);
+            border: 1px solid rgba(220, 38, 38, 0.3);
+            border-radius: 8px;
+            color: var(--danger-color);
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .team-leader-error.visible {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .sidebar-footer-compact {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.logout-item {
+  color: #FCA5A5 !important;
+  background: rgba(220, 38, 38, 0.1);
+}
+
+.logout-item:hover {
+  background: rgba(220, 38, 38, 0.2) !important;
+  color: #FEE2E2 !important;
+}
+
+        /* ANIMATIONS */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fade-in { animation: fadeIn 0.4s ease-out forwards; }
+
+        /* RESPONSIVE */
+        @media (max-width: 1024px) {
+            .sidebar { transform: translateX(-100%); }
+            .main-content { margin-left: 0; }
+        }
+
+        @media (max-width: 768px) {
+            .team-leaders-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .selected-employee.visible {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .selected-employee .employee-meta {
+                justify-content: center;
+            }
+        }
+
+        /* SCROLLBAR */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--gray-100); }
+        ::-webkit-scrollbar-thumb { background: var(--gray-300); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--gray-400); }
+    </style>
+</head>
+<body>
+
+<div class="main-container">
+    
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+                <img src="{% static 'images/logo.png' %}" alt="Logo" class="company-logo">
+            </div>
+        </div>
+
+        <nav style="padding: 16px 0;">
+            <div style="margin-bottom: 24px;">
+                <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255, 255, 255, 0.5); padding: 0 24px 12px;">Principal</div>
+                <a href="{% url 'rh_dashboard' %}" class="menu-item">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Tableau de bord</span>
+                </a>
+                <a href="{% url 'employee_list_rh' %}" class="menu-item">
+                    <i class="fas fa-users"></i>
+                    <span>Employés</span>
+                    <span class="menu-badge" style="background: var(--accent-color);">{{ total_employees }}</span>
+                </a>
+                <a href="{% url 'rh_manage_tasks_lines' %}" class="menu-item">
+                    <i class="fas fa-tasks"></i>
+                    <span>Tâches & Lignes</span>
+                </a>
+            </div>
+
+            <div style="margin-bottom: 24px;">
+                <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255, 255, 255, 0.5); padding: 0 24px 12px;">Gestion</div>
+                <a href="{% url 'rh_training_approvals' %}" class="menu-item">
+                    <i class="fas fa-clock"></i>
+                    <span>Demandes Formations</span>
+                </a>
+                <a href="{% url 'rh_requalification_approvals' %}" class="menu-item">
+                    <i class="fas fa-clipboard-check"></i>
+                    <span>Demandes Requalifications</span>
+                </a>
+                <a href="{% url 'rh_employees_to_requalify' %}" class="menu-item ">
+                    <i class="fas fa-history"></i>
+                    <span>Historique requalifications</span>
+                </a>
+                <a href="{% url 'transfer_employee' %}" class="menu-item active">
+                    <i class="fas fa-exchange-alt"></i>
+                    <span>Transferts</span>
+                </a>
+                <a href="{% url 'rh_transfer_approvals' %}" class="menu-item">
+                    <i class="fas fa-user-check"></i>
+                    <span>Valider Transferts</span>
+                    {% if pending.count > 0 %}
+                    <span style="background: var(--warning-color); color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px; margin-left: auto;">{{ pending.count }}</span>
+                    {% endif %}
+                </a>
+            </div>
+        </nav>
+            <!-- Version compacte -->
+            <div class="sidebar-footer-compact">
+            <a href="{% url 'login' %}" class="menu-item logout-item">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Déconnexion</span>
+                <span style="margin-left: auto; font-size: 11px; opacity: 0.7;">
+                {{ request.user.username }}
+                </span>
+            </a>
+            </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-content">
+        
+        <!-- HEADER -->
+        <header class="top-header">
+            <div>
+                <h1 class="page-title">Transfert d'Employé</h1>
+                <div class="breadcrumb">
+                    <a href="{% url 'rh_dashboard' %}" style="color: var(--accent-color); text-decoration: none;">
+                        <i class="fas fa-home"></i> Accueil
+                    </a>
+                    <span>/</span>
+                    <span>Transfert</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- CONTENT -->
+        <div style="padding: 32px 40px; max-width: 900px; margin: 0 auto;">
+
+            <!-- MESSAGES -->
+            {% if messages %}
+            <div class="messages fade-in">
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">
+                    <i class="fas {% if message.tags == 'success' %}fa-check-circle{% else %}fa-exclamation-circle{% endif %}"></i>
+                    {{ message }}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- PROCESS STEPS -->
+            <div class="process-steps fade-in">
+                <div class="step active" id="step1">
+                    <div class="step-circle">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="step-label">Sélection employé</div>
+                </div>
+                <div class="step" id="step2">
+                    <div class="step-circle">
+                        <i class="fas fa-industry"></i>
+                    </div>
+                    <div class="step-label">Nouvelle ligne</div>
+                </div>
+                <div class="step" id="step3">
+                    <div class="step-circle">
+                        <i class="fas fa-user-tie"></i>
+                    </div>
+                    <div class="step-label">Chef d'équipe</div>
+                </div>
+                <div class="step" id="step4">
+                    <div class="step-circle">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="step-label">Confirmation</div>
+                </div>
+            </div>
+
+            <!-- MAIN CARD -->
+            <div class="card fade-in">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <i class="fas fa-exchange-alt"></i>
+                        Formulaire de transfert
+                    </h2>
+                    <p style="font-size: 14px; color: var(--gray-600); margin-top: 8px; margin-left: 34px;">
+                        Transférez un employé vers une nouvelle ligne de production
+                    </p>
+                </div>
+                
+                <div class="card-body">
+
+                    <!-- FORM -->
+                    <form method="post" id="transferForm">
+                        {% csrf_token %}
+
+                        <!-- EMPLOYEE SEARCH FIELD -->
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-user" style="margin-right: 6px; color: var(--accent-color);"></i>
+                                Employé à transférer
+                            </label>
+                            
+                            <!-- Search Container -->
+                            <div class="search-container" id="searchContainer">
+                                <div class="search-input-wrapper">
+                                    <input 
+                                        type="text" 
+                                        id="employeeSearch" 
+                                        class="search-input" 
+                                        placeholder="Rechercher par matricule ou nom..."
+                                        autocomplete="off"
+                                        {% if employee %}value="{{ employee.matricule }} - {{ employee.user.get_full_name }}"{% endif %}
+                                    >
+                                    <i class="fas fa-search search-icon"></i>
+                                    <button type="button" class="clear-search {% if employee %}visible{% endif %}" id="clearSearch">
+                                        <i class="fas fa-times"></i>
+                                        <span>Effacer</span>
+                                    </button>
+                                </div>
+                                
+                                <!-- Hidden original select -->
+                                <div style="display: none;">
+                                    {{ form.employee }}
+                                </div>
+
+                                <!-- Search Dropdown -->
+                                <div class="search-dropdown" id="searchDropdown">
+                                    <div class="search-dropdown-header">
+                                        <span>
+                                            <i class="fas fa-users" style="margin-right: 6px;"></i>
+                                            Résultats
+                                        </span>
+                                        <span class="results-count" id="resultsCount">0</span>
+                                    </div>
+                                    <div class="search-results-list" id="searchResults">
+                                        <!-- Results populated by JS -->
+                                    </div>
+                                    <div class="no-results" id="noResults" style="display: none;">
+                                        <div class="no-results-icon">
+                                            <i class="fas fa-search"></i>
+                                        </div>
+                                        <p style="font-weight: 600; color: var(--gray-700); margin-bottom: 4px;">Aucun résultat trouvé</p>
+                                        <p style="font-size: 13px; color: var(--gray-500);">Essayez avec un autre matricule ou nom</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Selected Employee Display -->
+                            <div class="selected-employee {% if employee %}visible{% endif %}" id="selectedEmployee">
+                                <div class="employee-avatar" id="employeeAvatar">
+                                    {% if employee %}{{ employee.user.first_name|slice:":1" }}{{ employee.user.last_name|slice:":1" }}{% else %}--{% endif %}
+                                </div>
+                                <div class="employee-info">
+                                    <div class="employee-name" id="employeeName">
+                                        {% if employee %}{{ employee.user.get_full_name }}{% else %}Nom de l'employé{% endif %}
+                                    </div>
+                                    <div class="employee-meta">
+                                        <span class="meta-item">
+                                            <i class="fas fa-id-badge"></i>
+                                            <span id="employeeMatricule">{% if employee %}{{ employee.matricule }}{% else %}MAT-000{% endif %}</span>
+                                        </span>
+                                        <span class="meta-item">
+                                            <i class="fas fa-industry"></i>
+                                            <span id="employeeLine">{% if employee %}{{ employee.line.name|default:"Non assigné" }}{% else %}Ligne actuelle{% endif %}</span>
+                                        </span>
+                                        <span class="meta-item">
+                                            <i class="fas fa-user-tie"></i>
+                                            <span id="employeeManager">{% if employee %}{{ employee.manager|default:"Aucun" }}{% else %}Manager{% endif %}</span>
+                                        </span>
+                                    </div>
+                                </div>
+                                <button type="button" class="remove-btn" id="removeEmployee" title="Retirer la sélection">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+
+                            <p style="font-size: 12px; color: var(--gray-500); margin-top: 12px;">
+                                <i class="fas fa-info-circle" style="margin-right: 4px;"></i>
+                                Tapez au moins 2 caractères pour lancer la recherche
+                            </p>
+                        </div>
+
+                        <!-- NEW LINE SELECT -->
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-industry" style="margin-right: 6px; color: var(--accent-color);"></i>
+                                Nouvelle ligne de production
+                            </label>
+                            {{ form.new_line }}
+                            <p style="font-size: 12px; color: var(--gray-500); margin-top: 6px;">
+                                <i class="fas fa-lightbulb" style="margin-right: 4px;"></i>
+                                La ligne actuelle sera automatiquement exclue des choix
+                            </p>
+                        </div>
+
+                        <!-- TEAM LEADER SELECTION SECTION -->
+                        <div class="team-leader-section" id="teamLeaderSection">
+                            <div class="team-leader-header">
+                                <i class="fas fa-user-tie"></i>
+                                <h4>Sélection du Chef d'Équipe</h4>
+                                <span class="count-badge" id="teamLeadersCount">0</span>
+                            </div>
+                            
+                            <div class="team-leader-info" id="teamLeaderInfo">
+                                <i class="fas fa-info-circle"></i>
+                                <span>Cette ligne a plusieurs chefs d'équipe. Veuillez en sélectionner un pour cet employé.</span>
+                            </div>
+                            
+                            <!-- Container pour affichage dynamique -->
+                            <div id="teamLeadersContainer">
+                                <!-- Grille des chefs d'équipe (plusieurs) -->
+                                <div class="team-leaders-grid" id="teamLeadersGrid" style="display: none;">
+                                    <!-- Rempli dynamiquement par JavaScript -->
+                                </div>
+                                
+                                <!-- Affichage chef unique -->
+                                <div class="single-team-leader" id="singleTeamLeader" style="display: none;">
+                                    <div class="stl-avatar" id="singleTlAvatar">--</div>
+                                    <div class="stl-info">
+                                        <div class="stl-label">Chef d'équipe assigné automatiquement</div>
+                                        <div class="stl-name" id="singleTlName">-</div>
+                                    </div>
+                                    <div class="stl-badge">
+                                        <i class="fas fa-check"></i>
+                                        Auto
+                                    </div>
+                                </div>
+                                
+                                <!-- Aucun chef d'équipe -->
+                                <div class="no-team-leader-warning" id="noTeamLeaderWarning" style="display: none;">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    <div class="warning-text">
+                                        <div class="warning-title">Aucun chef d'équipe</div>
+                                        <div class="warning-desc">Cette ligne n'a pas de chef d'équipe assigné. L'employé n'aura pas de manager direct.</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Message d'erreur validation -->
+                            <div class="team-leader-error" id="teamLeaderError">
+                                <i class="fas fa-exclamation-circle"></i>
+                                <span>Veuillez sélectionner un chef d'équipe</span>
+                            </div>
+                            
+                            <!-- Champ caché pour stocker le chef sélectionné -->
+                            <input type="hidden" name="selected_team_leader" id="selectedTeamLeader" value="">
+                        </div>
+
+                        <!-- REASON FIELD -->
+                        <!-- <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-comment-alt" style="margin-right: 6px; color: var(--accent-color);"></i>
+                                Raison du transfert (optionnel)
+                            </label>
+                            {{ form.reason }}
+                        </div> -->
+
+                        <!-- PREVIEW -->
+                        <div id="transferPreview" style="display: none;">
+                            <hr style="margin: 32px 0; border-color: var(--gray-200);">
+                            <h3 style="font-size: 16px; font-weight: 700; color: var(--gray-900); margin-bottom: 16px; display: flex; align-items: center; gap: 10px;">
+                                <i class="fas fa-eye" style="color: var(--accent-color);"></i>
+                                Aperçu du transfert
+                            </h3>
+                            <div class="preview-card">
+                                <div class="preview-item">
+                                    <span style="color: var(--gray-600); font-size: 14px;">
+                                        <i class="fas fa-user" style="margin-right: 8px;"></i>Employé
+                                    </span>
+                                    <strong id="previewEmployee" style="color: var(--gray-900); font-size: 14px;">-</strong>
+                                </div>
+                                <div class="preview-item" id="previewManagerRow" style="display: none;">
+                                    <span style="color: var(--gray-600); font-size: 14px;">
+                                        <i class="fas fa-user-tie" style="margin-right: 8px;"></i>Nouveau Manager
+                                    </span>
+                                    <strong id="previewManager" style="color: var(--success-color); font-size: 14px;">-</strong>
+                                </div>
+                                <div class="preview-arrow">
+                                    <div class="from">
+                                        <i class="fas fa-sign-out-alt" style="margin-right: 6px;"></i>
+                                        <span id="previewCurrentLine">Ligne actuelle</span>
+                                    </div>
+                                    <div class="arrow">
+                                        <i class="fas fa-arrow-right"></i>
+                                    </div>
+                                    <div class="to">
+                                        <i class="fas fa-sign-in-alt" style="margin-right: 6px;"></i>
+                                        <span id="previewNewLine">Nouvelle ligne</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ACTIONS -->
+                        <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--gray-200);">
+                            <!-- <a href="{% url 'employee_list_rh' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i>
+                                Retour
+                            </a> -->
+                            <button type="submit" class="btn btn-primary" id="submitBtn" {% if not employee %}disabled{% endif %}>
+                                <i class="fas fa-exchange-alt"></i>
+                                Confirmer le transfert
+                            </button>
+                        </div>
+                    </form>
+
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+</div>
+
+<!-- ========== DONNÉES JAVASCRIPT ========== -->
+
+<!-- Données des employés -->
+<script>
+var EMPLOYEES = [
+    {% for emp in form.employee.field.queryset %}
+    {
+        id: {{ emp.id }},
+        matricule: "{{ emp.matricule|escapejs }}",
+        firstName: "{{ emp.first_name|escapejs }}",
+        lastName: "{{ emp.last_name|escapejs }}",
+        name: "{{ emp.first_name|escapejs }} {{ emp.last_name|escapejs }}",
+        line: "{{ emp.line.name|default:'Non assigné'|escapejs }}",
+        lineId: {% if emp.line %}{{ emp.line.id }}{% else %}null{% endif %},
+        manager: "{{ emp.manager.get_full_name|default:'Aucun'|escapejs }}"
+    }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+];
+
+// Données des lignes avec chefs d'équipe
+var LINES_DATA = {{ lines_json|safe }};
+</script>
+
+<!-- ========== SCRIPT PRINCIPAL - RECHERCHE EMPLOYÉ ========== -->
+<script>
+(function() {
+    "use strict";
+    
+    // ========== ÉLÉMENTS ==========
+    var searchInput = document.getElementById('employeeSearch');
+    var searchDropdown = document.getElementById('searchDropdown');
+    var searchResults = document.getElementById('searchResults');
+    var noResults = document.getElementById('noResults');
+    var resultsCount = document.getElementById('resultsCount');
+    var clearSearch = document.getElementById('clearSearch');
+    var employeeSelect = document.querySelector('select[name="employee"]');
+    var selectedEmployeeCard = document.getElementById('selectedEmployee');
+    var removeEmployee = document.getElementById('removeEmployee');
+    var lineSelect = document.querySelector('select[name="new_line"]');
+    var submitBtn = document.getElementById('submitBtn');
+    var searchContainer = document.getElementById('searchContainer');
+    
+    // Steps
+    var step1 = document.getElementById('step1');
+    var step2 = document.getElementById('step2');
+    var step3 = document.getElementById('step3');
+    var step4 = document.getElementById('step4');
+    
+    // Preview
+    var transferPreview = document.getElementById('transferPreview');
+    var previewEmployee = document.getElementById('previewEmployee');
+    var previewCurrentLine = document.getElementById('previewCurrentLine');
+    var previewNewLine = document.getElementById('previewNewLine');
+    var previewManagerRow = document.getElementById('previewManagerRow');
+    var previewManager = document.getElementById('previewManager');
+    
+    // Selected display
+    var employeeAvatar = document.getElementById('employeeAvatar');
+    var employeeName = document.getElementById('employeeName');
+    var employeeMatricule = document.getElementById('employeeMatricule');
+    var employeeLine = document.getElementById('employeeLine');
+    var employeeManager = document.getElementById('employeeManager');
+
+    // ========== ÉTAT ==========
+    var selectedEmployee = null;
+    var highlightedIndex = -1;
+
+    // ========== FONCTIONS UTILITAIRES ==========
+    
+    function getInitials(name) {
+        if (!name) return '--';
+        var parts = name.split(' ');
+        var initials = '';
+        for (var i = 0; i < parts.length && i < 2; i++) {
+            if (parts[i] && parts[i].length > 0) {
+                initials += parts[i][0].toUpperCase();
+            }
+        }
+        return initials || '--';
+    }
+
+    function escapeRegex(str) {
+        return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    function highlightMatch(text, query) {
+        if (!text || !query) return text || '';
+        try {
+            var regex = new RegExp('(' + escapeRegex(query) + ')', 'gi');
+            return text.replace(regex, '<span class="highlight">$1</span>');
+        } catch (e) {
+            return text;
+        }
+    }
+
+    // ========== RECHERCHE ==========
+    
+    function searchEmployees(query) {
+        if (!query || query.length < 2) {
+            hideDropdown();
+            return;
+        }
+
+        var q = query.toLowerCase().trim();
+        var results = [];
+
+        for (var i = 0; i < EMPLOYEES.length; i++) {
+            var emp = EMPLOYEES[i];
+            var matchMatricule = emp.matricule && emp.matricule.toLowerCase().indexOf(q) !== -1;
+            var matchName = emp.name && emp.name.toLowerCase().indexOf(q) !== -1;
+            
+            if (matchMatricule || matchName) {
+                results.push(emp);
+            }
+        }
+
+        displayResults(results, query);
+    }
+
+    function displayResults(results, query) {
+        searchResults.innerHTML = '';
+        noResults.style.display = 'none';
+        highlightedIndex = -1;
+
+        if (resultsCount) {
+            resultsCount.textContent = results.length;
+        }
+
+        if (results.length === 0) {
+            noResults.style.display = 'block';
+            showDropdown();
+            return;
+        }
+
+        for (var i = 0; i < results.length; i++) {
+            var emp = results[i];
+            var item = document.createElement('div');
+            item.className = 'search-result-item';
+            
+            if (selectedEmployee && selectedEmployee.id === emp.id) {
+                item.className += ' selected';
+            }
+            
+            item.setAttribute('data-index', i);
+            item.setAttribute('data-id', emp.id);
+
+            var initials = getInitials(emp.name);
+            var nameHtml = highlightMatch(emp.name, query);
+            var matriculeHtml = highlightMatch(emp.matricule, query);
+
+            var checkIcon = '';
+            if (selectedEmployee && selectedEmployee.id === emp.id) {
+                checkIcon = '<i class="fas fa-check-circle" style="color: var(--accent-color); font-size: 18px;"></i>';
+            }
+
+            item.innerHTML = 
+                '<div class="result-avatar">' + initials + '</div>' +
+                '<div class="result-info">' +
+                    '<div class="result-name">' + nameHtml + '</div>' +
+                    '<div class="result-meta">' +
+                        '<span class="result-badge matricule">' +
+                            '<i class="fas fa-id-badge"></i> ' + matriculeHtml +
+                        '</span>' +
+                        '<span class="result-badge line">' +
+                            '<i class="fas fa-industry"></i> ' + (emp.line || 'Non assigné') +
+                        '</span>' +
+                    '</div>' +
+                '</div>' + checkIcon;
+
+            // Événement click avec closure
+            (function(employee) {
+                item.addEventListener('click', function() {
+                    selectEmployee(employee);
+                });
+            })(emp);
+
+            // Événement hover
+            (function(index) {
+                item.addEventListener('mouseenter', function() {
+                    highlightedIndex = index;
+                    updateHighlight();
+                });
+            })(i);
+
+            searchResults.appendChild(item);
+        }
+
+        showDropdown();
+    }
+
+    // ========== DROPDOWN ==========
+    
+    function showDropdown() {
+        if (searchDropdown) {
+            searchDropdown.classList.add('active');
+        }
+    }
+
+    function hideDropdown() {
+        if (searchDropdown) {
+            searchDropdown.classList.remove('active');
+        }
+        highlightedIndex = -1;
+    }
+
+    function updateHighlight() {
+        var items = searchResults.querySelectorAll('.search-result-item');
+        for (var i = 0; i < items.length; i++) {
+            if (i === highlightedIndex) {
+                items[i].classList.add('highlighted');
+                items[i].scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            } else {
+                items[i].classList.remove('highlighted');
+            }
+        }
+    }
+
+    // ========== SÉLECTION ==========
+    
+    window.selectEmployee = function(emp) {
+        selectedEmployee = emp;
+        window.currentSelectedEmployee = emp;
+
+        // Mettre à jour le select caché
+        if (employeeSelect) {
+            employeeSelect.value = emp.id;
+        }
+
+        // Mettre à jour l'affichage
+        if (employeeAvatar) employeeAvatar.textContent = getInitials(emp.name);
+        if (employeeName) employeeName.textContent = emp.name;
+        if (employeeMatricule) employeeMatricule.textContent = emp.matricule;
+        if (employeeLine) employeeLine.textContent = emp.line || 'Non assigné';
+        if (employeeManager) employeeManager.textContent = emp.manager || 'Aucun';
+
+        // Afficher la carte sélectionnée
+        if (selectedEmployeeCard) {
+            selectedEmployeeCard.classList.add('visible');
+        }
+
+        // Mettre à jour l'input de recherche
+        if (searchInput) {
+            searchInput.value = emp.matricule + ' - ' + emp.name;
+        }
+        
+        if (clearSearch) {
+            clearSearch.classList.add('visible');
+        }
+
+        hideDropdown();
+        updateSteps();
+        updatePreview();
+        validateForm();
+    };
+
+    window.clearSelection = function() {
+        selectedEmployee = null;
+        window.currentSelectedEmployee = null;
+        
+        if (employeeSelect) employeeSelect.value = '';
+        if (selectedEmployeeCard) selectedEmployeeCard.classList.remove('visible');
+        if (searchInput) searchInput.value = '';
+        if (clearSearch) clearSearch.classList.remove('visible');
+        if (transferPreview) transferPreview.style.display = 'none';
+        
+        // Reset team leader section
+        var teamLeaderSection = document.getElementById('teamLeaderSection');
+        if (teamLeaderSection) teamLeaderSection.classList.remove('visible');
+        
+        updateSteps();
+        validateForm();
+        
+        if (searchInput) searchInput.focus();
+    };
+
+    // ========== STEPS ==========
+    
+    window.updateSteps = function() {
+        if (!step1 || !step2 || !step3 || !step4) return;
+
+        var teamLeaderSection = document.getElementById('teamLeaderSection');
+        var selectedTeamLeaderInput = document.getElementById('selectedTeamLeader');
+        var hasTeamLeaderSelection = teamLeaderSection && teamLeaderSection.classList.contains('visible');
+        var teamLeaderSelected = selectedTeamLeaderInput && selectedTeamLeaderInput.value;
+
+        // Reset all
+        step1.classList.remove('completed');
+        step2.classList.remove('active', 'completed');
+        step3.classList.remove('active', 'completed');
+        step4.classList.remove('active');
+
+        if (selectedEmployee || window.currentSelectedEmployee) {
+            step1.classList.add('completed');
+            step2.classList.add('active');
+        }
+
+        if ((selectedEmployee || window.currentSelectedEmployee) && lineSelect && lineSelect.value) {
+            step2.classList.add('completed');
+            step3.classList.add('active');
+            
+            if (!hasTeamLeaderSelection || teamLeaderSelected) {
+                step3.classList.add('completed');
+                step4.classList.add('active');
+            }
+        }
+    };
+
+    // ========== PREVIEW ==========
+    
+    window.updatePreview = function() {
+        if (!transferPreview) return;
+
+        var currentEmployee = selectedEmployee || window.currentSelectedEmployee;
+
+        if (currentEmployee && lineSelect && lineSelect.value) {
+            var lineName = lineSelect.options[lineSelect.selectedIndex].text;
+            
+            if (previewEmployee) {
+                previewEmployee.textContent = currentEmployee.name + ' (' + currentEmployee.matricule + ')';
+            }
+            if (previewCurrentLine) {
+                previewCurrentLine.textContent = currentEmployee.line || 'Non assigné';
+            }
+            if (previewNewLine) {
+                previewNewLine.textContent = lineName;
+            }
+            
+            transferPreview.style.display = 'block';
+        } else {
+            transferPreview.style.display = 'none';
+        }
+    };
+
+    // ========== VALIDATION ==========
+    
+    window.validateForm = function() {
+        if (!submitBtn) return;
+        
+        var currentEmployee = selectedEmployee || window.currentSelectedEmployee;
+        var isValid = currentEmployee && lineSelect && lineSelect.value;
+        
+        // Vérifier aussi la sélection du chef d'équipe si nécessaire
+        var teamLeaderSection = document.getElementById('teamLeaderSection');
+        var selectedTeamLeaderInput = document.getElementById('selectedTeamLeader');
+        var teamLeadersGrid = document.getElementById('teamLeadersGrid');
+        
+        if (teamLeaderSection && teamLeaderSection.classList.contains('visible')) {
+            if (teamLeadersGrid && teamLeadersGrid.style.display !== 'none') {
+                // Plusieurs chefs d'équipe - vérifier si un est sélectionné
+                isValid = isValid && selectedTeamLeaderInput && selectedTeamLeaderInput.value;
+            }
+        }
+        
+        submitBtn.disabled = !isValid;
+    };
+
+    // ========== ÉVÉNEMENTS ==========
+    
+    // Input de recherche
+    if (searchInput) {
+        var debounceTimer = null;
+        
+        searchInput.addEventListener('input', function() {
+            var value = this.value;
+            
+            if (clearSearch) {
+                if (value.length > 0) {
+                    clearSearch.classList.add('visible');
+                } else {
+                    clearSearch.classList.remove('visible');
+                }
+            }
+            
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(function() {
+                searchEmployees(value);
+            }, 150);
+        });
+
+        searchInput.addEventListener('focus', function() {
+            if (this.value.length >= 2 && !selectedEmployee) {
+                searchEmployees(this.value);
+            }
+        });
+
+        // Navigation clavier
+        searchInput.addEventListener('keydown', function(e) {
+            var items = searchResults ? searchResults.querySelectorAll('.search-result-item') : [];
+            
+            switch(e.key) {
+                case 'ArrowDown':
+                    e.preventDefault();
+                    if (!searchDropdown.classList.contains('active') && this.value.length >= 2) {
+                        searchEmployees(this.value);
+                    }
+                    if (highlightedIndex < items.length - 1) {
+                        highlightedIndex++;
+                    }
+                    updateHighlight();
+                    break;
+                    
+                case 'ArrowUp':
+                    e.preventDefault();
+                    if (highlightedIndex > 0) {
+                        highlightedIndex--;
+                    }
+                    updateHighlight();
+                    break;
+                    
+                case 'Enter':
+                    e.preventDefault();
+                    if (highlightedIndex >= 0 && items[highlightedIndex]) {
+                        var id = parseInt(items[highlightedIndex].getAttribute('data-id'));
+                        for (var i = 0; i < EMPLOYEES.length; i++) {
+                            if (EMPLOYEES[i].id === id) {
+                                selectEmployee(EMPLOYEES[i]);
+                                break;
+                            }
+                        }
+                    }
+                    break;
+                    
+                case 'Escape':
+                    hideDropdown();
+                    break;
+            }
+        });
+    }
+
+    // Bouton effacer
+    if (clearSearch) {
+        clearSearch.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            clearSelection();
+        });
+    }
+
+    // Bouton supprimer sélection
+    if (removeEmployee) {
+        removeEmployee.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            clearSelection();
+        });
+    }
+
+    // Clic en dehors pour fermer le dropdown
+    document.addEventListener('click', function(e) {
+        if (searchContainer && !searchContainer.contains(e.target)) {
+            hideDropdown();
+        }
+    });
+
+    // ========== INITIALISATION ==========
+    
+    // Vérifier si un employé est pré-sélectionné
+    if (employeeSelect && employeeSelect.value) {
+        var preselectedId = parseInt(employeeSelect.value);
+        for (var i = 0; i < EMPLOYEES.length; i++) {
+            if (EMPLOYEES[i].id === preselectedId) {
+                selectedEmployee = EMPLOYEES[i];
+                window.currentSelectedEmployee = EMPLOYEES[i];
+                
+                // Mettre à jour l'affichage
+                if (employeeAvatar) employeeAvatar.textContent = getInitials(selectedEmployee.name);
+                if (employeeName) employeeName.textContent = selectedEmployee.name;
+                if (employeeMatricule) employeeMatricule.textContent = selectedEmployee.matricule;
+                if (employeeLine) employeeLine.textContent = selectedEmployee.line || 'Non assigné';
+                if (employeeManager) employeeManager.textContent = selectedEmployee.manager || 'Aucun';
+                if (selectedEmployeeCard) selectedEmployeeCard.classList.add('visible');
+                if (searchInput) searchInput.value = selectedEmployee.matricule + ' - ' + selectedEmployee.name;
+                if (clearSearch) clearSearch.classList.add('visible');
+                
+                break;
+            }
+        }
+    }
+    
+    updateSteps();
+    updatePreview();
+    validateForm();
+
+})();
+</script>
+
+<!-- ========== SCRIPT CHEF D'ÉQUIPE ========== -->
+<script>
+(function() {
+    "use strict";
+    
+    // Éléments
+    var lineSelect = document.querySelector('select[name="new_line"]');
+    var teamLeaderSection = document.getElementById('teamLeaderSection');
+    var teamLeadersGrid = document.getElementById('teamLeadersGrid');
+    var teamLeadersCount = document.getElementById('teamLeadersCount');
+    var singleTeamLeader = document.getElementById('singleTeamLeader');
+    var singleTlAvatar = document.getElementById('singleTlAvatar');
+    var singleTlName = document.getElementById('singleTlName');
+    var noTeamLeaderWarning = document.getElementById('noTeamLeaderWarning');
+    var selectedTeamLeaderInput = document.getElementById('selectedTeamLeader');
+    var teamLeaderError = document.getElementById('teamLeaderError');
+    var teamLeaderInfo = document.getElementById('teamLeaderInfo');
+    var previewManagerRow = document.getElementById('previewManagerRow');
+    var previewManager = document.getElementById('previewManager');
+    
+    // État
+    var selectedTeamLeaderId = null;
+    var currentLineTeamLeaders = [];
+    
+    // Fonction pour obtenir les initiales
+    function getInitials(name) {
+        if (!name) return '--';
+        var parts = name.split(' ');
+        var initials = '';
+        for (var i = 0; i < parts.length && i < 2; i++) {
+            if (parts[i] && parts[i].length > 0) {
+                initials += parts[i][0].toUpperCase();
+            }
+        }
+        return initials || '--';
+    }
+    
+    // Fonction pour trouver les données d'une ligne
+    function getLineData(lineId) {
+        if (!LINES_DATA) return null;
+        for (var i = 0; i < LINES_DATA.length; i++) {
+            if (LINES_DATA[i].id === lineId) {
+                return LINES_DATA[i];
+            }
+        }
+        return null;
+    }
+    
+    // Fonction pour créer une carte de chef d'équipe
+    function createTeamLeaderCard(teamLeader) {
+        var card = document.createElement('div');
+        card.className = 'team-leader-card';
+        card.setAttribute('data-id', teamLeader.id);
+        
+        var initials = getInitials(teamLeader.name);
+        
+        card.innerHTML = 
+            '<div class="tl-avatar">' + initials + '</div>' +
+            '<div class="tl-info">' +
+                '<div class="tl-name">' + teamLeader.name + '</div>' +
+                '<div class="tl-matricule">' + (teamLeader.matricule || 'N/A') + '</div>' +
+            '</div>' +
+            '<div class="tl-check"><i class="fas fa-check"></i></div>';
+        
+        card.addEventListener('click', function() {
+            selectTeamLeader(teamLeader.id, teamLeader.name);
+        });
+        
+        return card;
+    }
+    
+    // Fonction pour sélectionner un chef d'équipe
+    function selectTeamLeader(id, name) {
+        selectedTeamLeaderId = id;
+        if (selectedTeamLeaderInput) {
+            selectedTeamLeaderInput.value = id;
+        }
+        
+        // Mettre à jour l'affichage des cartes
+        var cards = teamLeadersGrid.querySelectorAll('.team-leader-card');
+        for (var i = 0; i < cards.length; i++) {
+            var cardId = parseInt(cards[i].getAttribute('data-id'));
+            if (cardId === id) {
+                cards[i].classList.add('selected');
+            } else {
+                cards[i].classList.remove('selected');
+            }
+        }
+        
+        // Cacher l'erreur
+        if (teamLeaderError) {
+            teamLeaderError.classList.remove('visible');
+        }
+        
+        // Mettre à jour le preview
+        if (previewManagerRow && previewManager) {
+            previewManagerRow.style.display = 'flex';
+            previewManager.textContent = name;
+        }
+        
+        // Mettre à jour les steps et validation
+        if (typeof window.updateSteps === 'function') window.updateSteps();
+        if (typeof window.validateForm === 'function') window.validateForm();
+    }
+    
+    // Fonction principale pour gérer le changement de ligne
+    function handleLineChange() {
+        var lineId = parseInt(lineSelect.value);
+        
+        // Réinitialiser
+        selectedTeamLeaderId = null;
+        if (selectedTeamLeaderInput) selectedTeamLeaderInput.value = '';
+        currentLineTeamLeaders = [];
+        if (teamLeadersGrid) teamLeadersGrid.innerHTML = '';
+        if (teamLeaderError) teamLeaderError.classList.remove('visible');
+        if (previewManagerRow) previewManagerRow.style.display = 'none';
+        
+        // Cacher tous les éléments
+        if (singleTeamLeader) singleTeamLeader.style.display = 'none';
+        if (noTeamLeaderWarning) noTeamLeaderWarning.style.display = 'none';
+        if (teamLeadersGrid) teamLeadersGrid.style.display = 'none';
+        if (teamLeaderInfo) teamLeaderInfo.style.display = 'none';
+        
+        if (!lineId) {
+            if (teamLeaderSection) teamLeaderSection.classList.remove('visible');
+            if (typeof window.updateSteps === 'function') window.updateSteps();
+            if (typeof window.updatePreview === 'function') window.updatePreview();
+            if (typeof window.validateForm === 'function') window.validateForm();
+            return;
+        }
+        
+        var lineData = getLineData(lineId);
+        
+        if (!lineData) {
+            if (teamLeaderSection) teamLeaderSection.classList.remove('visible');
+            if (typeof window.updateSteps === 'function') window.updateSteps();
+            if (typeof window.updatePreview === 'function') window.updatePreview();
+            if (typeof window.validateForm === 'function') window.validateForm();
+            return;
+        }
+        
+        currentLineTeamLeaders = lineData.team_leaders;
+        var count = lineData.team_leaders_count;
+        
+        if (teamLeadersCount) teamLeadersCount.textContent = count;
+        
+        if (count === 0) {
+            // Aucun chef d'équipe
+            if (teamLeaderSection) teamLeaderSection.classList.add('visible');
+            if (noTeamLeaderWarning) noTeamLeaderWarning.style.display = 'flex';
+            
+        } else if (count === 1) {
+            // Un seul chef d'équipe - assignation automatique
+            var tl = currentLineTeamLeaders[0];
+            if (teamLeaderSection) teamLeaderSection.classList.add('visible');
+            if (singleTeamLeader) singleTeamLeader.style.display = 'flex';
+            if (singleTlAvatar) singleTlAvatar.textContent = getInitials(tl.name);
+            if (singleTlName) singleTlName.textContent = tl.name + (tl.matricule ? ' (' + tl.matricule + ')' : '');
+            
+            // Auto-sélection
+            selectedTeamLeaderId = tl.id;
+            if (selectedTeamLeaderInput) selectedTeamLeaderInput.value = tl.id;
+            
+            // Mettre à jour preview
+            if (previewManagerRow && previewManager) {
+                previewManagerRow.style.display = 'flex';
+                previewManager.textContent = tl.name;
+            }
+            
+        } else {
+            // Plusieurs chefs d'équipe - afficher la grille
+            if (teamLeaderSection) teamLeaderSection.classList.add('visible');
+            if (teamLeaderInfo) teamLeaderInfo.style.display = 'flex';
+            if (teamLeadersGrid) teamLeadersGrid.style.display = 'grid';
+            
+            for (var i = 0; i < currentLineTeamLeaders.length; i++) {
+                var card = createTeamLeaderCard(currentLineTeamLeaders[i]);
+                teamLeadersGrid.appendChild(card);
+            }
+        }
+        
+        // Mettre à jour les steps et le preview
+        if (typeof window.updateSteps === 'function') window.updateSteps();
+        if (typeof window.updatePreview === 'function') window.updatePreview();
+        if (typeof window.validateForm === 'function') window.validateForm();
+    }
+    
+    // Fonction de validation
+    function validateTeamLeader() {
+        var lineId = parseInt(lineSelect.value);
+        if (!lineId) return true;
+        
+        var lineData = getLineData(lineId);
+        if (!lineData) return true;
+        
+        // Si plusieurs chefs d'équipe et aucun sélectionné
+        if (lineData.team_leaders_count > 1 && !selectedTeamLeaderId) {
+            if (teamLeaderError) teamLeaderError.classList.add('visible');
+            if (teamLeaderSection) {
+                teamLeaderSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            return false;
+        }
+        
+        return true;
+    }
+    
+    // Événement changement de ligne
+    if (lineSelect) {
+        lineSelect.addEventListener('change', handleLineChange);
+    }
+    
+    // Validation du formulaire
+    var form = document.getElementById('transferForm');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            var currentEmployee = window.currentSelectedEmployee;
+            
+            // Vérifier employé
+            if (!currentEmployee) {
+                e.preventDefault();
+                alert('⚠️ Veuillez sélectionner un employé');
+                return false;
+            }
+
+            // Vérifier ligne
+            if (!lineSelect || !lineSelect.value) {
+                e.preventDefault();
+                alert('⚠️ Veuillez sélectionner une nouvelle ligne');
+                if (lineSelect) lineSelect.focus();
+                return false;
+            }
+
+            // Vérifier si même ligne
+            if (currentEmployee.lineId && currentEmployee.lineId == lineSelect.value) {
+                e.preventDefault();
+                alert('⚠️ L\'employé est déjà affecté à cette ligne');
+                return false;
+            }
+            
+            // Vérifier chef d'équipe
+            if (!validateTeamLeader()) {
+                e.preventDefault();
+                return false;
+            }
+
+            var lineName = lineSelect.options[lineSelect.selectedIndex].text;
+            var confirmMsg = 'Confirmer le transfert ?\n\n' +
+                '👤 ' + currentEmployee.name + '\n' +
+                '📍 ' + (currentEmployee.line || 'Non assigné') + ' → ' + lineName;
+
+            // Ajouter info chef d'équipe si sélectionné
+            if (selectedTeamLeaderId) {
+                for (var i = 0; i < currentLineTeamLeaders.length; i++) {
+                    if (currentLineTeamLeaders[i].id === selectedTeamLeaderId) {
+                        confirmMsg += '\n👔 Manager: ' + currentLineTeamLeaders[i].name;
+                        break;
+                    }
+                }
+            }
+
+            if (!confirm(confirmMsg)) {
+                e.preventDefault();
+                return false;
+            }
+            
+            return true;
+        });
+    }
+    
+    // Initialisation si une ligne est déjà sélectionnée
+    if (lineSelect && lineSelect.value) {
+        handleLineChange();
+    }
+    
+})();
+</script>
+
+</body>
+</html>
