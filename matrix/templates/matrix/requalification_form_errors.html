@@ -1,0 +1,11 @@
+{% if form.errors %}
+<div role="alert" class="mb-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+    {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+    {% for field in form %}
+        {% if field.name != 'training_plan_image' %}
+            {% for error in field.errors %}<p>{{ field.label }} : {{ error }}</p>{% endfor %}
+        {% endif %}
+    {% endfor %}
+    <p>Vérifiez les champs et sélectionnez à nouveau le fichier du plan.</p>
+</div>
+{% endif %}

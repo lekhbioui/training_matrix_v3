@@ -2,6 +2,10 @@
 
 from django.contrib.auth.decorators import user_passes_test
 from django.shortcuts import redirect
+from django.core.exceptions import PermissionDenied
+from functools import wraps
+from django.contrib.auth.views import redirect_to_login
+from django.urls import reverse
 
 def superuser_required(view_func):
     """
@@ -21,6 +25,25 @@ def superuser_required(view_func):
     )(view_func)
     
     return decorated_view
+
+
+def rh_required(view_func):
+    """Reserve une vue aux superutilisateurs et aux membres du groupe RH."""
+    @wraps(view_func)
+    def wrapper(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect_to_login(request.get_full_path(), reverse("login"))
+
+        is_rh = (
+            request.user.is_superuser
+            or request.user.groups.filter(name="RH").exists()
+        )
+        if not is_rh:
+            raise PermissionDenied
+
+        return view_func(request, *args, **kwargs)
+
+    return wrapper
 
 
 # matrix/decorators.py  ← AJOUTER à votre fichier existant

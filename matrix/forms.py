@@ -3,7 +3,7 @@ from datetime import date, timedelta
 from django import forms
 
 from training_matrix import settings
-from .models import Employee, PendingEmployee, ProductionLine, TrainingApprovalRequest, TrainingLevel
+from .models import Employee, PendingEmployee, ProductionLine, TrainingApprovalRequest, TrainingLevel, TrainingQuestionAnswer
 from .models import TrainingRecord
 import datetime
 from django.utils import timezone
@@ -17,6 +17,38 @@ from django.core.mail import EmailMultiAlternatives
 from .models import Task as TaskModel, ProductionLine as LineModel, Employee
 
 from django.contrib.auth.models import User
+
+class TrainingPlanImageForm(forms.Form):
+    """Only the plan is editable; training creation remains independent."""
+
+    training_plan_image = forms.ImageField(
+        label="Image du plan de formation",
+        help_text="JPEG, PNG ou WEBP — 10 Mo maximum, 25 millions de pixels maximum.",
+        widget=forms.FileInput(attrs={
+            "accept": "image/jpeg,image/png,image/webp",
+            "class": "block w-full rounded-lg border border-gray-300 p-3 text-sm",
+        }),
+        error_messages={
+            "required": "Sélectionnez une image du plan de formation.",
+            "invalid_image": "Le fichier doit être une image JPEG, PNG ou WEBP valide.",
+        },
+    )
+
+    def clean_training_plan_image(self):
+        uploaded = self.cleaned_data["training_plan_image"]
+        if uploaded.size > 10 * 1024 * 1024:
+            raise ValidationError("L’image ne doit pas dépasser 10 Mo.")
+        extensions = {"JPEG": ".jpg", "PNG": ".png", "WEBP": ".webp"}
+        extension = extensions.get(uploaded.image.format)
+        if not extension:
+            raise ValidationError("Formats acceptés : JPEG, PNG et WEBP.")
+        width, height = uploaded.image.size
+        if width * height > 25_000_000:
+            raise ValidationError("L’image ne doit pas dépasser 25 millions de pixels.")
+        # Use the format verified by Pillow, never the client-provided extension.
+        uploaded.name = "plan" + extension
+        return uploaded
+
 
 # forms.py
 
@@ -483,6 +515,7 @@ class EmployeeExcelImportForm(forms.Form):
 
 import os
 from django import forms
+from django.db import transaction
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
@@ -497,676 +530,761 @@ from .models import (
 )
 
 
+from datetime import timedelta
+import logging
+
+from django import forms
+from django.conf import settings
+from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
+from django.core.mail import send_mail
+from django.db.models import Q
+from django.utils import timezone
+
+from .models import (
+    Employee,
+    ProductionLine,
+    Task,
+    TrainingApprovalRequest,
+    TrainingLevel,
+    TrainingQuestion,
+    TrainingQuestionnaire,
+    TrainingRecord,
+)
+
+
+User = get_user_model()
+logger = logging.getLogger(__name__)
+
+
 class TrainingRecordForm(forms.ModelForm):
+    """
+    Formulaire utilisé par les chefs d'équipe pour enregistrer
+    une formation I, L ou U.
+
+    Pour TOUS les niveaux (I, L, U) :
+    - Affiche dynamiquement les questions configurées par RH pour le niveau choisi.
+    - Vérifie les réponses obligatoires et bloque l'enregistrement si une réponse bloquante est incorrecte.
+
+    Pour les niveaux L et U :
+    - Crée un TrainingRecord en statut 'PENDING' pour attacher le questionnaire.
+    - Crée une demande d'approbation RH (TrainingApprovalRequest).
+    """
+
+    # Mettre False si tu souhaites autoriser un niveau I
+    # même lorsqu'aucune question RH n'est configurée.
+    REQUIRE_QUESTIONNAIRE_FOR_LEVEL_I = True
 
     line = forms.ModelChoiceField(
         queryset=ProductionLine.objects.none(),
         required=False,
         label="Ligne de production",
         help_text="Sélectionnez la ligne sur laquelle cette formation est réalisée.",
-        widget=forms.Select(attrs={
-            'id': 'id_line',
-            'class': 'form-select'
-        })
+        widget=forms.Select(attrs={"id": "id_line", "class": "form-select"}),
     )
 
     date = forms.DateField(
         required=True,
         label="Date de formation",
-        widget=forms.DateInput(attrs={
-            'type': 'date',
-            'class': 'form-control',
-        }),
-        help_text="Sélectionnez la date à laquelle la formation a eu lieu"
+        widget=forms.DateInput(attrs={"type": "date", "class": "form-control"}),
+        help_text="Sélectionnez la date à laquelle la formation a eu lieu.",
     )
 
     class Meta:
-        model  = TrainingRecord
-        fields = ['employee', 'task', 'level', 'date', 'trainer']
+        model = TrainingRecord
+        fields = ["employee", "task", "level", "date", "trainer"]
         labels = {
             "employee": "Employé",
-            "task":     "Tâche",
-            "level":    "Niveau",
-            "date":     "Date de formation",
-            "trainer":  "Formateur",
+            "task": "Tâche",
+            "level": "Niveau",
+            "date": "Date de formation",
+            "trainer": "Formateur",
         }
         widgets = {
-            'employee': forms.Select(attrs={
-                'id': 'id_employee', 'class': 'form-select'
-            }),
-            'task': forms.Select(attrs={
-                'id': 'id_task', 'class': 'form-select'
-            }),
-            'level': forms.Select(attrs={
-                'class': 'form-select'
-            }),
-            'date': forms.DateInput(attrs={
-                'type': 'date', 'class': 'form-control'
-            }),
-            'trainer': forms.Select(attrs={
-                'class': 'form-select'
-            }),
+            "employee": forms.Select(attrs={"id": "id_employee", "class": "form-select"}),
+            "task": forms.Select(attrs={"id": "id_task", "class": "form-select"}),
+            "level": forms.Select(attrs={"id": "id_level", "class": "form-select"}),
+            "trainer": forms.Select(attrs={"class": "form-select"}),
         }
 
     def __init__(self, *args, **kwargs):
-        self.user             = kwargs.pop('user', None)
-        self.selected_line_id = kwargs.pop('selected_line_id', None)
+        self.user = kwargs.pop("user", None)
+        self.selected_line_id = kwargs.pop("selected_line_id", None)
 
-        self.rh_request_created   = False
-        self.rh_request_info      = None
+        self.rh_request_created = False
+        self.rh_request_info = None
         self.team_leader_employee = None
-        self.user_lines           = ProductionLine.objects.none()
-        # ✅ MODIFIÉ : show_line_field = True dès qu'on a plusieurs lignes
-        self.show_line_field      = False
+        self.user_lines = ProductionLine.objects.none()
+        self.show_line_field = False
+
+        self.training_questions = []
 
         super().__init__(*args, **kwargs)
 
         today = timezone.now().date()
-        self.fields['date'].widget.attrs['max'] = today.isoformat()
+        self.fields["date"].widget.attrs["max"] = today.isoformat()
 
-        if self.user:
-            self.user_lines = ProductionLine.objects.filter(
-                team_leaders=self.user
+        if not self.is_bound and not self.instance.pk:
+            self.fields["date"].initial = today
+
+        self._configure_user_fields()
+        self._load_questionnaire_fields()
+
+    # ================================================================
+    # CONFIGURATION DU FORMULAIRE ET UTILS PROFIL
+    # ================================================================
+
+    def _configure_user_fields(self):
+        if not self.user:
+            self.fields["employee"].queryset = Employee.objects.all().order_by("last_name", "first_name")
+            self.fields["line"].queryset = ProductionLine.objects.all().order_by("code")
+            self.fields["task"].queryset = Task.objects.all().order_by("order", "task_number")
+            self.fields["trainer"].queryset = Employee.objects.all().order_by("last_name", "first_name")
+            self.fields["line"].required = True
+            self.show_line_field = True
+            return
+
+        self.user_lines = ProductionLine.objects.filter(team_leaders=self.user).order_by("code")
+        self.team_leader_employee = self._find_employee_profile_for_user(self.user)
+
+        if not self.user.is_superuser:
+            team_leader_employee_ids = self._get_all_team_leader_employee_ids()
+
+            employees_queryset = (
+                Employee.objects.filter(
+                    visible_lines__in=self.user_lines,
+                    manager=self.user,
+                )
+                .exclude(id__in=team_leader_employee_ids)
+                .distinct()
+                .order_by("last_name", "first_name")
             )
 
-            # Profil Employee du chef
-            if hasattr(self.user, 'employee_profile'):
+            self.fields["employee"].queryset = employees_queryset
+            self.fields["line"].queryset = self.user_lines
+            self.fields["line"].required = True
+            self.show_line_field = True
+
+            if self.selected_line_id:
                 try:
-                    self.team_leader_employee = self.user.employee_profile
-                except Exception:
+                    self.fields["line"].initial = int(self.selected_line_id)
+                except (ValueError, TypeError):
                     pass
 
-            if not self.team_leader_employee:
-                self.team_leader_employee = Employee.objects.filter(
-                    Q(first_name__iexact=self.user.first_name,
-                      last_name__iexact=self.user.last_name) |
-                    Q(matricule__iexact=self.user.username)
-                ).first()
+            selected_line_id = self._get_selected_field_value("line") or self.selected_line_id
 
-            if not self.user.is_superuser:
-                # IDs des chefs d'équipe à exclure
-                all_tl_user_ids = User.objects.filter(
-                    managed_lines__isnull=False
-                ).distinct().values_list('id', flat=True)
-
-                tl_emp_ids = set(
-                    Employee.objects.filter(
-                        user_id__in=all_tl_user_ids
-                    ).values_list('id', flat=True)
+            if selected_line_id:
+                self.fields["task"].queryset = (
+                    Task.objects.filter(lines__id=selected_line_id)
+                    .distinct()
+                    .order_by("order", "task_number")
                 )
-                for tl_user in User.objects.filter(id__in=all_tl_user_ids):
-                    match = Employee.objects.filter(
-                        Q(first_name__iexact=tl_user.first_name,
-                          last_name__iexact=tl_user.last_name) |
-                        Q(matricule__iexact=tl_user.username)
-                    ).first()
-                    if match:
-                        tl_emp_ids.add(match.id)
-
-                # Employés visibles sur les lignes du chef
-                employees_qs = Employee.objects.filter(
-                    visible_lines__in=self.user_lines,
-                    manager=self.user
-                ).exclude(id__in=tl_emp_ids).distinct()
-
-                self.fields['employee'].queryset = employees_qs.order_by(
-                    'last_name', 'first_name'
-                )
-
-                # ✅ Ligne : toujours proposer les lignes du chef
-                self.fields['line'].queryset  = self.user_lines
-                self.fields['line'].required  = True   # ← Toujours obligatoire
-                self.show_line_field          = True   # ← Toujours affiché
-
-                # Pré-sélection si une ligne est déjà dans le contexte
-                if self.selected_line_id:
-                    try:
-                        self.fields['line'].initial = int(self.selected_line_id)
-                    except (ValueError, TypeError):
-                        pass
-
-                # ✅ Tâches : filtrées par ligne sélectionnée OU toutes les lignes
-                if self.selected_line_id:
-                    self.fields['task'].queryset = Task.objects.filter(
-                        lines__id=self.selected_line_id
-                    ).distinct().order_by('order', 'task_number')
-                else:
-                    self.fields['task'].queryset = Task.objects.filter(
-                        lines__in=self.user_lines
-                    ).distinct().order_by('order', 'task_number')
-
-                self.fields['trainer'].required = False
-                self.fields['trainer'].widget   = forms.HiddenInput()
-                self.fields['trainer'].queryset = Employee.objects.none()
-
             else:
-                # RH / superuser
-                self.fields['line'].queryset     = ProductionLine.objects.all()
-                self.fields['line'].required     = True
-                self.fields['employee'].queryset = Employee.objects.all().order_by(
-                    'last_name', 'first_name'
+                self.fields["task"].queryset = (
+                    Task.objects.filter(lines__in=self.user_lines)
+                    .distinct()
+                    .order_by("order", "task_number")
                 )
-                self.fields['task'].queryset     = Task.objects.all()
-                self.fields['trainer'].queryset  = Employee.objects.all()
-                self.show_line_field             = True
+
+            self.fields["trainer"].required = False
+            self.fields["trainer"].widget = forms.HiddenInput()
+            self.fields["trainer"].queryset = Employee.objects.none()
+
+        else:
+            self.fields["line"].queryset = ProductionLine.objects.all().order_by("code")
+            self.fields["line"].required = True
+            self.fields["employee"].queryset = Employee.objects.all().order_by("last_name", "first_name")
+
+            selected_line_id = self._get_selected_field_value("line") or self.selected_line_id
+
+            if selected_line_id:
+                self.fields["task"].queryset = (
+                    Task.objects.filter(lines__id=selected_line_id)
+                    .distinct()
+                    .order_by("order", "task_number")
+                )
+            else:
+                self.fields["task"].queryset = Task.objects.all().order_by("order", "task_number")
+
+            self.fields["trainer"].queryset = Employee.objects.all().order_by("last_name", "first_name")
+            self.show_line_field = True
+
+    def _find_employee_profile_for_user(self, user):
+        """Trouve le profil Employee correspondant à un User."""
+        if not user:
+            return None
+        try:
+            if hasattr(user, "employee_profile"):
+                return user.employee_profile
+        except Exception:
+            pass
+        return Employee.objects.filter(
+            Q(user=user)
+            | Q(first_name__iexact=user.first_name, last_name__iexact=user.last_name)
+            | Q(matricule__iexact=user.username)
+        ).first()
+
+    def _get_all_team_leader_employee_ids(self):
+        """Retourne les IDs Employee correspondant aux chefs d'équipe."""
+        team_leader_users = User.objects.filter(managed_lines__isnull=False).distinct()
+        employee_ids = set(
+            Employee.objects.filter(user__in=team_leader_users).values_list("id", flat=True)
+        )
+        for team_leader_user in team_leader_users:
+            employee = self._find_employee_profile_for_user(team_leader_user)
+            if employee:
+                employee_ids.add(employee.id)
+        return employee_ids
+
+    def _get_selected_field_value(self, field_name):
+        value = None
+        if self.is_bound:
+            value = self.data.get(field_name)
+        else:
+            value = self.initial.get(field_name)
+            if value is None and self.instance.pk:
+                value = getattr(self.instance, f"{field_name}_id", None)
+        if hasattr(value, "pk"):
+            value = value.pk
+        return value
+
+    # ================================================================
+    # CHARGEMENT ET SAUVEGARDE DU QUESTIONNAIRE (TOUS NIVEAUX)
+    # ================================================================
+
+    def _load_questionnaire_fields(self):
+        selected_task_id = self._get_selected_field_value("task")
+        selected_line_id = self._get_selected_field_value("line") or self.selected_line_id
+        selected_level = self._get_selected_field_value("level")
+
+        try:
+            selected_task_id = int(selected_task_id)
+            selected_line_id = int(selected_line_id)
+            selected_level = int(selected_level)
+        except (ValueError, TypeError):
+            return
+
+        questions = (
+            TrainingQuestion.objects.filter(
+                is_active=True,
+                level=selected_level,  # Filtrage dynamique par niveau
+            )
+            .filter(Q(task__isnull=True) | Q(task_id=selected_task_id))
+            .filter(Q(line__isnull=True) | Q(line_id=selected_line_id))
+            .select_related("task", "line")
+            .order_by("order", "id")
+        )
+
+        existing_answers = {}
+        existing_general_comment = ""
+
+        if self.instance.pk:
+            try:
+                questionnaire = self.instance.questionnaire
+                existing_answers = {
+                    answer.question_id: answer
+                    for answer in questionnaire.answers.all()
+                }
+                existing_general_comment = questionnaire.general_comment
+            except TrainingQuestionnaire.DoesNotExist:
+                pass
+
+        for question in questions:
+            answer_field_name = f"training_question_{question.pk}"
+            comment_field_name = f"training_question_{question.pk}_comment"
+
+            if question.answer_type == TrainingQuestion.AnswerType.YES_NO:
+                self.fields[answer_field_name] = forms.TypedChoiceField(
+                    label=question.text,
+                    required=False,
+                    choices=[("1", "Oui"), ("0", "Non")],
+                    coerce=lambda value: value == "1",
+                    empty_value=None,
+                    widget=forms.RadioSelect(
+                        attrs={"class": "form-check-input training-question-answer"}
+                    ),
+                    help_text=question.help_text,
+                )
+
+            elif question.answer_type == TrainingQuestion.AnswerType.TEXT:
+                self.fields[answer_field_name] = forms.CharField(
+                    label=question.text,
+                    required=False,
+                    help_text=question.help_text,
+                    widget=forms.Textarea(
+                        attrs={
+                            "class": "form-control",
+                            "rows": 2,
+                            "placeholder": "Saisissez votre réponse...",
+                        }
+                    ),
+                )
+
+            self.fields[comment_field_name] = forms.CharField(
+                label="Commentaire",
+                required=False,
+                widget=forms.Textarea(
+                    attrs={
+                        "class": "form-control training-question-comment",
+                        "rows": 2,
+                        "placeholder": "Commentaire ou action corrective...",
+                    }
+                ),
+            )
+
+            existing_answer = existing_answers.get(question.pk)
+            if existing_answer:
+                if question.answer_type == TrainingQuestion.AnswerType.YES_NO:
+                    if existing_answer.boolean_answer is True:
+                        self.fields[answer_field_name].initial = "1"
+                    elif existing_answer.boolean_answer is False:
+                        self.fields[answer_field_name].initial = "0"
+                else:
+                    self.fields[answer_field_name].initial = existing_answer.text_answer
+
+                self.fields[comment_field_name].initial = existing_answer.comment
+
+            self.training_questions.append({
+                "question": question,
+                "answer_field": answer_field_name,
+                "comment_field": comment_field_name,
+            })
+
+        if self.training_questions:
+            self.fields["questionnaire_general_comment"] = forms.CharField(
+                label="Commentaire général",
+                required=False,
+                initial=existing_general_comment,
+                widget=forms.Textarea(
+                    attrs={
+                        "class": "form-control",
+                        "rows": 3,
+                        "placeholder": "Observations générales sur la formation...",
+                    }
+                ),
+            )
+
+    @property
+    def questionnaire_fields(self):
+        result = []
+        for item in self.training_questions:
+            result.append({
+                "question": item["question"],
+                "answer": self[item["answer_field"]],
+                "comment": self[item["comment_field"]],
+            })
+        return result
+
+    # ================================================================
+    # VALIDATION ET LOGIQUE DE DEMANDES RH
+    # ================================================================
+
+    def _validate_questionnaire(self, cleaned_data, level):
+        level_names = {
+            TrainingLevel.IN_TRAINING: "I",
+            TrainingLevel.SUPERVISED: "L",
+            TrainingLevel.TRAINER: "U",
+        }
+        level_label = level_names.get(level, str(level))
+
+        if not self.training_questions:
+            if level == TrainingLevel.IN_TRAINING and self.REQUIRE_QUESTIONNAIRE_FOR_LEVEL_I:
+                raise ValidationError(
+                    f"❌ Aucun questionnaire actif n'est configuré pour le niveau {level_label}. "
+                    "Contactez le service RH."
+                )
+            return
+
+        for item in self.training_questions:
+            question = item["question"]
+            answer_field_name = item["answer_field"]
+            comment_field_name = item["comment_field"]
+
+            answer = cleaned_data.get(answer_field_name)
+            comment = (cleaned_data.get(comment_field_name, "") or "").strip()
+
+            if question.is_required:
+                missing_answer = False
+                if question.answer_type == TrainingQuestion.AnswerType.YES_NO:
+                    missing_answer = answer is None
+                elif question.answer_type == TrainingQuestion.AnswerType.TEXT:
+                    missing_answer = not str(answer or "").strip()
+
+                if missing_answer:
+                    self.add_error(answer_field_name, "Cette question est obligatoire.")
+                    continue
+
+            if question.answer_type == TrainingQuestion.AnswerType.YES_NO:
+                if answer is None:
+                    continue
+
+                if answer is False and question.requires_comment_if_no and not comment:
+                    self.add_error(
+                        comment_field_name,
+                        "Un commentaire est obligatoire lorsque la réponse est Non.",
+                    )
+
+                if (
+                    question.is_blocking
+                    and question.expected_boolean is not None
+                    and answer != question.expected_boolean
+                ):
+                    expected_label = "Oui" if question.expected_boolean else "Non"
+                    self.add_error(
+                        answer_field_name,
+                        f"Réponse non conforme. La réponse attendue est « {expected_label} ». "
+                        f"Le niveau {level_label} ne peut pas être enregistré.",
+                    )
+
     def clean(self):
-        cleaned_data  = super().clean()
-        employee      = cleaned_data.get("employee")
-        task          = cleaned_data.get("task")
-        level         = cleaned_data.get("level")
-        line          = cleaned_data.get("line")
+        cleaned_data = super().clean()
+
+        employee = cleaned_data.get("employee")
+        task = cleaned_data.get("task")
+        level = cleaned_data.get("level")
+        line = cleaned_data.get("line")
         training_date = cleaned_data.get("date")
 
-        # ── Validations date ────────────────────────────────────────────
         if not training_date:
-            raise ValidationError({'date': "❌ La date de formation est obligatoire."})
+            self.add_error("date", "❌ La date de formation est obligatoire.")
+            return cleaned_data
 
-        today    = timezone.now().date()
-        days_ago = (today - training_date).days
-
+        today = timezone.now().date()
         if training_date > today:
-            raise ValidationError({'date': "❌ La date ne peut pas être dans le futur."})
+            self.add_error("date", "❌ La date ne peut pas être dans le futur.")
 
-        
-
-        if not all([employee, task, level is not None]):
+        if not employee or not task or level is None:
             return cleaned_data
 
         if not line:
-            raise ValidationError({'line': "❌ Veuillez sélectionner la ligne de production."})
-
-        effective_line = line
-        new_level      = int(level)
-
-        # ── Empêcher le chef de se former lui-même ──────────────────────
-        if (self.team_leader_employee and
-                employee.id == self.team_leader_employee.id):
-            raise ValidationError(
-                "❌ Vous ne pouvez pas enregistrer une formation pour vous-même."
-            )
-
-        # ── Vérifier si c'est un chef d'équipe ──────────────────────────
-        target_is_tl = False
-        if employee.user:
-            target_is_tl = ProductionLine.objects.filter(
-                team_leaders=employee.user
-            ).exists()
-        if not target_is_tl:
-            match_user = User.objects.filter(
-                Q(first_name__iexact=employee.first_name,
-                last_name__iexact=employee.last_name) |
-                Q(username__iexact=employee.matricule)
-            ).first()
-            if match_user:
-                target_is_tl = ProductionLine.objects.filter(
-                    team_leaders=match_user
-                ).exists()
-        if target_is_tl:
-            raise ValidationError(
-                f"❌ {employee.first_name} {employee.last_name} est un chef d'équipe."
-            )
-
-        # ── Vérifier visibilité sur la ligne ────────────────────────────
-        if (not self.user.is_superuser and
-                not employee.visible_lines.filter(pk=effective_line.pk).exists()):
-            raise ValidationError(
-                f"❌ {employee.first_name} {employee.last_name} "
-                f"n'est pas visible sur la ligne '{effective_line.name}'."
-            )
-
-        # ── Tâche appartient à la ligne ──────────────────────────────────
-        if not task.lines.filter(pk=effective_line.pk).exists():
-            raise ValidationError(
-                f"❌ La tâche '{task}' n'appartient pas à la ligne '{effective_line.name}'."
-            )
-
-        # ════════════════════════════════════════════════════════════════
-        # ✅ LOGIQUE DE PROGRESSION PAR LIGNE
-        #
-        # La progression I → L → U est INDÉPENDANTE par ligne.
-        #
-        #   Ligne X : I → L → U  (progression propre à Ligne X)
-        #   Ligne Y : I → L → U  (progression propre à Ligne Y)
-        #
-        # Pour enregistrer L sur Ligne Y :
-        #   → Il FAUT un niveau I sur Ligne Y (pas Ligne X)
-        #
-        # Pour enregistrer U sur Ligne Y :
-        #   → Il FAUT un niveau L sur Ligne Y (pas Ligne X)
-        # ════════════════════════════════════════════════════════════════
-
-        if new_level == TrainingLevel.IN_TRAINING:
-            # ── Niveau I ────────────────────────────────────────────────
-            # Vérifier le doublon sur CETTE ligne
-            if not self.instance.pk:
-                if TrainingRecord.objects.filter(
-                    employee=employee,
-                    task=task,
-                    level=TrainingLevel.IN_TRAINING,
-                    lines=effective_line
-                ).exists():
-                    raise ValidationError(
-                        f"❌ Un niveau I existe déjà pour la tâche '{task}' "
-                        f"sur la ligne '{effective_line.name}'."
-                    )
-
-            # ── 3 jours d'ancienneté ─────────────────────────────────────
-            if getattr(employee, 'hire_date', None):
-                days_since_hire = (training_date - employee.hire_date).days
-                if days_since_hire < 3:
-                    raise ValidationError(
-                        f"❌ Ancienneté insuffisante : {days_since_hire} jour(s). "
-                        f"Minimum : 3 jours."
-                    )
-
+            self.add_error("line", "❌ Veuillez sélectionner la ligne de production.")
             return cleaned_data
 
-        elif new_level == TrainingLevel.SUPERVISED:
-            # ════════════════════════════════════════════════════════════
-            # Niveau L → chercher niveau I SUR CETTE MÊME LIGNE
-            # ════════════════════════════════════════════════════════════
+        try:
+            new_level = int(level)
+        except (ValueError, TypeError):
+            self.add_error("level", "❌ Niveau de formation invalide.")
+            return cleaned_data
 
-            # ✅ Chercher I uniquement sur effective_line
-            record_I_this_line = TrainingRecord.objects.filter(
-                employee=employee,
-                task=task,
-                level=TrainingLevel.IN_TRAINING,
-                lines=effective_line,           # ← MÊME LIGNE UNIQUEMENT
-            ).exclude(date__isnull=True).order_by('date').first()
+        effective_line = line
 
-            if not record_I_this_line:
-                # ✅ Vérifier si le I existe sur D'AUTRES lignes
-                # pour donner un message d'erreur plus précis
-                record_I_other_lines = TrainingRecord.objects.filter(
-                    employee=employee,
-                    task=task,
-                    level=TrainingLevel.IN_TRAINING,
-                ).exclude(
-                    lines=effective_line
-                ).exclude(date__isnull=True)
+        if self.team_leader_employee and employee.id == self.team_leader_employee.id:
+            raise ValidationError("❌ Vous ne pouvez pas enregistrer une formation pour vous-même.")
 
-                other_lines_with_I = []
-                for rec in record_I_other_lines:
-                    for l in rec.lines.all():
-                        if l.name not in other_lines_with_I:
-                            other_lines_with_I.append(l.name)
+        if self._employee_is_team_leader(employee):
+            raise ValidationError(f"❌ {employee.first_name} {employee.last_name} est un chef d'équipe.")
 
-                if other_lines_with_I:
-                    # L'opérateur a un I mais sur une autre ligne
-                    raise ValidationError(
-                        f"❌ Impossible d'enregistrer le niveau L sur "
-                        f"'{effective_line.name}'.\n\n"
-                        f"L'opérateur {employee.first_name} {employee.last_name} "
-                        f"n'a pas de niveau I pour la tâche '{task}' "
-                        f"sur la ligne '{effective_line.name}'.\n\n"
-                        f"Le niveau I existe sur : "
-                        f"{', '.join(other_lines_with_I)}\n\n"
-                        f"💡 Enregistrez d'abord un niveau I sur "
-                        f"'{effective_line.name}' avant de passer au niveau L."
+        if (
+            self.user
+            and not self.user.is_superuser
+            and not employee.visible_lines.filter(pk=effective_line.pk).exists()
+        ):
+            raise ValidationError(
+                f"❌ {employee.first_name} {employee.last_name} n'est pas visible "
+                f"sur la ligne « {effective_line.name} »."
+            )
+
+        if not task.lines.filter(pk=effective_line.pk).exists():
+            raise ValidationError(f"❌ La tâche « {task} » n'appartient pas à la ligne « {effective_line.name} ».")
+
+        # ============================================================
+        # NIVEAU I
+        # ============================================================
+        if new_level == TrainingLevel.IN_TRAINING:
+            duplicate_query = TrainingRecord.objects.filter(
+                employee=employee, task=task, level=TrainingLevel.IN_TRAINING, lines=effective_line
+            ).exclude(
+                approval_status=TrainingRecord.ApprovalStatus.REJECTED
+            )
+            if self.instance.pk:
+                duplicate_query = duplicate_query.exclude(pk=self.instance.pk)
+            if duplicate_query.exists():
+                raise ValidationError(f"❌ Un niveau I existe déjà pour cette tâche sur la ligne « {effective_line.name} ».")
+
+            if employee.hire_date:
+                days_since_hire = (training_date - employee.hire_date).days
+                if days_since_hire < 3:
+                    raise ValidationError(f"❌ Ancienneté insuffisante : {days_since_hire} jour(s). Minimum requis : 3 jours.")
+
+            self._validate_questionnaire(cleaned_data, TrainingLevel.IN_TRAINING)
+            return cleaned_data
+
+        # ============================================================
+        # NIVEAU L
+        # ============================================================
+        if new_level == TrainingLevel.SUPERVISED:
+            record_i = (
+                TrainingRecord.objects.filter(
+                    employee=employee, task=task, level=TrainingLevel.IN_TRAINING, lines=effective_line,
+                    approval_status=TrainingRecord.ApprovalStatus.APPROVED,
+                )
+                .exclude(date__isnull=True)
+                .order_by("date")
+                .first()
+            )
+
+            if not record_i:
+                unapproved_record_i = (
+                    TrainingRecord.objects.filter(
+                        employee=employee, task=task, level=TrainingLevel.IN_TRAINING, lines=effective_line
                     )
-                else:
-                    # Pas de I sur aucune ligne
-                    raise ValidationError(
-                        f"❌ Impossible d'enregistrer le niveau L sur "
-                        f"'{effective_line.name}'.\n\n"
-                        f"L'opérateur {employee.first_name} {employee.last_name} "
-                        f"n'a pas encore de niveau I pour la tâche '{task}' "
-                        f"sur cette ligne.\n\n"
-                        f"💡 Enregistrez d'abord un niveau I sur "
-                        f"'{effective_line.name}'."
-                    )
+                    .order_by("-date", "-created_at", "-id")
+                    .first()
+                )
 
-            # ── Doublon L sur cette ligne ─────────────────────────────────
-            if not self.instance.pk:
-                if TrainingRecord.objects.filter(
-                    employee=employee,
-                    task=task,
-                    level=TrainingLevel.SUPERVISED,
-                    lines=effective_line
-                ).exists():
-                    raise ValidationError(
-                        f"❌ Un niveau L existe déjà pour la tâche '{task}' "
-                        f"sur la ligne '{effective_line.name}'."
-                    )
+                if unapproved_record_i:
+                    if unapproved_record_i.approval_status == TrainingRecord.ApprovalStatus.PENDING:
+                        raise ValidationError("Impossible de demander le niveau L : le niveau I correspondant est en attente d'approbation RH.")
+                    raise ValidationError("Impossible de demander le niveau L : le niveau I correspondant a été refusé par RH.")
 
-            # ── Délai 7 jours depuis le I sur CETTE ligne ────────────────
-            days_since_I = (training_date - record_I_this_line.date).days
+                other_lines = self._get_other_lines_for_level(employee, task, TrainingLevel.IN_TRAINING, effective_line)
+                if other_lines:
+                    raise ValidationError(f"❌ Le niveau I existe déjà sur : {', '.join(other_lines)}. Enregistrez d'abord un niveau I sur « {effective_line.name} ».")
+                raise ValidationError(f"❌ Aucun niveau I n'existe pour cette tâche sur la ligne « {effective_line.name} ».")
 
-            if days_since_I < 7:
+            duplicate_query = TrainingRecord.objects.filter(
+                employee=employee, task=task, level=TrainingLevel.SUPERVISED, lines=effective_line
+            ).exclude(
+                approval_status=TrainingRecord.ApprovalStatus.REJECTED
+            )
+            if self.instance.pk:
+                duplicate_query = duplicate_query.exclude(pk=self.instance.pk)
+            if duplicate_query.exists():
+                raise ValidationError(f"❌ Un niveau L existe déjà pour cette tâche sur la ligne « {effective_line.name} ».")
+
+            days_since_i = (training_date - record_i.date).days
+            if days_since_i < 7:
+                possible_date = record_i.date + timedelta(days=7)
                 raise ValidationError(
                     f"⏳ Attendre 7 jours minimum après le niveau I.\n"
-                    f"Date niveau I  : "
-                    f"{record_I_this_line.date.strftime('%d/%m/%Y')} "
-                    f"(ligne '{effective_line.name}')\n"
-                    f"Date saisie    : {training_date.strftime('%d/%m/%Y')}\n"
-                    f"Jours écoulés  : {days_since_I}/7\n"
-                    f"Date possible  : "
-                    f"{(record_I_this_line.date + timedelta(days=7)).strftime('%d/%m/%Y')}"
+                    f"Date niveau I : {record_i.date.strftime('%d/%m/%Y')}\n"
+                    f"Date possible : {possible_date.strftime('%d/%m/%Y')}"
                 )
 
-            # ── Créer demande RH ──────────────────────────────────────────
-            self._create_rh_request(
-                employee, task, new_level,
-                days_since_I, training_date, effective_line
+            self._validate_questionnaire(cleaned_data, TrainingLevel.SUPERVISED)
+            if any(self.errors):
+                return cleaned_data
+
+            request_object, created = self._create_rh_request(
+                employee=employee, task=task, new_level=new_level,
+                days_since_last=days_since_i, training_date=training_date, line=effective_line
             )
+
             self.rh_request_created = True
-            self.rh_request_info    = {
-                'employee':   employee,
-                'task':       task,
-                'level':      'L (Supervisé)',
-                'level_code': 'L',
-                'line':       effective_line,
+            self.rh_request_info = {
+                "request": request_object, "created": created,
+                "employee": employee, "task": task, "level": "L (Approuvé)", "level_code": "L", "line": effective_line
             }
-            raise ValidationError("RH_REQUEST_CREATED", code='rh_request_pending')
+            raise ValidationError("RH_REQUEST_CREATED", code="rh_request_pending")
 
-        elif new_level == TrainingLevel.TRAINER:
-            # ════════════════════════════════════════════════════════════
-            # Niveau U → chercher niveau L SUR CETTE MÊME LIGNE
-            # ════════════════════════════════════════════════════════════
+        # ============================================================
+        # NIVEAU U
+        # ============================================================
+        if new_level == TrainingLevel.TRAINER:
+            record_l = (
+                TrainingRecord.objects.filter(
+                    employee=employee, task=task, level=TrainingLevel.SUPERVISED, lines=effective_line,
+                    approval_status=TrainingRecord.ApprovalStatus.APPROVED,
+                )
+                .exclude(date__isnull=True)
+                .order_by("date")
+                .first()
+            )
 
-            # ✅ Chercher L uniquement sur effective_line
-            record_L_this_line = TrainingRecord.objects.filter(
-                employee=employee,
-                task=task,
-                level=TrainingLevel.SUPERVISED,
-                lines=effective_line,           # ← MÊME LIGNE UNIQUEMENT
-            ).exclude(date__isnull=True).order_by('date').first()
+            if not record_l:
+                other_lines = self._get_other_lines_for_level(employee, task, TrainingLevel.SUPERVISED, effective_line)
+                if other_lines:
+                    raise ValidationError(f"❌ Le niveau L existe déjà sur : {', '.join(other_lines)}. Enregistrez d'abord un niveau L sur « {effective_line.name} ».")
+                raise ValidationError(f"❌ Aucun niveau L n'existe pour cette tâche sur la ligne « {effective_line.name} ».")
 
-            if not record_L_this_line:
-                # Vérifier si L existe sur d'autres lignes
-                record_L_other_lines = TrainingRecord.objects.filter(
-                    employee=employee,
-                    task=task,
-                    level=TrainingLevel.SUPERVISED,
-                ).exclude(
-                    lines=effective_line
-                ).exclude(date__isnull=True)
+            duplicate_query = TrainingRecord.objects.filter(
+                employee=employee, task=task, level=TrainingLevel.TRAINER, lines=effective_line
+            ).exclude(
+                approval_status=TrainingRecord.ApprovalStatus.REJECTED
+            )
+            if self.instance.pk:
+                duplicate_query = duplicate_query.exclude(pk=self.instance.pk)
+            if duplicate_query.exists():
+                raise ValidationError(f"❌ Un niveau U existe déjà pour cette tâche sur la ligne « {effective_line.name} ».")
 
-                other_lines_with_L = []
-                for rec in record_L_other_lines:
-                    for l in rec.lines.all():
-                        if l.name not in other_lines_with_L:
-                            other_lines_with_L.append(l.name)
-
-                if other_lines_with_L:
-                    raise ValidationError(
-                        f"❌ Impossible d'enregistrer le niveau U sur "
-                        f"'{effective_line.name}'.\n\n"
-                        f"L'opérateur {employee.first_name} {employee.last_name} "
-                        f"n'a pas de niveau L pour la tâche '{task}' "
-                        f"sur la ligne '{effective_line.name}'.\n\n"
-                        f"Le niveau L existe sur : "
-                        f"{', '.join(other_lines_with_L)}\n\n"
-                        f"💡 Enregistrez d'abord un niveau L sur "
-                        f"'{effective_line.name}' avant de passer au niveau U."
-                    )
-                else:
-                    raise ValidationError(
-                        f"❌ Impossible d'enregistrer le niveau U sur "
-                        f"'{effective_line.name}'.\n\n"
-                        f"L'opérateur {employee.first_name} {employee.last_name} "
-                        f"n'a pas encore de niveau L pour la tâche '{task}' "
-                        f"sur cette ligne.\n\n"
-                        f"💡 Enregistrez d'abord un niveau L sur "
-                        f"'{effective_line.name}'."
-                    )
-
-            # ── Doublon U sur cette ligne ─────────────────────────────────
-            if not self.instance.pk:
-                if TrainingRecord.objects.filter(
-                    employee=employee,
-                    task=task,
-                    level=TrainingLevel.TRAINER,
-                    lines=effective_line
-                ).exists():
-                    raise ValidationError(
-                        f"❌ Un niveau U existe déjà pour la tâche '{task}' "
-                        f"sur la ligne '{effective_line.name}'."
-                    )
-
-            # ── Délai 21 jours depuis le L sur CETTE ligne ───────────────
-            days_since_L = (training_date - record_L_this_line.date).days
-
-            if days_since_L < 21:
+            days_since_l = (training_date - record_l.date).days
+            if days_since_l < 21:
+                possible_date = record_l.date + timedelta(days=21)
                 raise ValidationError(
                     f"⏳ Attendre 21 jours minimum après le niveau L.\n"
-                    f"Date niveau L  : "
-                    f"{record_L_this_line.date.strftime('%d/%m/%Y')} "
-                    f"(ligne '{effective_line.name}')\n"
-                    f"Date saisie    : {training_date.strftime('%d/%m/%Y')}\n"
-                    f"Jours écoulés  : {days_since_L}/21\n"
-                    f"Date possible  : "
-                    f"{(record_L_this_line.date + timedelta(days=21)).strftime('%d/%m/%Y')}"
+                    f"Date niveau L : {record_l.date.strftime('%d/%m/%Y')}\n"
+                    f"Date possible : {possible_date.strftime('%d/%m/%Y')}"
                 )
 
-            # ── Créer demande RH ──────────────────────────────────────────
-            self._create_rh_request(
-                employee, task, new_level,
-                days_since_L, training_date, effective_line
+            self._validate_questionnaire(cleaned_data, TrainingLevel.TRAINER)
+            if any(self.errors):
+                return cleaned_data
+
+            request_object, created = self._create_rh_request(
+                employee=employee, task=task, new_level=new_level,
+                days_since_last=days_since_l, training_date=training_date, line=effective_line
             )
+
             self.rh_request_created = True
-            self.rh_request_info    = {
-                'employee':   employee,
-                'task':       task,
-                'level':      'U (Formateur)',
-                'level_code': 'U',
-                'line':       effective_line,
+            self.rh_request_info = {
+                "request": request_object, "created": created,
+                "employee": employee, "task": task, "level": "U (Formateur)", "level_code": "U", "line": effective_line
             }
-            raise ValidationError("RH_REQUEST_CREATED", code='rh_request_pending')
+            raise ValidationError("RH_REQUEST_CREATED", code="rh_request_pending")
 
         return cleaned_data
 
+    # ================================================================
+    # LOGIQUE DE SAUVEGARDE ET UTILITAIRES
+    # ================================================================
 
-    def _create_rh_request(
-        self, employee, task, new_level,
-        days_since_last, training_date, line=None
-    ):
-        """
-        ✅ Vérifie le doublon PAR LIGNE avant de créer la demande.
-        """
-        if line:
-            exists = TrainingApprovalRequest.objects.filter(
-                employee=employee,
-                task=task,
-                requested_level=new_level,
-                approved__isnull=True,
-                line=line              # ✅ FILTRE PAR LIGNE
-            ).exists()
-        else:
-            exists = TrainingApprovalRequest.objects.filter(
-                employee=employee,
-                task=task,
-                requested_level=new_level,
-                approved__isnull=True,
-                line__isnull=True
-            ).exists()
-
-        if exists:
+    def _save_questionnaire_for_record(self, record):
+        if not self.training_questions:
             return
 
-        request_obj = TrainingApprovalRequest.objects.create(
-            employee=employee,
-            task=task,
-            requested_level=new_level,
-            requested_by=self.user,
-            training_date=training_date,
-            line=line,                 # ✅ LIGNE STOCKÉE
-        )
+        line = record.lines.first() or self.cleaned_data.get("line")
+        if not line or not self.user:
+            return
 
-        self._send_professional_email(
-            employee=employee,
-            task=task,
-            new_level=new_level,
-            days_since_last=days_since_last,
-            training_date=training_date,
-            request_obj=request_obj,
-            line=line
-        )
-
-    def _send_professional_email(self, employee, task, new_level, days_since_last, training_date, request_obj, line=None):
-        """Envoi d'email HTML professionnel avec logo image intégré"""
-        
-        from django.core.mail import EmailMultiAlternatives
-        from django.template.loader import render_to_string
-        from django.utils.html import strip_tags
-        from django.conf import settings
-        import logging
-        
-        logger = logging.getLogger(__name__)
-        
-        LEVEL_CONFIG = {
-            TrainingLevel.SUPERVISED: {
-                'name': 'L (Supervisé)',
-                'color': '#3b82f6',
-                'color_dark': '#1d4ed8',
-                'required_days': '7 jours',
-                'emoji': '📘'
-            },
-            TrainingLevel.TRAINER: {
-                'name': 'U (Formateur)',
-                'color': '#8b5cf6',
-                'color_dark': '#6d28d9',
-                'required_days': '21 jours',
-                'emoji': '🎓'
-            }
-        }
-        
-        level_config = LEVEL_CONFIG.get(new_level, {
-            'name': str(new_level),
-            'color': '#6b7280',
-            'color_dark': '#4b5563',
-            'required_days': 'N/A',
-            'emoji': '📋'
-        })
-
-        base_url = getattr(settings, 'APP_BASE_URL', 'http://localhost:8000')
-        
-        if line:
-            production_line_display = f"{line.name} ({line.code})"
-        elif employee.line:
-            production_line_display = str(employee.line)
-        else:
-            production_line_display = 'Non assignée'
-        
-        context = {
-            'company_name': getattr(settings, 'COMPANY_NAME', 'GRUPO PREMO'),
-            'company_website': getattr(settings, 'COMPANY_WEBSITE', 'https://www.grupopremo.com'),
-            'support_email': getattr(settings, 'SUPPORT_EMAIL', 'support@grupopremo.com'),
-            'current_year': training_date.year,
-            'request_id': request_obj.pk,
-            'employee_name': f"{employee.first_name} {employee.last_name}",
-            'employee_matricule': employee.matricule if hasattr(employee, 'matricule') else 'N/A',
-            'task_name': str(task),
-            'production_line': production_line_display,
-            'requester_name': self.user.get_full_name() or self.user.username,
-            'request_date': training_date.strftime('%d %B %Y'),  # ✅ Date de formation
-            'training_date': training_date.strftime('%d/%m/%Y'),  # ✅ NOUVEAU
-            'level_name': level_config['name'],
-            'level_color': level_config['color'],
-            'level_color_dark': level_config['color_dark'],
-            'required_days': level_config['required_days'],
-            'level_emoji': level_config['emoji'],
-            'days_elapsed': days_since_last,
-            'approval_url': f"{base_url}/matrix/rh/approve/{request_obj.pk}/",
-            'reject_url': f"{base_url}/matrix/rh/reject/{request_obj.pk}/",
-            'dashboard_url': f"{base_url}/matrix/rh/pending/",
-        }
-
-        subject = (
-            f"📋 [Action Requise] Formation {level_config['name']} - "
-            f"{employee.first_name} {employee.last_name}"
-        )
-
-        try:
-            html_content = render_to_string('emails/rh_request.html', context)
-            text_content = self._get_fallback_text(context)
-        except Exception as e:
-            logger.warning(f"⚠️ Template non trouvé, utilisation du fallback: {e}")
-            html_content = self._get_fallback_html(context)
-            text_content = self._get_fallback_text(context)
-
-        try:
-            rh_emails = getattr(settings, 'RH_EMAILS', [])
-            if not rh_emails:
-                logger.error("❌ RH_EMAILS non configuré dans settings.py")
-                return
-            
-            email = EmailMultiAlternatives(
-                subject=subject,
-                body=text_content,
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                to=rh_emails,
+        with transaction.atomic():
+            questionnaire, created = TrainingQuestionnaire.objects.get_or_create(
+                training_record=record,
+                defaults={
+                    "line": line,
+                    "answered_by": self.user,
+                    "general_comment": self.cleaned_data.get("questionnaire_general_comment", ""),
+                }
             )
-            
-            email.attach_alternative(html_content, "text/html")
-            email.mixed_subtype = 'related'
-            
-            logo_attached = self._attach_logo(email, settings)
-            
-            if logo_attached:
-                logger.info("✅ Logo image attaché à l'email")
-            else:
-                logger.warning("⚠️ Email sera envoyé sans logo")
 
-            email.send(fail_silently=False)
-            logger.info(
-                f"✅ Email RH envoyé avec succès pour {employee} "
-                f"(Demande #{request_obj.pk})"
-            )
-            
-        except Exception as e:
-            logger.error(f"❌ Erreur envoi email RH: {e}")
+            if not created:
+                questionnaire.general_comment = self.cleaned_data.get("questionnaire_general_comment", "")
+                questionnaire.save()
 
-    def _attach_logo(self, email, settings):
-        """Attache le logo de l'entreprise à l'email."""
-        import os
-        from email.mime.image import MIMEImage
-        import logging
-        
-        logger = logging.getLogger(__name__)
-        
-        possible_paths = [
-            os.path.join(settings.BASE_DIR, 'matrix', 'static', 'images', 'logo.png'),
-            os.path.join(settings.BASE_DIR, 'matrix', 'static', 'images', 'logo.jpg'),
-            os.path.join(settings.BASE_DIR, 'matrix', 'static', 'images', 'logo.jpeg'),
-            os.path.join(settings.BASE_DIR, 'matrix', 'static', 'img', 'logo.png'),
-            os.path.join(settings.BASE_DIR, 'static', 'images', 'logo.png'),
-            os.path.join(settings.BASE_DIR, 'static', 'images', 'logo.jpg'),
-            os.path.join(settings.BASE_DIR, 'static', 'img', 'logo.png'),
-            os.path.join(settings.BASE_DIR, 'staticfiles', 'images', 'logo.png'),
-        ]
-        
-        for logo_path in possible_paths:
-            if os.path.exists(logo_path):
-                try:
-                    with open(logo_path, 'rb') as f:
-                        logo_data = f.read()
-                    
-                    if logo_path.lower().endswith('.png'):
-                        subtype = 'png'
-                    elif logo_path.lower().endswith(('.jpg', '.jpeg')):
-                        subtype = 'jpeg'
-                    else:
-                        subtype = 'png'
-                    
-                    logo_image = MIMEImage(logo_data, _subtype=subtype)
-                    logo_image.add_header('Content-ID', '<company_logo>')
-                    logo_image.add_header(
-                        'Content-Disposition', 
-                        'inline', 
-                        filename=f'logo.{subtype}'
-                    )
-                    
-                    email.attach(logo_image)
-                    logger.info(f"✅ Logo trouvé et attaché: {logo_path}")
-                    return True
-                    
-                except Exception as e:
-                    logger.warning(f"⚠️ Erreur lecture logo {logo_path}: {e}")
-                    continue
-        
-        logger.warning(f"⚠️ Aucun logo trouvé.")
+            questionnaire.answers.all().delete()
+
+            for item in self.training_questions:
+                question = item["question"]
+                answer_val = self.cleaned_data.get(item["answer_field"])
+                comment = self.cleaned_data.get(item["comment_field"], "") or ""
+
+                is_compliant = True
+                if (
+                    question.answer_type == TrainingQuestion.AnswerType.YES_NO
+                    and question.expected_boolean is not None
+                    and answer_val is not None
+                ):
+                    is_compliant = (answer_val == question.expected_boolean)
+
+                TrainingQuestionAnswer.objects.create(
+                    questionnaire=questionnaire,
+                    question=question,
+                    question_text_snapshot=question.text,
+                    answer_type_snapshot=question.answer_type,
+                    boolean_answer=answer_val if question.answer_type == TrainingQuestion.AnswerType.YES_NO else None,
+                    text_answer=str(answer_val or "") if question.answer_type == TrainingQuestion.AnswerType.TEXT else "",
+                    comment=comment,
+                    is_compliant=is_compliant,
+                )
+
+            all_compliant = not questionnaire.answers.filter(is_compliant=False).exists()
+            questionnaire.is_compliant = all_compliant
+            questionnaire.save(update_fields=["is_compliant"])
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        if commit:
+            instance.save()
+            self.save_m2m()
+            self._save_questionnaire_for_record(instance)
+        return instance
+
+    def _employee_is_team_leader(self, employee):
+        if employee.user:
+            if ProductionLine.objects.filter(team_leaders=employee.user).exists():
+                return True
+        matching_user = User.objects.filter(
+            Q(first_name__iexact=employee.first_name, last_name__iexact=employee.last_name)
+            | Q(username__iexact=employee.matricule)
+        ).first()
+        if matching_user:
+            return ProductionLine.objects.filter(team_leaders=matching_user).exists()
         return False
+
+    def _get_other_lines_for_level(self, employee, task, level, excluded_line):
+        records = TrainingRecord.objects.filter(employee=employee, task=task, level=level).exclude(lines=excluded_line).prefetch_related("lines")
+        line_names = set()
+        for r in records:
+            for l in r.lines.all():
+                if l.pk != excluded_line.pk:
+                    line_names.add(l.name)
+        return sorted(line_names)
+
+    def _create_rh_request(self, employee, task, new_level, days_since_last, training_date, line):
+        existing_request = TrainingApprovalRequest.objects.filter(
+            employee=employee, task=task, requested_level=new_level, approved__isnull=True, line=line
+        ).first()
+
+        if existing_request:
+            return existing_request, False
+
+        with transaction.atomic():
+            record = TrainingRecord.objects.create(
+                employee=employee,
+                task=task,
+                level=new_level,
+                date=training_date,
+                approval_status=TrainingRecord.ApprovalStatus.PENDING,
+                trainer=None,
+            )
+            record.lines.add(line)
+
+            self._save_questionnaire_for_record(record)
+
+            request_object = TrainingApprovalRequest.objects.create(
+                employee=employee,
+                task=task,
+                requested_level=new_level,
+                requested_by=self.user,
+                training_date=training_date,
+                line=line,
+                training_record=record,
+            )
+
+        self._send_rh_email(employee, task, new_level, days_since_last, training_date, request_object, line)
+        return request_object, True
+
+    def _send_rh_email(self, employee, task, new_level, days_since_last, training_date, request_object, line):
+        rh_emails = getattr(settings, "RH_EMAILS", [])
+        if not rh_emails:
+            logger.warning("RH_EMAILS n'est pas configuré.")
+            return
+
+        level_names = {
+            TrainingLevel.IN_TRAINING: "I - En formation",
+            TrainingLevel.SUPERVISED: "L - Approuvé",
+            TrainingLevel.TRAINER: "U - Formateur",
+        }
+        level_name = level_names.get(new_level, str(new_level))
+        requester_name = self.user.get_full_name() or self.user.username if self.user else "Utilisateur inconnu"
+
+        subject = f"Demande de validation formation {level_name} - {employee.first_name} {employee.last_name}"
+        message = (
+            f"Une nouvelle demande de formation nécessite une validation RH.\n\n"
+            f"Demande : #{request_object.pk}\n"
+            f"Employé : {employee.first_name} {employee.last_name}\n"
+            f"Matricule : {employee.matricule}\n"
+            f"Tâche : {task}\n"
+            f"Ligne : {line.name if line else 'N/A'}\n"
+            f"Niveau demandé : {level_name}\n"
+            f"Date de formation : {training_date.strftime('%d/%m/%Y')}\n"
+            f"Jours écoulés : {days_since_last}\n"
+            f"Demandé par : {requester_name}\n"
+        )
+
+        try:
+            send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, rh_emails, fail_silently=False)
+        except Exception as e:
+            logger.exception("Erreur pendant l'envoi de l'email RH : %s", e)
 
     def _get_fallback_html(self, context):
         """HTML de secours"""
@@ -1465,6 +1583,8 @@ class RHTeamLeaderTrainingForm(forms.ModelForm):
             task=task,
             level=new_level,
             lines=line
+        ).exclude(
+            approval_status=TrainingRecord.ApprovalStatus.REJECTED
         ).exists()
         
         if duplicate:
@@ -1480,6 +1600,8 @@ class RHTeamLeaderTrainingForm(forms.ModelForm):
             employee=employee,
             task=task,
             lines=line
+        ).exclude(
+            approval_status=TrainingRecord.ApprovalStatus.REJECTED
         ).order_by('-date').first()
         
         # ═══════════════════════════════════════════════════════════════════
@@ -1782,70 +1904,60 @@ class EmployeeFormRH(forms.ModelForm):
             instance.save()
         return instance
 
-class RequalificationForm(forms.Form):
-    """Formulaire pour enregistrer une requalification"""
-    
-    RESULT_CHOICES = [
-        ('PASS', 'Réussi - Maintien du niveau'),
-        ('UPGRADE', 'Réussi - Montée en niveau'),
-        ('DOWNGRADE', 'Échec - Descente en niveau'),
-        ('RETRAIN', 'À reformer complètement'),
-    ]
-    
-    employee_id = forms.IntegerField(widget=forms.HiddenInput())
-    task_id = forms.IntegerField(widget=forms.HiddenInput())
-    
-    # ============================================
-    # NOUVEAU CHAMP : Nom du requalificateur
-    # ============================================
-    requalifier_name = forms.CharField(
-        max_length=150,
-        widget=forms.TextInput(attrs={
-            'class': 'form-control',
-            'placeholder': 'Entrez le nom du requalificateur...',
-            'id': 'requalifier-name'
-        }),
-        label="Nom du requalificateur",
-        required=False  # Mettez False si optionnel
-    )
-    
-    result = forms.ChoiceField(
-        choices=RESULT_CHOICES,
-        widget=forms.Select(attrs={
-            'class': 'form-select',
-            'id': 'result-select'
-        }),
-        label="Résultat de la requalification"
-    )
-    
-    new_level = forms.ChoiceField(
-        choices=TrainingLevel.choices,
-        widget=forms.Select(attrs={
-            'class': 'form-select',
-            'id': 'new-level-select'
-        }),
-        label="Nouveau niveau"
-    )
-    
-    requalification_date = forms.DateField(
-        widget=forms.DateInput(attrs={
-            'class': 'form-control',
-            'type': 'date',
-            'id': 'requalification-date'
-        }),
-        label="Date de requalification",
-        required=False  # Optionnel, utilisera la date du jour par défaut
-    )
-    
-    notes = forms.CharField(
-        widget=forms.Textarea(attrs={
-            'class': 'form-control',
-            'rows': 3,
-            'placeholder': 'Commentaires sur la requalification...'
-        }),
-        required=False,
-        label="Notes"
-    )
+class RequalificationForm(TrainingPlanImageForm):
+    """Validate the existing global/per-task flow before any persistence."""
+
+    employee_id = forms.ModelChoiceField(queryset=Employee.objects.none(), label="Employé")
+    line_id = forms.ModelChoiceField(queryset=ProductionLine.objects.all(), required=False, label="Ligne")
+    task_id = forms.ModelChoiceField(queryset=Task.objects.all(), required=False, label="Tâche")
+    result = forms.ChoiceField(choices=models.RequalificationApprovalRequest.RESULT_CHOICES, label="Résultat")
+    new_level = forms.TypedChoiceField(choices=TrainingLevel.choices, coerce=int, empty_value=None, required=False)
+    requalification_date = forms.DateField(required=False, widget=forms.DateInput(attrs={"type": "date"}))
+    notes = forms.CharField(required=False, widget=forms.Textarea)
+    requalifier_name = forms.CharField(max_length=150, required=False)
+    field_order = ["employee_id", "line_id", "task_id", "result", "new_level",
+                   "requalification_date", "notes", "requalifier_name", "training_plan_image"]
+
+    def __init__(self, *args, user, direct_leader=False, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.user = user
+        self.direct_leader = direct_leader
+        is_rh = user.is_superuser or user.groups.filter(name="RH").exists()
+        employees = Employee.objects.all()
+        if direct_leader:
+            employees = employees.filter(user__managed_lines__isnull=False).distinct()
+        elif not is_rh:
+            employees = employees.filter(manager=user)
+        self.fields["employee_id"].queryset = employees
+        self.fields["line_id"].required = direct_leader
+        from .services_requalification import can_add_requalification_plan
+        if direct_leader or not can_add_requalification_plan(user):
+            # Removing the field also excludes forged uploads from cleaned_data.
+            self.fields.pop("training_plan_image")
+            return
+        plan = self.fields["training_plan_image"]
+        plan.label = "Plan de formation"
+        plan.required = True
+        plan.error_messages["required"] = "Le plan de formation est obligatoire pour créer une requalification."
+
+    def clean(self):
+        data = super().clean()
+        employee = data.get("employee_id")
+        if employee:
+            if self.direct_leader and employee.user_id == self.user.pk:
+                self.add_error("employee_id", "Vous ne pouvez pas vous requalifier vous-même.")
+            if not data.get("line_id") and "line_id" not in self.errors:
+                data["line_id"] = employee.line
+        if self.direct_leader and data.get("task_id"):
+            self.add_error("task_id", "La requalification des chefs est globale par ligne.")
+        if self.direct_leader and employee and data.get("line_id"):
+            if not data["line_id"].team_leaders.filter(pk=employee.user_id).exists():
+                self.add_error("line_id", "Ce chef n’est pas affecté à la ligne sélectionnée.")
+        if "requalification_date" not in self.errors and not data.get("requalification_date"):
+            data["requalification_date"] = timezone.now().date()
+        # The leader/line cooldown is rechecked under a transaction in the
+        # service. The operator workflow keeps its existing validation.
+        return data
 
 
 class TeamLeaderTransferForm(forms.Form):

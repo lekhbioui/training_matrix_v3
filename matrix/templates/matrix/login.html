@@ -1,120 +1,982 @@
+
 {% load static %}
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8" />
-    <title>Connexion</title>
-    <link rel="icon" type="image/png" href="{% static 'images/logo.png' %}">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Connexion | PREMO</title>
+
+    <link rel="icon"
+          type="image/png"
+          href="{% static 'images/logo.png' %}">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossorigin>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+          rel="stylesheet">
+
     <style>
-        body {
-            font-family: 'Open Sans', sans-serif;
-            color: #333;
-        }
-        h1, h2, h3 {
-            font-family: 'Montserrat', sans-serif;
+        /* ========================================
+           DESIGN SYSTEM
+        ======================================== */
+
+        :root {
+            --primary: #0067B8;
+            --primary-hover: #005A9E;
+            --primary-focus: #0078D4;
+
+            --text: #1B1B1B;
+            --secondary: #616161;
+
+            --border: #D1D1D1;
+            --background: #F5F6F8;
+            --white: #FFFFFF;
+
+            --danger: #C50F1F;
+
+            --font: "Inter", "Segoe UI", Arial, sans-serif;
         }
 
-        /* Styles pour les champs du formulaire Django */
-        .form-field {
-            margin-bottom: 1.25rem; /* 20px */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
+
+        html {
+            min-height: 100%;
+        }
+
+        body {
+            min-height: 100vh;
+            min-height: 100dvh;
+
+            font-family: var(--font);
+            color: var(--text);
+
+            background:
+                radial-gradient(
+                    ellipse at 5% 0%,
+                    rgba(198, 220, 244, .34),
+                    transparent 43%
+                ),
+                radial-gradient(
+                    ellipse at 100% 100%,
+                    rgba(218, 231, 246, .42),
+                    transparent 42%
+                ),
+                var(--background);
+
+            -webkit-font-smoothing: antialiased;
+        }
+
+        button,
+        input {
+            font: inherit;
+        }
+
+        button {
+            cursor: pointer;
+        }
+
+        /* ========================================
+           PAGE LAYOUT
+        ======================================== */
+
+        .auth-page {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+
+            min-height: 100vh;
+            min-height: 100dvh;
+
+            padding: 45px 24px;
+        }
+
+        .auth-container {
+            width: 100%;
+            max-width: 460px;
+        }
+
+        /* ========================================
+           TOP BRAND
+        ======================================== */
+
+        .brand {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 17px;
+
+            margin-bottom: 32px;
+        }
+
+        .brand-logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            width: 103px;
+            min-height: 52px;
+
+            flex-shrink: 0;
+        }
+
+        .brand-logo img {
+            display: block;
+            width: 100%;
+            height: auto;
+            max-height: 65px;
+            object-fit: contain;
+        }
+
+        .brand-divider {
+            width: 1px;
+            height: 39px;
+            background: #CBD5E1;
+        }
+
+        .brand-info {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .brand-name {
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: -.4px;
+            color: #17243A;
+            line-height: 1.4;
+        }
+
+        .brand-subtitle {
+            font-size: 11px;
+            font-weight: 400;
+            color: #64748B;
+            line-height: 1.4;
+        }
+
+        /* ========================================
+           LOGIN CARD
+        ======================================== */
+
+        .login-card {
+            position: relative;
+
+            width: 100%;
+
+            padding: 43px 44px 37px;
+
+            background: var(--white);
+
+            border: 1px solid rgba(209, 213, 219, .8);
+            border-radius: 10px;
+
+            box-shadow:
+                0 2px 6px rgba(15, 23, 42, .025),
+                0 14px 42px rgba(15, 23, 42, .075);
+        }
+
+        /* Fine blue accent */
+
+        .login-card::before {
+            content: "";
+
+            position: absolute;
+            top: 0;
+            left: 45px;
+
+            width: 39px;
+            height: 3px;
+
+            background: var(--primary);
+
+            border-radius: 0 0 3px 3px;
+        }
+
+        /* ========================================
+           CARD HEADER
+        ======================================== */
+
+        .form-eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+
+            color: #476582;
+
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+
+            margin-bottom: 18px;
+        }
+
+        .form-eyebrow::before {
+            content: "";
+
+            width: 6px;
+            height: 6px;
+
+            background: var(--primary);
+            border-radius: 50%;
+        }
+
+        .login-heading {
+            margin-bottom: 12px;
+
+            font-size: 29px;
+            font-weight: 700;
+            line-height: 1.3;
+            letter-spacing: -1.1px;
+
+            color: #17243A;
+        }
+
+        .login-description {
+            margin-bottom: 35px;
+
+            color: var(--secondary);
+
+            font-size: 13px;
+            font-weight: 400;
+            line-height: 1.8;
+        }
+
+        /* ========================================
+           FORM
+        ======================================== */
+
+        .form-field {
+            margin-bottom: 24px;
+        }
+
         .form-field label {
             display: block;
-            font-weight: 600; /* semibold */
-            color: #4B5563; /* gray-700 */
-            margin-bottom: 0.5rem;
-            font-size: 0.9rem;
+
+            margin-bottom: 9px;
+
+            color: #323130;
+
+            font-size: 12px;
+            font-weight: 600;
         }
-        .form-field input[type="text"],
-        .form-field input[type="password"] {
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        /* Django fields */
+
+        .form-field input:not([type="hidden"]),
+        .form-field select {
+            display: block;
+
             width: 100%;
-            padding: 0.75rem 1rem; /* py-3 px-4 */
-            border: 1px solid #D1D5DB; /* gray-300 */
-            border-radius: 0.625rem; /* 10px */
-            font-size: 1rem;
-            color: #1F2937; /* gray-900 */
-            background-color: #F9FAFB; /* gray-50 */
-            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
-        }
-        .form-field input[type="text"]:focus,
-        .form-field input[type="password"]:focus {
+            height: 50px;
+
+            padding: 0 15px;
+
+            background: #FFFFFF;
+
+            border: 1px solid #BFC5CD;
+            border-radius: 6px;
+
+            color: #242424;
+
+            font-size: 14px;
+            font-weight: 400;
+
             outline: none;
-            border-color: #4F46E5; /* indigo-600 */
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25); /* indigo-500 with opacity */
+
+            transition:
+                border-color .15s ease,
+                box-shadow .15s ease,
+                background .15s ease;
         }
-        .form-field .errorlist {
-            color: #EF4444; /* red-500 */
-            font-size: 0.875rem; /* text-sm */
-            margin-top: 0.5rem;
+
+        .form-field input:not([type="hidden"]):hover,
+        .form-field select:hover {
+            border-color: #747D89;
+        }
+
+        .form-field input:not([type="hidden"]):focus,
+        .form-field select:focus {
+            border-color: var(--primary-focus);
+
+            box-shadow:
+                0 0 0 2px rgba(0,120,212,.13);
+        }
+
+        .form-field input::placeholder {
+            color: #999999;
+        }
+
+        .form-field input[aria-invalid="true"] {
+            border-color: var(--danger);
+        }
+
+        /* ========================================
+           PASSWORD VISIBILITY
+        ======================================== */
+
+        .form-field input[type="password"],
+        .form-field input[data-password] {
+            padding-right: 91px;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 9px;
+            top: 50%;
+
+            transform: translateY(-50%);
+
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+
+            border: none;
+            border-radius: 4px;
+
+            padding: 8px;
+
+            background: transparent;
+
+            color: #505B68;
+
+            font-size: 11px;
+            font-weight: 600;
+
+            transition:
+                color .15s ease,
+                background .15s ease;
+        }
+
+        .password-toggle[hidden] {
+            display: none;
+        }
+
+        .password-toggle:hover {
+            background: #F0F6FC;
+            color: var(--primary);
+        }
+
+        .password-toggle:focus-visible {
+            outline: 2px solid var(--primary-focus);
+            outline-offset: 2px;
+        }
+
+        /* ========================================
+           ERRORS
+        ======================================== */
+
+        .error-alert {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+
+            padding: 15px;
+
+            margin-bottom: 27px;
+
+            background: #FDF2F3;
+            border: 1px solid #F4CDD1;
+            border-left: 3px solid var(--danger);
+            border-radius: 5px;
+        }
+
+        .error-icon {
+            flex-shrink: 0;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            width: 20px;
+            height: 20px;
+
+            border-radius: 50%;
+
+            background: var(--danger);
+            color: white;
+
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .error-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .error-title {
+            display: block;
+
+            margin-bottom: 5px;
+
+            color: #A4262C;
+
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .error-alert ul {
             list-style: none;
-            padding: 0;
+
+            color: #A4262C;
+
+            font-size: 12px;
+            line-height: 1.7;
+        }
+
+        .field-errors {
+            margin-top: 8px;
+
+            list-style: none;
+
+            color: var(--danger);
+
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        .field-help {
+            margin-top: 7px;
+
+            color: var(--secondary);
+
+            font-size: 11px;
+            line-height: 1.6;
+        }
+
+        /* ========================================
+           SUBMIT BUTTON
+        ======================================== */
+
+        .submit-btn {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+
+            width: 100%;
+            min-height: 50px;
+
+            margin-top: 31px;
+            padding: 12px 18px;
+
+            border: 1px solid var(--primary);
+            border-radius: 6px;
+
+            background: var(--primary);
+            color: white;
+
+            font-size: 13px;
+            font-weight: 600;
+
+            transition:
+                background .15s ease,
+                box-shadow .15s ease,
+                border-color .15s ease;
+        }
+
+        .submit-btn:hover {
+            background: var(--primary-hover);
+            border-color: var(--primary-hover);
+
+            box-shadow:
+                0 3px 10px rgba(0,103,184,.16);
+        }
+
+        .submit-btn:active {
+            background: #004578;
+        }
+
+        .submit-btn:focus-visible {
+            outline: 3px solid #8AC6F5;
+            outline-offset: 3px;
+        }
+
+        .submit-btn svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        /* ========================================
+           CARD FOOTER
+        ======================================== */
+
+        .card-footer {
+            margin-top: 32px;
+            padding-top: 25px;
+
+            border-top: 1px solid #E8EBEF;
+        }
+
+        .support-title {
+            color: #424B57;
+
+            font-size: 12px;
+            font-weight: 600;
+
+            margin-bottom: 7px;
+        }
+
+        .support-description {
+            color: var(--secondary);
+
+            font-size: 11px;
+            line-height: 1.8;
+        }
+
+        /* ========================================
+           PAGE FOOTER
+        ======================================== */
+
+        .page-footer {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 12px;
+
+            margin-top: 28px;
+
+            text-align: center;
+        }
+
+        .security-note {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+
+            color: #617080;
+
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .security-note svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        .copyright {
+            color: #8693A2;
+            font-size: 10px;
+            line-height: 1.7;
+        }
+
+        /* ========================================
+           RESPONSIVE
+        ======================================== */
+
+        @media (max-width: 600px) {
+            .auth-page {
+                padding: 30px 20px;
+            }
+
+            .brand {
+                margin-bottom: 28px;
+            }
+
+            .login-card {
+                padding: 34px 27px;
+            }
+
+            .login-card::before {
+                left: 28px;
+            }
+
+            .login-heading {
+                font-size: 27px;
+            }
+
+            .login-description {
+                margin-bottom: 30px;
+            }
+        }
+
+        @media (max-width: 370px) {
+            .brand {
+                gap: 12px;
+            }
+
+            .brand-logo {
+                width: 80px;
+            }
+
+            .brand-name {
+                font-size: 12px;
+            }
+
+            .brand-subtitle {
+                font-size: 10px;
+            }
+
+            .login-card {
+                padding: 30px 22px;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                transition: none !important;
+                animation: none !important;
+            }
         }
     </style>
 </head>
-<body class="min-h-screen flex items-center justify-center bg-gray-100">
 
-<div class="w-full max-w-md">
-    <div class="bg-white shadow-xl rounded-2xl p-8 md:p-10 border border-gray-100">
+<body>
 
-        <!-- Logo -->
-        <div class="flex justify-center mb-6">
-            <img src="{% static 'images/logo.png' %}" alt="Logo de l'entreprise" class="h-20 w-auto">
-        </div>
+<main class="auth-page">
 
-        <!-- Header -->
-        <div class="text-center mb-8">
-            <h1 class="text-3xl font-extrabold text-gray-800">Connexion</h1>
-            <p class="text-gray-500 text-base mt-2">Accédez à votre espace sécurisé</p>
-        </div>
+    <div class="auth-container">
 
-        <!-- Formulaire -->
-        <form method="post" class="space-y-6" novalidate>
-            {% csrf_token %}
+        <!-- =================================
+             BRAND PREMO
+        ================================= -->
 
-            {% if form.non_field_errors %}
-            <div class="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-4 mb-4" role="alert">
-                <p class="font-medium">⚠️ Erreur(s) :</p>
-                <ul class="list-disc pl-5 mt-2">
-                    {% for error in form.non_field_errors %}
-                        <li>{{ error }}</li>
-                    {% endfor %}
-                </ul>
+        <header class="brand">
+
+            <div class="brand-logo">
+
+                <img
+                    src="{% static 'images/logo.png' %}"
+                    alt="Logo PREMO"
+                >
+
             </div>
-            {% endif %}
 
-            <!-- Rendu du formulaire Django personnalisé -->
-            <div class="space-y-4">
-                {% for field in form %}
-                    <div class="form-field">
-                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                        {{ field }}
-                        {% if field.errors %}
-                            <ul class="errorlist">
-                                {% for error in field.errors %}
+            <div class="brand-divider"
+                 aria-hidden="true"></div>
+
+            <div class="brand-info">
+
+                <span class="brand-name">
+                    Matrice des compétences
+                </span>
+
+                <span class="brand-subtitle">
+                    Plateforme de gestion des qualifications
+                </span>
+
+            </div>
+
+        </header>
+
+
+        <!-- =================================
+             LOGIN CARD
+        ================================= -->
+
+        <section class="login-card"
+                 aria-labelledby="login-title">
+
+            <!-- HEADER -->
+
+            <div class="form-eyebrow">
+                Espace professionnel
+            </div>
+
+            <h1 class="login-heading"
+                id="login-title">
+                Connexion
+            </h1>
+
+            <p class="login-description">
+                Connectez-vous avec vos identifiants
+                professionnels pour accéder à votre espace
+                de gestion des compétences.
+            </p>
+
+
+            <!-- =================================
+                 DJANGO FORM
+            ================================= -->
+
+            <form method="post" novalidate>
+
+                {% csrf_token %}
+
+                {% if next %}
+
+                    <input
+                        type="hidden"
+                        name="next"
+                        value="{{ next }}"
+                    >
+
+                {% endif %}
+
+
+                <!-- GENERAL ERRORS -->
+
+                {% if form.non_field_errors %}
+
+                    <div class="error-alert"
+                         role="alert">
+
+                        <div class="error-icon"
+                             aria-hidden="true">
+                            !
+                        </div>
+
+                        <div class="error-content">
+
+                            <strong class="error-title">
+                                Connexion impossible
+                            </strong>
+
+                            <ul>
+
+                                {% for error in form.non_field_errors %}
+
                                     <li>{{ error }}</li>
+
                                 {% endfor %}
+
                             </ul>
-                        {% endif %}
+
+                        </div>
+
                     </div>
+
+                {% endif %}
+
+
+                <!-- FORM FIELDS -->
+
+                {% for field in form %}
+
+                    {% if field.is_hidden %}
+
+                        {{ field }}
+
+                    {% else %}
+
+                        <div class="form-field">
+
+                            <label for="{{ field.id_for_label }}">
+                                {{ field.label }}
+                            </label>
+
+                            <div class="input-wrapper">
+
+                                {{ field }}
+
+                                {% if field.name == 'password' %}
+
+                                    <button
+                                        type="button"
+                                        id="passwordToggle"
+                                        class="password-toggle"
+                                        aria-label="Afficher le mot de passe"
+                                        aria-pressed="false"
+                                        hidden
+                                    >
+                                        Afficher
+                                    </button>
+
+                                {% endif %}
+
+                            </div>
+
+
+                            <!-- HELP TEXT -->
+
+                            {% if field.help_text %}
+
+                                <p class="field-help">
+                                    {{ field.help_text }}
+                                </p>
+
+                            {% endif %}
+
+
+                            <!-- FIELD ERRORS -->
+
+                            {% if field.errors %}
+
+                                <ul class="field-errors"
+                                    role="alert">
+
+                                    {% for error in field.errors %}
+
+                                        <li>{{ error }}</li>
+
+                                    {% endfor %}
+
+                                </ul>
+
+                            {% endif %}
+
+                        </div>
+
+                    {% endif %}
+
                 {% endfor %}
-            </div>
 
-            <div>
-                <button type="submit" 
-                    class="w-full mt-4 inline-flex items-center justify-center px-8 py-3 border border-transparent text-base font-semibold rounded-xl text-white bg-indigo-600 hover:bg-indigo-700 shadow-lg transition-all duration-200 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                    Se connecter
+
+                <!-- SUBMIT -->
+
+                <button
+                    type="submit"
+                    class="submit-btn"
+                >
+
+                    <span>Se connecter</span>
+
+                    <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.8"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        aria-hidden="true"
+                    >
+                        <path d="M5 12h14"/>
+                        <path d="M12 5l7 7-7 7"/>
+                    </svg>
+
                 </button>
-            </div>
-        </form>
 
-        <!-- Footer -->
-        <div class="text-center mt-8 text-sm text-gray-500">
-            <p>Besoin d’aide ? Veuillez contacter votre administrateur système.</p>
-        </div>
+            </form>
+
+
+            <!-- =================================
+                 SUPPORT
+            ================================= -->
+
+            <div class="card-footer">
+
+                <p class="support-title">
+                    Besoin d'aide pour vous connecter ?
+                </p>
+
+                <p class="support-description">
+                    Si vous rencontrez des difficultés
+                    pour accéder à votre compte, veuillez
+                    contacter votre administrateur système.
+                </p>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================
+             FOOTER
+        ================================= -->
+
+        <footer class="page-footer">
+
+            <div class="security-note">
+
+                <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                >
+                    <rect
+                        x="5"
+                        y="10"
+                        width="14"
+                        height="11"
+                        rx="2"
+                    />
+
+                    <path d="M8 10V7a4 4 0 018 0v3"/>
+                </svg>
+
+                Accès réservé aux utilisateurs autorisés
+
+            </div>
+
+            <p class="copyright">
+                © {% now "Y" %} PREMO.
+                Tous droits réservés.
+            </p>
+
+        </footer>
+
     </div>
-</div>
+
+</main>
+
+
+<!-- =================================
+     PASSWORD VISIBILITY
+================================= -->
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    const toggle =
+        document.getElementById('passwordToggle');
+
+    if (!toggle) return;
+
+    const wrapper =
+        toggle.closest('.input-wrapper');
+
+    if (!wrapper) return;
+
+    const passwordInput =
+        wrapper.querySelector('input');
+
+    if (!passwordInput) return;
+
+    passwordInput.setAttribute('data-password', '');
+
+    toggle.hidden = false;
+
+    toggle.addEventListener('click', function () {
+
+        const show =
+            passwordInput.type === 'password';
+
+        passwordInput.type =
+            show ? 'text' : 'password';
+
+        toggle.textContent =
+            show ? 'Masquer' : 'Afficher';
+
+        toggle.setAttribute(
+            'aria-label',
+            show
+                ? 'Masquer le mot de passe'
+                : 'Afficher le mot de passe'
+        );
+
+        toggle.setAttribute(
+            'aria-pressed',
+            String(show)
+        );
+
+    });
+
+});
+</script>
 
 </body>
 </html>

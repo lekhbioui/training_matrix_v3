@@ -1,6 +1,13 @@
+import logging
+
 from django import forms
 from django.contrib import messages
 from django.http import JsonResponse
+from django.http import FileResponse, Http404, HttpResponseForbidden
+from django.core.exceptions import ValidationError
+from django.core.paginator import Paginator
+from django.views.decorators.http import require_http_methods, require_safe
+from django.views.decorators.cache import never_cache
 from django.urls import reverse
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
@@ -14,11 +21,17 @@ from django.shortcuts import redirect, get_object_or_404
 from .forms import EmployeeExcelImportForm, EmployeeForm, EmployeeFormRH, EmployeeRHRegisterForm, EmployeeTransferForm, ProductionLineForm, RHTeamLeaderTrainingForm, TaskForm
 from .models import TrainingRecord
 from .forms import TrainingRecordForm
+from .forms import TrainingPlanImageForm, RequalificationForm
+from .services_requalification import create_requalification, decide_requalification, plan_display
+from .services_requalification import LEADER_REQUALIFICATION_DAYS, leader_tasks_to_requalify
+from django.db import DatabaseError, OperationalError
 from django.db.models import Q
 from .models import ProductionLine
 from django.contrib.auth.decorators import login_required, user_passes_test
 from .models import TrainingApprovalRequest
 from django.utils import timezone
+
+logger = logging.getLogger(__name__)
 
 from django.contrib.auth.views import LoginView
 from django.urls import reverse
@@ -112,419 +125,969 @@ def line_list(request):
 def matrix_view(request):
     user = request.user
 
-    # ═══════════════════════════════════════════════════════════════════
-    # NOTIFICATIONS RH
-    # ═══════════════════════════════════════════════════════════════════
-    my_decided_requests = TrainingApprovalRequest.objects.filter(
-        requested_by=user,
-        approved__isnull=False,
-        notification_seen=False
+    # ================================================================
+    # NOTIFICATIONS DES DÉCISIONS RH
+    # ================================================================
+
+    my_decided_requests = (
+        TrainingApprovalRequest.objects.filter(
+            requested_by=user,
+            approved__isnull=False,
+            notification_seen=False,
+        )
+        .select_related(
+            "employee",
+            "task",
+            "line",
+        )
+        .order_by("date_requested")
     )
-    
-    for req in my_decided_requests:
-        line_info = f" [{req.line.name}]" if req.line else ""
-        if req.approved:
+
+    for approval_request in my_decided_requests:
+        line_info = ""
+
+        if approval_request.line:
+            line_info = (
+                f" [{approval_request.line.name}]"
+            )
+
+        if approval_request.approved is True:
             messages.success(
                 request,
-                f"✅ Votre demande a été approuvée par RH : "
-                f"{req.employee} - {req.task}{line_info} "
-                f"(niveau {req.get_requested_level_display()})"
+                (
+                    "✅ Votre demande a été approuvée par RH : "
+                    f"{approval_request.employee} - "
+                    f"{approval_request.task}"
+                    f"{line_info} "
+                    f"(niveau "
+                    f"{approval_request.get_requested_level_display()})"
+                ),
             )
-        else:
+
+        elif approval_request.approved is False:
+            refusal_message = (
+                "❌ Votre demande a été refusée par RH : "
+                f"{approval_request.employee} - "
+                f"{approval_request.task}"
+                f"{line_info} "
+                f"(niveau "
+                f"{approval_request.get_requested_level_display()})"
+            )
+
+            if approval_request.rejection_reason:
+                refusal_message += (
+                    f" — Motif : "
+                    f"{approval_request.rejection_reason}"
+                )
+
             messages.warning(
                 request,
-                f"❌ Votre demande a été refusée par RH : "
-                f"{req.employee} - {req.task}{line_info} "
-                f"(niveau {req.get_requested_level_display()})"
+                refusal_message,
             )
-        req.notification_seen = True
-        req.save()
 
-    # ═══════════════════════════════════════════════════════════════════
-    # RÉCUPÉRATION DES LIGNES
-    # ═══════════════════════════════════════════════════════════════════
+        approval_request.notification_seen = True
+        approval_request.save(
+            update_fields=["notification_seen"]
+        )
+
+    # ================================================================
+    # RÉCUPÉRATION DES LIGNES ACCESSIBLES
+    # ================================================================
+
     selected_line_id = request.GET.get("line_id")
-    all_user_lines = ProductionLine.objects.filter(
-        team_leaders=user
-    ).prefetch_related('team_leaders')
-    has_multiple_lines = all_user_lines.count() > 1
 
-    # ═══════════════════════════════════════════════════════════════════
-    # TROUVER L'EMPLOYÉ DU CHEF D'ÉQUIPE CONNECTÉ
-    # ═══════════════════════════════════════════════════════════════════
+    all_user_lines = (
+        ProductionLine.objects.filter(
+            team_leaders=user
+        )
+        .prefetch_related("team_leaders")
+        .order_by("code", "name")
+    )
+
+    has_multiple_lines = (
+        all_user_lines.count() > 1
+    )
+
+    # ================================================================
+    # TROUVER LE PROFIL EMPLOYEE DU CHEF CONNECTÉ
+    # ================================================================
+
     team_leader_employee = None
 
-    if hasattr(user, 'employee_profile'):
-        try:
-            team_leader_employee = user.employee_profile
-        except Exception:
-            pass
+    try:
+        if hasattr(user, "employee_profile"):
+            team_leader_employee = (
+                user.employee_profile
+            )
+    except Exception:
+        team_leader_employee = None
 
     if not team_leader_employee:
-        team_leader_employee = Employee.objects.filter(
-            Q(first_name__iexact=user.first_name,
-              last_name__iexact=user.last_name) |
-            Q(matricule__iexact=user.username)
-        ).first()
+        team_leader_employee = (
+            Employee.objects.filter(
+                Q(user=user)
+                | Q(
+                    first_name__iexact=user.first_name,
+                    last_name__iexact=user.last_name,
+                )
+                | Q(
+                    matricule__iexact=user.username
+                )
+            )
+            .select_related(
+                "user",
+                "manager",
+                "line",
+            )
+            .first()
+        )
 
-    # ═══════════════════════════════════════════════════════════════════
-    # FILTRER PAR LIGNE SÉLECTIONNÉE
-    # ═══════════════════════════════════════════════════════════════════
+    # ================================================================
+    # SÉLECTION DE LA LIGNE
+    # ================================================================
+
     if selected_line_id:
         try:
-            selected_line_id = int(selected_line_id)
-            lines = all_user_lines.filter(id=selected_line_id)
+            selected_line_id = int(
+                selected_line_id
+            )
+
+            lines = all_user_lines.filter(
+                id=selected_line_id
+            )
+
         except (ValueError, TypeError):
-            lines = all_user_lines
             selected_line_id = None
+            lines = all_user_lines
+
     else:
+        # Si le chef possède plusieurs lignes,
+        # demander d'abord de sélectionner une ligne.
         if has_multiple_lines:
             lines_with_leaders = [
-                {"line": line, "leaders": line.team_leaders.all()}
+                {
+                    "line": line,
+                    "leaders": (
+                        line.team_leaders.all()
+                    ),
+                }
                 for line in all_user_lines
             ]
+
             context = {
-                "lines":              all_user_lines,
-                "lines_with_leaders": lines_with_leaders,
-                "employees":          [],
-                "matrix":             [],
-                "selected_line_id":   None,
-                "has_multiple_lines": has_multiple_lines,
-                "notifications":      [],
+                "lines": all_user_lines,
+                "lines_with_leaders": (
+                    lines_with_leaders
+                ),
+                "employees": [],
+                "matrix": [],
+                "selected_line_id": None,
+                "has_multiple_lines": (
+                    has_multiple_lines
+                ),
+                "notifications": [],
                 "development_alerts": [],
-                "completion_rate":    0,
-                "total_missing":      0,
-                "total_alerts":       0,
-                "total_critical":     0,
-                "total_ready":        0,
+                "completion_rate": 0,
+                "total_missing": 0,
+                "total_alerts": 0,
+                "total_critical": 0,
+                "total_warning": 0,
+                "total_ready": 0,
                 "show_line_selector": True,
+                "team_leader_employee": (
+                    team_leader_employee
+                ),
             }
-            return render(request, "matrix/matrix.html", context)
-        else:
-            lines = all_user_lines
+
+            return render(
+                request,
+                "matrix/matrix.html",
+                context,
+            )
+
+        lines = all_user_lines
 
     current_line = lines.first()
 
+    # ================================================================
+    # AUCUNE LIGNE DISPONIBLE
+    # ================================================================
+
     if not current_line:
         context = {
-            "lines":              all_user_lines,
-            "employees":          [],
-            "matrix":             [],
-            "selected_line_id":   None,
-            "has_multiple_lines": has_multiple_lines,
-            "notifications":      [],
+            "lines": all_user_lines,
+            "lines_with_leaders": [],
+            "current_line": None,
+            "employees": [],
+            "matrix": [],
+            "selected_line_id": None,
+            "has_multiple_lines": (
+                has_multiple_lines
+            ),
+            "notifications": [],
             "development_alerts": [],
-            "completion_rate":    0,
-            "total_missing":      0,
-            "total_alerts":       0,
-            "total_critical":     0,
-            "total_ready":        0,
+            "completion_rate": 0,
+            "total_missing": 0,
+            "total_alerts": 0,
+            "total_critical": 0,
+            "total_warning": 0,
+            "total_ready": 0,
+            "team_leader_employee": (
+                team_leader_employee
+            ),
+            "show_line_selector": True,
         }
-        return render(request, "matrix/matrix.html", context)
 
-    # ═══════════════════════════════════════════════════════════════════
-    # EMPLOYÉS VIA visible_lines
-    # ═══════════════════════════════════════════════════════════════════
-    team_leader_user_ids = User.objects.filter(
-        managed_lines__isnull=False
-    ).distinct().values_list('id', flat=True)
+        return render(
+            request,
+            "matrix/matrix.html",
+            context,
+        )
+
+    selected_line_id = current_line.id
+
+    # ================================================================
+    # RÉCUPÉRER LES EMPLOYÉS QUI SONT CHEFS D'ÉQUIPE
+    # ================================================================
+
+    team_leader_user_ids = (
+        User.objects.filter(
+            managed_lines__isnull=False
+        )
+        .distinct()
+        .values_list("id", flat=True)
+    )
 
     team_leader_emp_ids = set(
         Employee.objects.filter(
             user_id__in=team_leader_user_ids
-        ).values_list('id', flat=True)
+        ).values_list("id", flat=True)
     )
 
-    line_employees = Employee.objects.filter(
-        visible_lines=current_line,
-        manager=user
-    ).exclude(
-        id__in=team_leader_emp_ids
-    ).select_related(
-        'manager', 'line'
-    ).order_by("last_name", "first_name")
+    # Ajouter aussi les profils trouvés par matricule ou nom.
+    team_leader_users = User.objects.filter(
+        id__in=team_leader_user_ids
+    )
+
+    for leader_user in team_leader_users:
+        leader_employee = (
+            Employee.objects.filter(
+                Q(user=leader_user)
+                | Q(
+                    first_name__iexact=(
+                        leader_user.first_name
+                    ),
+                    last_name__iexact=(
+                        leader_user.last_name
+                    ),
+                )
+                | Q(
+                    matricule__iexact=(
+                        leader_user.username
+                    )
+                )
+            )
+            .only("id")
+            .first()
+        )
+
+        if leader_employee:
+            team_leader_emp_ids.add(
+                leader_employee.id
+            )
+
+    # ================================================================
+    # EMPLOYÉS DE LA LIGNE
+    # ================================================================
+
+    line_employees = (
+        Employee.objects.filter(
+            visible_lines=current_line,
+            manager=user,
+        )
+        .exclude(
+            id__in=team_leader_emp_ids
+        )
+        .select_related(
+            "manager",
+            "line",
+            "user",
+        )
+        .prefetch_related(
+            "visible_lines",
+        )
+        .distinct()
+        .order_by(
+            "last_name",
+            "first_name",
+        )
+    )
 
     employees_list = list(line_employees)
 
+    # Ajouter le chef connecté au début de la matrice.
     if team_leader_employee:
-        if team_leader_employee.id not in [e.id for e in employees_list]:
-            employees_list.insert(0, team_leader_employee)
+        employee_ids_in_list = {
+            employee.id
+            for employee in employees_list
+        }
 
-    # ═══════════════════════════════════════════════════════════════════
-    # TÂCHES
-    # ═══════════════════════════════════════════════════════════════════
-    tasks = Task.objects.filter(
-        lines=current_line
-    ).distinct().order_by("order")
+        if (
+            team_leader_employee.id
+            not in employee_ids_in_list
+        ):
+            employees_list.insert(
+                0,
+                team_leader_employee,
+            )
 
-    # ═══════════════════════════════════════════════════════════════════
-    # FORMATIONS filtrées par ligne courante
-    # ═══════════════════════════════════════════════════════════════════
-    employee_ids = [e.id for e in employees_list]
+    # ================================================================
+    # TÂCHES DE LA LIGNE
+    # ================================================================
 
-    all_training_records = TrainingRecord.objects.filter(
-        employee_id__in=employee_ids,
-        task__in=tasks,
-        lines=current_line
-    ).select_related('employee', 'task', 'trainer').distinct()
+    tasks = list(
+        Task.objects.filter(
+            lines=current_line
+        )
+        .distinct()
+        .order_by(
+            "order",
+            "task_number",
+        )
+    )
 
+    employee_ids = [
+        employee.id
+        for employee in employees_list
+    ]
+
+    task_ids = [
+        task.id
+        for task in tasks
+    ]
+
+    # ================================================================
+    # FORMATIONS APPROUVÉES
+    # ================================================================
+
+    # Important :
+    # les formations PENDING ou REJECTED ne sont pas placées
+    # dans training_dict et ne sont donc pas affichées comme
+    # niveaux acquis dans la matrice.
+    all_training_records = (
+        TrainingRecord.objects.filter(
+            employee_id__in=employee_ids,
+            task_id__in=task_ids,
+            lines=current_line,
+            approval_status=(
+                TrainingRecord
+                .ApprovalStatus
+                .APPROVED
+            ),
+        )
+        .select_related(
+            "employee",
+            "task",
+            "trainer",
+            "approved_by",
+        )
+        .prefetch_related(
+            "lines",
+        )
+        .distinct()
+    )
+
+    # Dictionnaire :
+    # (employee_id, task_id, level) -> dernier TrainingRecord approuvé
     training_dict = {}
-    for rec in all_training_records:
-        key = (rec.employee_id, rec.task_id, rec.level)
-        if key not in training_dict:
-            training_dict[key] = rec
-        else:
-            existing_date = training_dict[key].date
-            new_date      = rec.date
-            if new_date and existing_date:
-                if new_date > existing_date:
-                    training_dict[key] = rec
-            elif new_date and not existing_date:
-                training_dict[key] = rec
 
-    # ═══════════════════════════════════════════════════════════════════
-    # ✅ DEMANDES D'APPROBATION — FILTRÉES PAR LIGNE COURANTE
-    # ═══════════════════════════════════════════════════════════════════
+    for training_record in all_training_records:
+        key = (
+            training_record.employee_id,
+            training_record.task_id,
+            training_record.level,
+        )
 
-    # ── Demandes avec ligne explicite = current_line ────────────────
-    requests_on_current_line = TrainingApprovalRequest.objects.filter(
-        employee_id__in=employee_ids,
-        task__in=tasks,
-        approved__isnull=True,
-        line=current_line                  # ✅ FILTRE PAR LIGNE
-    ).select_related('employee', 'task', 'line')
+        existing_record = training_dict.get(key)
 
-    # ── Demandes sans ligne (anciennes) dont la ligne principale
-    #    de l'employé = current_line (fallback rétrocompatibilité) ──
-    requests_no_line_fallback = TrainingApprovalRequest.objects.filter(
-        employee_id__in=employee_ids,
-        task__in=tasks,
-        approved__isnull=True,
-        line__isnull=True,                 # ✅ Pas de ligne assignée
-        employee__line=current_line        # ✅ Ligne principale = current_line
-    ).select_related('employee', 'task')
+        if not existing_record:
+            training_dict[key] = (
+                training_record
+            )
+            continue
 
-    # ── Construire le dictionnaire d'approbations ───────────────────
+        existing_date = existing_record.date
+        new_date = training_record.date
+
+        if new_date and existing_date:
+            if new_date > existing_date:
+                training_dict[key] = (
+                    training_record
+                )
+
+        elif new_date and not existing_date:
+            training_dict[key] = (
+                training_record
+            )
+
+    # ================================================================
+    # DEMANDES EN ATTENTE RH
+    # ================================================================
+
+    requests_on_current_line = (
+        TrainingApprovalRequest.objects.filter(
+            employee_id__in=employee_ids,
+            task_id__in=task_ids,
+            approved__isnull=True,
+            line=current_line,
+        )
+        .select_related(
+            "employee",
+            "task",
+            "line",
+            "training_record",
+        )
+    )
+
+    # Anciennes demandes qui ne possèdent pas de ligne.
+    requests_no_line_fallback = (
+        TrainingApprovalRequest.objects.filter(
+            employee_id__in=employee_ids,
+            task_id__in=task_ids,
+            approved__isnull=True,
+            line__isnull=True,
+            employee__line=current_line,
+        )
+        .select_related(
+            "employee",
+            "task",
+            "training_record",
+        )
+    )
+
+    # Dictionnaire :
+    # (employee_id, task_id, requested_level) -> dernière demande pending
     approval_dict = {}
 
-    for req in list(requests_on_current_line) + list(requests_no_line_fallback):
-        key = (req.employee_id, req.task_id, req.requested_level)
-        if key not in approval_dict:
-            approval_dict[key] = req
-        elif req.date_requested > approval_dict[key].date_requested:
-            approval_dict[key] = req
+    pending_requests = list(
+        requests_on_current_line
+    ) + list(
+        requests_no_line_fallback
+    )
 
-    # ═══════════════════════════════════════════════════════════════════
+    for approval_request in pending_requests:
+        key = (
+            approval_request.employee_id,
+            approval_request.task_id,
+            approval_request.requested_level,
+        )
+
+        existing_request = approval_dict.get(
+            key
+        )
+
+        if not existing_request:
+            approval_dict[key] = (
+                approval_request
+            )
+
+        elif (
+            approval_request.date_requested
+            > existing_request.date_requested
+        ):
+            approval_dict[key] = (
+                approval_request
+            )
+
+    # ================================================================
     # CONSTRUCTION DE LA MATRICE
-    # ═══════════════════════════════════════════════════════════════════
-    matrix = []
-    for task in tasks:
-        row = {'task': task, 'cells': []}
+    # ================================================================
 
-        for emp in employees_list:
-            is_team_leader = (
-                team_leader_employee and
-                emp.id == team_leader_employee.id
+    matrix = []
+
+    for task in tasks:
+        row = {
+            "task": task,
+            "cells": [],
+        }
+
+        for employee in employees_list:
+            is_team_leader = bool(
+                team_leader_employee
+                and employee.id
+                == team_leader_employee.id
             )
 
             team_leader_name = None
-            if emp.manager:
+
+            if employee.manager:
                 team_leader_name = (
-                    f"{emp.manager.first_name} {emp.manager.last_name}".strip()
-                    or emp.manager.username
+                    (
+                        f"{employee.manager.first_name} "
+                        f"{employee.manager.last_name}"
+                    ).strip()
+                    or employee.manager.username
                 )
 
-            emp_visible_lines = emp.visible_lines.filter(
-                team_leaders=user
-            ).exclude(id=current_line.id)
-
-            # ✅ Récupérer les demandes pending pour cet employé/tâche
-            pending_L = approval_dict.get(
-                (emp.id, task.id, TrainingLevel.SUPERVISED)
+            emp_visible_lines = (
+                employee.visible_lines.filter(
+                    team_leaders=user
+                )
+                .exclude(
+                    id=current_line.id
+                )
+                .distinct()
             )
-            pending_U = approval_dict.get(
-                (emp.id, task.id, TrainingLevel.TRAINER)
+
+            # --------------------------------------------------------
+            # Demandes en attente pour les trois niveaux
+            # --------------------------------------------------------
+
+            pending_i = approval_dict.get(
+                (
+                    employee.id,
+                    task.id,
+                    TrainingLevel.IN_TRAINING,
+                )
+            )
+
+            pending_l = approval_dict.get(
+                (
+                    employee.id,
+                    task.id,
+                    TrainingLevel.SUPERVISED,
+                )
+            )
+
+            pending_u = approval_dict.get(
+                (
+                    employee.id,
+                    task.id,
+                    TrainingLevel.TRAINER,
+                )
             )
 
             cell = {
-                'employee':         emp,
-                'is_team_leader':   is_team_leader,
-                'team_leader':      emp.manager,
-                'team_leader_name': team_leader_name,
-                'other_lines':      emp_visible_lines,
-                'is_multiline':     emp_visible_lines.exists(),
-                'I': training_dict.get(
-                    (emp.id, task.id, TrainingLevel.IN_TRAINING)
+                "employee": employee,
+                "is_team_leader": (
+                    is_team_leader
                 ),
-                'L': training_dict.get(
-                    (emp.id, task.id, TrainingLevel.SUPERVISED)
+                "team_leader": (
+                    employee.manager
                 ),
-                'U': training_dict.get(
-                    (emp.id, task.id, TrainingLevel.TRAINER)
+                "team_leader_name": (
+                    team_leader_name
                 ),
-                'pending': {
-                    1: pending_L,   # SUPERVISED
-                    3: pending_U,   # TRAINER
-                }
+                "other_lines": (
+                    emp_visible_lines
+                ),
+                "is_multiline": (
+                    emp_visible_lines.exists()
+                ),
+
+                # Niveaux approuvés uniquement.
+                "I": training_dict.get(
+                    (
+                        employee.id,
+                        task.id,
+                        TrainingLevel.IN_TRAINING,
+                    )
+                ),
+                "L": training_dict.get(
+                    (
+                        employee.id,
+                        task.id,
+                        TrainingLevel.SUPERVISED,
+                    )
+                ),
+                "U": training_dict.get(
+                    (
+                        employee.id,
+                        task.id,
+                        TrainingLevel.TRAINER,
+                    )
+                ),
+
+                # Demandes qui attendent RH.
+                "pending": {
+                    "I": pending_i,
+                    "L": pending_l,
+                    "U": pending_u,
+                },
             }
-            row['cells'].append(cell)
+
+            row["cells"].append(cell)
+
         matrix.append(row)
 
-    # ═══════════════════════════════════════════════════════════════════
+    # ================================================================
     # ALERTES DE DÉVELOPPEMENT
-    # ═══════════════════════════════════════════════════════════════════
+    # ================================================================
+
     today = timezone.now().date()
+
     development_alerts = []
 
-    THRESHOLD_I_TO_L = 7
-    THRESHOLD_L_TO_U = 21
+    threshold_i_to_l = 7
+    threshold_l_to_u = 21
 
-    for emp in employees_list:
-        is_leader = (team_leader_employee and emp.id == team_leader_employee.id)
+    for employee in employees_list:
+        is_leader = bool(
+            team_leader_employee
+            and employee.id
+            == team_leader_employee.id
+        )
+
+        # Ne pas générer d'alertes pour le chef d'équipe.
         if is_leader:
             continue
 
-        emp_alerts = []
+        employee_alerts = []
 
         for task in tasks:
-            record_I = training_dict.get((emp.id, task.id, TrainingLevel.IN_TRAINING))
-            record_L = training_dict.get((emp.id, task.id, TrainingLevel.SUPERVISED))
-            record_U = training_dict.get((emp.id, task.id, TrainingLevel.TRAINER))
+            record_i = training_dict.get(
+                (
+                    employee.id,
+                    task.id,
+                    TrainingLevel.IN_TRAINING,
+                )
+            )
 
-            if not record_I and not record_L and not record_U:
+            record_l = training_dict.get(
+                (
+                    employee.id,
+                    task.id,
+                    TrainingLevel.SUPERVISED,
+                )
+            )
+
+            record_u = training_dict.get(
+                (
+                    employee.id,
+                    task.id,
+                    TrainingLevel.TRAINER,
+                )
+            )
+
+            pending_i = approval_dict.get(
+                (
+                    employee.id,
+                    task.id,
+                    TrainingLevel.IN_TRAINING,
+                )
+            )
+
+            pending_l = approval_dict.get(
+                (
+                    employee.id,
+                    task.id,
+                    TrainingLevel.SUPERVISED,
+                )
+            )
+
+            pending_u = approval_dict.get(
+                (
+                    employee.id,
+                    task.id,
+                    TrainingLevel.TRAINER,
+                )
+            )
+
+            # Aucun niveau approuvé ni demande en attente.
+            if (
+                not record_i
+                and not record_l
+                and not record_u
+                and not pending_i
+                and not pending_l
+                and not pending_u
+            ):
                 continue
 
-            # ✅ Vérifier les pending sur CETTE ligne uniquement
-            has_pending_L = approval_dict.get(
-                (emp.id, task.id, TrainingLevel.SUPERVISED)
-            )
-            has_pending_U = approval_dict.get(
-                (emp.id, task.id, TrainingLevel.TRAINER)
-            )
+            # --------------------------------------------------------
+            # Niveau I approuvé -> prêt pour L
+            # --------------------------------------------------------
 
-            # CAS 1 : Niveau I → prêt pour L
-            if record_I and not record_L and not has_pending_L:
-                if record_I.date is None:
+            if (
+                record_i
+                and not record_l
+                and not pending_l
+            ):
+                if record_i.date is None:
                     continue
 
-                days_at_I = (today - record_I.date).days
+                days_at_i = (
+                    today - record_i.date
+                ).days
 
-                if days_at_I >= THRESHOLD_I_TO_L:
-                    urgency = (
-                        'critical' if days_at_I > 30 else
-                        'warning'  if days_at_I > 14 else
-                        'info'
+                if days_at_i >= threshold_i_to_l:
+                    if days_at_i > 30:
+                        urgency = "critical"
+                    elif days_at_i > 14:
+                        urgency = "warning"
+                    else:
+                        urgency = "info"
+
+                    employee_alerts.append(
+                        {
+                            "task": task,
+                            "current_level": "I",
+                            "next_level": "L",
+                            "days_since": days_at_i,
+                            "threshold": (
+                                threshold_i_to_l
+                            ),
+                            "days_overdue": (
+                                days_at_i
+                                - threshold_i_to_l
+                            ),
+                            "urgency": urgency,
+                            "training_date": (
+                                record_i.date
+                            ),
+                            "message": (
+                                f"Niveau I depuis "
+                                f"{days_at_i} jours "
+                                "→ Prêt pour L"
+                            ),
+                        }
                     )
-                    emp_alerts.append({
-                        'task':          task,
-                        'current_level': 'I',
-                        'next_level':    'L',
-                        'days_since':    days_at_I,
-                        'threshold':     THRESHOLD_I_TO_L,
-                        'days_overdue':  days_at_I - THRESHOLD_I_TO_L,
-                        'urgency':       urgency,
-                        'training_date': record_I.date,
-                        'message':       f"Niveau I depuis {days_at_I} jours → Prêt pour L",
-                    })
 
-            # CAS 2 : Niveau L → prêt pour U
-            if record_L and not record_U and not has_pending_U:
-                if record_L.date is None:
+            # --------------------------------------------------------
+            # Niveau L approuvé -> prêt pour U
+            # --------------------------------------------------------
+
+            if (
+                record_l
+                and not record_u
+                and not pending_u
+            ):
+                if record_l.date is None:
                     continue
 
-                days_at_L = (today - record_L.date).days
+                days_at_l = (
+                    today - record_l.date
+                ).days
 
-                if days_at_L >= THRESHOLD_L_TO_U:
-                    urgency = (
-                        'critical' if days_at_L > 60 else
-                        'warning'  if days_at_L > 30 else
-                        'info'
+                if days_at_l >= threshold_l_to_u:
+                    if days_at_l > 60:
+                        urgency = "critical"
+                    elif days_at_l > 30:
+                        urgency = "warning"
+                    else:
+                        urgency = "info"
+
+                    employee_alerts.append(
+                        {
+                            "task": task,
+                            "current_level": "L",
+                            "next_level": "U",
+                            "days_since": days_at_l,
+                            "threshold": (
+                                threshold_l_to_u
+                            ),
+                            "days_overdue": (
+                                days_at_l
+                                - threshold_l_to_u
+                            ),
+                            "urgency": urgency,
+                            "training_date": (
+                                record_l.date
+                            ),
+                            "message": (
+                                f"Niveau L depuis "
+                                f"{days_at_l} jours "
+                                "→ Prêt pour U"
+                            ),
+                        }
                     )
-                    emp_alerts.append({
-                        'task':          task,
-                        'current_level': 'L',
-                        'next_level':    'U',
-                        'days_since':    days_at_L,
-                        'threshold':     THRESHOLD_L_TO_U,
-                        'days_overdue':  days_at_L - THRESHOLD_L_TO_U,
-                        'urgency':       urgency,
-                        'training_date': record_L.date,
-                        'message':       f"Niveau L depuis {days_at_L} jours → Prêt pour U",
-                    })
 
-        if emp_alerts:
-            urgency_order = {'critical': 0, 'warning': 1, 'info': 2}
-            emp_alerts.sort(key=lambda x: (
-                urgency_order.get(x['urgency'], 3),
-                -x['days_since']
-            ))
-            development_alerts.append({
-                'employee':       emp,
-                'alerts':         emp_alerts,
-                'total_alerts':   len(emp_alerts),
-                'critical_count': len([a for a in emp_alerts if a['urgency'] == 'critical']),
-                'warning_count':  len([a for a in emp_alerts if a['urgency'] == 'warning']),
-                'ready_count':    len([a for a in emp_alerts if a['urgency'] == 'info']),
-                'max_urgency':    emp_alerts[0]['urgency'],
-            })
+        if employee_alerts:
+            urgency_order = {
+                "critical": 0,
+                "warning": 1,
+                "info": 2,
+            }
 
-    development_alerts.sort(key=lambda x: (
-        {'critical': 0, 'warning': 1, 'info': 2}.get(x['max_urgency'], 3),
-        -x['total_alerts']
-    ))
+            employee_alerts.sort(
+                key=lambda alert: (
+                    urgency_order.get(
+                        alert["urgency"],
+                        3,
+                    ),
+                    -alert["days_since"],
+                )
+            )
 
-    # ═══════════════════════════════════════════════════════════════════
+            development_alerts.append(
+                {
+                    "employee": employee,
+                    "alerts": employee_alerts,
+                    "total_alerts": len(
+                        employee_alerts
+                    ),
+                    "critical_count": len(
+                        [
+                            alert
+                            for alert
+                            in employee_alerts
+                            if alert["urgency"]
+                            == "critical"
+                        ]
+                    ),
+                    "warning_count": len(
+                        [
+                            alert
+                            for alert
+                            in employee_alerts
+                            if alert["urgency"]
+                            == "warning"
+                        ]
+                    ),
+                    "ready_count": len(
+                        [
+                            alert
+                            for alert
+                            in employee_alerts
+                            if alert["urgency"]
+                            == "info"
+                        ]
+                    ),
+                    "max_urgency": (
+                        employee_alerts[0][
+                            "urgency"
+                        ]
+                    ),
+                }
+            )
+
+    development_alerts.sort(
+        key=lambda item: (
+            {
+                "critical": 0,
+                "warning": 1,
+                "info": 2,
+            }.get(
+                item["max_urgency"],
+                3,
+            ),
+            -item["total_alerts"],
+        )
+    )
+
+    # ================================================================
     # STATISTIQUES
-    # ═══════════════════════════════════════════════════════════════════
-    total_cells  = len(employees_list) * tasks.count() * 3
+    # ================================================================
+
+    total_cells = (
+        len(employees_list)
+        * len(tasks)
+        * 3
+    )
+
     filled_cells = sum(
         1
         for task in tasks
-        for emp in employees_list
-        for level in [
+        for employee in employees_list
+        for level in (
             TrainingLevel.IN_TRAINING,
             TrainingLevel.SUPERVISED,
             TrainingLevel.TRAINER,
-        ]
-        if training_dict.get((emp.id, task.id, level))
+        )
+        if training_dict.get(
+            (
+                employee.id,
+                task.id,
+                level,
+            )
+        )
     )
 
-    completion_rate = (
-        round(filled_cells / total_cells * 100, 1)
-        if total_cells > 0 else 0
+    if total_cells > 0:
+        completion_rate = round(
+            filled_cells
+            / total_cells
+            * 100,
+            1,
+        )
+    else:
+        completion_rate = 0
+
+    total_alerts = sum(
+        item["total_alerts"]
+        for item in development_alerts
     )
 
-    total_alerts   = sum(a['total_alerts']   for a in development_alerts)
-    total_critical = sum(a['critical_count'] for a in development_alerts)
-    total_warning  = sum(a['warning_count']  for a in development_alerts)
-    total_ready    = sum(a['ready_count']    for a in development_alerts)
+    total_critical = sum(
+        item["critical_count"]
+        for item in development_alerts
+    )
+
+    total_warning = sum(
+        item["warning_count"]
+        for item in development_alerts
+    )
+
+    total_ready = sum(
+        item["ready_count"]
+        for item in development_alerts
+    )
+
+    # ================================================================
+    # INFORMATIONS DES LIGNES
+    # ================================================================
 
     lines_with_leaders = [
-        {"line": line, "leaders": line.team_leaders.all()}
+        {
+            "line": line,
+            "leaders": line.team_leaders.all(),
+        }
         for line in all_user_lines
     ]
 
+    # ================================================================
+    # CONTEXTE
+    # ================================================================
+
     context = {
-        "lines":                all_user_lines,
-        "current_line":         current_line,
-        "employees":            employees_list,
-        "matrix":               matrix,
-        "lines_with_leaders":   lines_with_leaders,
-        "selected_line_id":     selected_line_id,
-        "has_multiple_lines":   has_multiple_lines,
-        "development_alerts":   development_alerts,
-        "total_alerts":         total_alerts,
-        "total_critical":       total_critical,
-        "total_warning":        total_warning,
-        "total_ready":          total_ready,
-        "completion_rate":      completion_rate,
-        "total_missing":        total_alerts,
-        "team_leader_employee": team_leader_employee,
-        "show_line_selector":   False,
-        "notifications":        [],
+        "lines": all_user_lines,
+        "current_line": current_line,
+        "employees": employees_list,
+        "matrix": matrix,
+        "lines_with_leaders": (
+            lines_with_leaders
+        ),
+        "selected_line_id": (
+            selected_line_id
+        ),
+        "has_multiple_lines": (
+            has_multiple_lines
+        ),
+        "development_alerts": (
+            development_alerts
+        ),
+        "total_alerts": total_alerts,
+        "total_critical": (
+            total_critical
+        ),
+        "total_warning": total_warning,
+        "total_ready": total_ready,
+        "completion_rate": (
+            completion_rate
+        ),
+        "total_missing": total_alerts,
+        "team_leader_employee": (
+            team_leader_employee
+        ),
+        "show_line_selector": False,
+        "notifications": [],
     }
 
-    return render(request, "matrix/matrix.html", context)
+    return render(
+        request,
+        "matrix/matrix.html",
+        context,
+    )
 
 
 from django.contrib.auth import update_session_auth_hash
@@ -743,173 +1306,1297 @@ def employee_delete(request, pk):
 
 
 @login_required
+@require_safe
+@never_cache
+def training_requests_list(request):
+    # Toutes les demandes appartenant au chef connecté.
+    # Cette base permet de garantir qu'un chef ne peut jamais
+    # consulter les demandes d'un autre chef via les filtres.
+    base_requests = TrainingApprovalRequest.objects.filter(
+        requested_by=request.user,
+    )
+
+    requests = base_requests.select_related(
+        "employee",
+        "task",
+        "line",
+    ).order_by(
+        "-date_requested",
+        "-pk",
+    )
+
+    # -------------------------
+    # Filtre par statut
+    # -------------------------
+    status = request.GET.get("status", "all")
+
+    filters = {
+        "pending": None,
+        "approved": True,
+        "rejected": False,
+    }
+
+    if status in filters:
+        requests = requests.filter(
+            approved=filters[status]
+        )
+    else:
+        status = "all"
+
+    # -------------------------
+    # Filtre par opérateur
+    # -------------------------
+    selected_operator_id = None
+    operator_param = request.GET.get("operator", "").strip()
+
+    if operator_param:
+        try:
+            selected_operator_id = int(operator_param)
+        except (TypeError, ValueError):
+            selected_operator_id = None
+
+    if selected_operator_id is not None:
+        requests = requests.filter(
+            employee_id=selected_operator_id
+        )
+
+    # Afficher uniquement les opérateurs pour lesquels
+    # ce chef a déjà créé au moins une demande.
+    operators = Employee.objects.filter(
+        pk__in=base_requests.values("employee_id")
+    ).order_by("pk")
+
+    return render(
+        request,
+        "matrix/training_requests_list.html",
+        {
+            "page_obj": Paginator(
+                requests,
+                25,
+            ).get_page(request.GET.get("page")),
+
+            "selected_status": status,
+
+            "selected_operator_id": selected_operator_id,
+
+            "operators": operators,
+
+            "status_filters": [
+                ("all", "Toutes"),
+                ("pending", "En attente"),
+                ("approved", "Approuvées"),
+                ("rejected", "Refusées"),
+            ],
+        },
+    )
+
+
+def _delete_replaced_training_plan(storage, name):
+    if name:
+        try:
+            storage.delete(name)
+        except OSError:
+            logger.exception("Could not remove replaced training plan %s", name)
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+@never_cache
+def training_plan_upload(request, request_id):
+    approval_request = get_object_or_404(
+        TrainingApprovalRequest.objects.select_related("employee", "task", "line"),
+        pk=request_id,
+        requested_by=request.user,
+        requested_level__in=(TrainingLevel.SUPERVISED, TrainingLevel.TRAINER),
+    )
+    if not approval_request.is_pending:
+        return HttpResponseForbidden("Cette demande a été traitée. Le plan est en lecture seule.")
+
+    form = TrainingPlanImageForm(
+        request.POST if request.method == "POST" else None,
+        request.FILES if request.method == "POST" else None,
+    )
+    if request.method == "POST" and form.is_valid():
+        field = approval_request._meta.get_field("training_plan_image")
+        storage = field.storage
+        uploaded = form.cleaned_data["training_plan_image"]
+        old_name = approval_request.training_plan_image.name
+        new_name = storage.save(field.generate_filename(approval_request, uploaded.name), uploaded)
+        try:
+            with transaction.atomic():
+                # A conditional write also protects SQLite, where row locks are unavailable.
+                updated = TrainingApprovalRequest.objects.filter(
+                    pk=approval_request.pk,
+                    requested_by=request.user,
+                    approved__isnull=True,
+                    training_plan_image=old_name,
+                ).update(training_plan_image=new_name)
+                if updated:
+                    transaction.on_commit(
+                        lambda: _delete_replaced_training_plan(storage, old_name)
+                    )
+        except Exception:
+            _delete_replaced_training_plan(storage, new_name)
+            raise
+        if not updated:
+            _delete_replaced_training_plan(storage, new_name)
+            messages.error(request, "La demande a changé entre-temps. Rechargez-la avant de réessayer.")
+        else:
+            messages.success(request, "Plan de formation enregistré. La demande reste en attente de décision RH.")
+        return redirect("training_requests_list")
+
+    return render(request, "matrix/training_plan_form.html", {
+        "form": form, "approval_request": approval_request,
+    })
+
+
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_safe
+from django.views.decorators.cache import never_cache
+from django.shortcuts import get_object_or_404, render
+from django.http import FileResponse, Http404
+from django.urls import reverse
+
+
+@login_required
+@require_safe
+@never_cache
+def training_plan_view(request, request_id):
+    requests = TrainingApprovalRequest.objects.all()
+
+    if not is_rh_user(request.user):
+        requests = requests.filter(requested_by=request.user)
+
+    approval_request = get_object_or_404(
+        requests,
+        pk=request_id
+    )
+
+    if not approval_request.training_plan_image:
+        raise Http404("Aucun plan de formation disponible.")
+
+    return render(
+        request,
+        "matrix/training_plan_view.html",
+        {
+            "approval_request": approval_request,
+        }
+    )
+
+
+@login_required
+@require_safe
+@never_cache
+def training_plan_image(request, request_id):
+    requests = TrainingApprovalRequest.objects.all()
+
+    if not is_rh_user(request.user):
+        requests = requests.filter(requested_by=request.user)
+
+    approval_request = get_object_or_404(
+        requests,
+        pk=request_id
+    )
+
+    plan = approval_request.training_plan_image
+
+    if not plan:
+        raise Http404("Aucun plan de formation disponible.")
+
+    try:
+        stream = plan.open("rb")
+    except OSError:
+        raise Http404(
+            "Le fichier du plan de formation est indisponible."
+        )
+
+    suffix = plan.name.rsplit(".", 1)[-1].lower()
+
+    content_types = {
+        "jpg": "image/jpeg",
+        "jpeg": "image/jpeg",
+        "png": "image/png",
+        "webp": "image/webp",
+    }
+
+    response = FileResponse(
+        stream,
+        content_type=content_types.get(
+            suffix,
+            "application/octet-stream"
+        ),
+    )
+
+    response["X-Content-Type-Options"] = "nosniff"
+
+    return response
+
+
+def _get_requalification_plan(request, request_id):
+    requests = RequalificationApprovalRequest.objects.all()
+    if not is_rh_user(request.user):
+        requests = requests.filter(requested_by=request.user)
+    return get_object_or_404(requests, pk=request_id)
+
+
+@login_required
+@require_safe
+@never_cache
+def requalification_plan_view(request, request_id):
+    req = _get_requalification_plan(request, request_id)
+    if not req.has_training_plan:
+        raise Http404("Le plan de formation est indisponible.")
+    return render(request, "matrix/training_plan_view.html", {
+        "approval_request": req,
+        "plan_image_url": reverse("requalification_plan_image", args=[req.pk]),
+    })
+
+
+@login_required
+@require_safe
+@never_cache
+def requalification_plan_image(request, request_id):
+    req = _get_requalification_plan(request, request_id)
+    plan = req.training_plan_image
+    if not plan:
+        raise Http404("Le plan de formation est indisponible.")
+    try:
+        stream = plan.storage.open(plan.name, "rb")
+    except (OSError, ValueError):
+        raise Http404("Le plan de formation est indisponible.")
+    suffix = plan.name.rsplit(".", 1)[-1].lower()
+    response = FileResponse(stream, content_type={
+        "jpg": "image/jpeg", "jpeg": "image/jpeg", "png": "image/png", "webp": "image/webp",
+    }.get(suffix, "application/octet-stream"))
+    response["X-Content-Type-Options"] = "nosniff"
+    return response
+
+
+@login_required
 def training_record_list(request):
     records = TrainingRecord.objects.filter(employee__manager=request.user)
     return render(request, "matrix/trainingrecord_list.html", {"records": records})
 
 
-# views.py
+from django.db import transaction
+from django.utils import timezone
+
+from .models import (
+    TrainingQuestion,
+    TrainingQuestionAnswer,
+    TrainingQuestionnaire,
+)
+
+
+def save_level_i_questionnaire(
+    *,
+    training_record,
+    form,
+    answered_by,
+    line,
+):
+    """
+    Enregistre le questionnaire correspondant au niveau I.
+
+    En cas de modification d'un niveau I existant :
+    - le questionnaire est mis à jour ;
+    - les anciennes réponses sont remplacées.
+    """
+
+    general_comment = (
+        form.cleaned_data.get(
+            "questionnaire_general_comment",
+            "",
+        )
+        or ""
+    ).strip()
+
+    questionnaire, created = (
+        TrainingQuestionnaire.objects.update_or_create(
+            training_record=training_record,
+            defaults={
+                "line": line,
+                "answered_by": answered_by,
+                "general_comment": general_comment,
+                "completed_at": timezone.now(),
+            },
+        )
+    )
+
+    # Remplacer les réponses précédentes.
+    questionnaire.answers.all().delete()
+
+    answers_to_create = []
+    questionnaire_is_compliant = True
+
+    for item in form.training_questions:
+        question = item["question"]
+        answer_field_name = item["answer_field"]
+        comment_field_name = item["comment_field"]
+
+        answer_value = form.cleaned_data.get(
+            answer_field_name
+        )
+
+        comment_value = (
+            form.cleaned_data.get(
+                comment_field_name,
+                "",
+            )
+            or ""
+        ).strip()
+
+        boolean_answer = None
+        text_answer = ""
+        answer_is_compliant = True
+
+        if (
+            question.answer_type
+            == TrainingQuestion.AnswerType.YES_NO
+        ):
+            boolean_answer = answer_value
+
+            if (
+                answer_value is not None
+                and question.expected_boolean
+                is not None
+            ):
+                answer_is_compliant = (
+                    answer_value
+                    == question.expected_boolean
+                )
+
+        elif (
+            question.answer_type
+            == TrainingQuestion.AnswerType.TEXT
+        ):
+            text_answer = str(
+                answer_value or ""
+            ).strip()
+
+        if (
+            question.is_blocking
+            and not answer_is_compliant
+        ):
+            questionnaire_is_compliant = False
+
+        answers_to_create.append(
+            TrainingQuestionAnswer(
+                questionnaire=questionnaire,
+                question=question,
+                question_text_snapshot=question.text,
+                answer_type_snapshot=question.answer_type,
+                boolean_answer=boolean_answer,
+                text_answer=text_answer,
+                comment=comment_value,
+                is_compliant=answer_is_compliant,
+            )
+        )
+
+    if answers_to_create:
+        TrainingQuestionAnswer.objects.bulk_create(
+            answers_to_create
+        )
+
+    questionnaire.is_compliant = (
+        questionnaire_is_compliant
+    )
+    questionnaire.save(
+        update_fields=[
+            "is_compliant",
+            "line",
+            "answered_by",
+            "general_comment",
+            "completed_at",
+        ]
+    )
+
+    return questionnaire
+
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.db import transaction
+from django.shortcuts import redirect, render
+from django.urls import reverse
+
+from .forms import TrainingRecordForm
+from .models import (
+    TrainingApprovalRequest,
+    TrainingLevel,
+    TrainingRecord,
+)
+
 
 @login_required
 def training_record_create(request):
-    employee_id = request.GET.get('employee')
-    task_id     = request.GET.get('task')
-    line_id     = request.GET.get('line_id')
+    """
+    Niveau I :
+    - création du TrainingRecord en attente ;
+    - enregistrement du questionnaire ;
+    - création d'une demande RH ;
+    - aucune modification de la matrice avant validation RH.
+
+    Niveaux L et U :
+    - fonctionnement actuel avec demande RH.
+    """
+
+    employee_id = request.GET.get("employee")
+    task_id = request.GET.get("task")
+    line_id = request.GET.get("line_id")
+    level_id = request.GET.get("level")
 
     if request.method == "POST":
-        post_line_id      = request.POST.get('line')
-        effective_line_id = post_line_id or line_id
+        post_line_id = request.POST.get("line")
+
+        effective_line_id = (
+            post_line_id or line_id
+        )
 
         form = TrainingRecordForm(
             request.POST,
             user=request.user,
-            selected_line_id=effective_line_id
+            selected_line_id=effective_line_id,
         )
 
-        is_valid = False
-        try:
-            is_valid = form.is_valid()
-        except Exception:
-            pass
+        is_valid = form.is_valid()
 
-        # ── CAS 1 : Demande RH (niveau L ou U) ───────────────────────
-        if not is_valid and getattr(form, 'rh_request_created', False):
+        # ========================================================
+        # NIVEAUX L ET U : DEMANDE RH CRÉÉE PAR LE FORMULAIRE
+        # ========================================================
+        if (
+            not is_valid
+            and form.rh_request_created
+        ):
             info = form.rh_request_info
+
             if info:
-                line_name = info['line'].name if info.get('line') else 'N/A'
-                messages.info(
-                    request,
-                    f"📋 Demande RH créée : "
-                    f"{info['employee']} - {info['task']} "
-                    f"niveau {info['level']} sur '{line_name}'. "
-                    f"RH notifié par email."
+                line_name = (
+                    info["line"].name
+                    if info.get("line")
+                    else "N/A"
                 )
-            redirect_line = effective_line_id
-            if redirect_line:
+
+                if info.get("created"):
+                    messages.info(
+                        request,
+                        (
+                            "📋 Demande RH créée : "
+                            f"{info['employee']} — "
+                            f"{info['task']} — "
+                            f"niveau {info['level']} — "
+                            f"ligne « {line_name} »."
+                        ),
+                    )
+                else:
+                    messages.warning(
+                        request,
+                        (
+                            "⚠️ Une demande RH est déjà "
+                            "en attente pour cette formation."
+                        ),
+                    )
+
+            if effective_line_id:
                 return redirect(
-                    f"{reverse('matrix_view')}?line_id={redirect_line}"
+                    f"{reverse('matrix_view')}"
+                    f"?line_id={effective_line_id}"
                 )
+
             return redirect("matrix_view")
 
-        # ── CAS 2 : Formulaire valide (niveau I) ─────────────────────
+        # ========================================================
+        # NIVEAU I VALIDE
+        # ========================================================
         if is_valid:
-            employee      = form.cleaned_data['employee']
-            task          = form.cleaned_data['task']
-            level         = int(form.cleaned_data['level'])
-            line          = form.cleaned_data['line']
-            training_date = form.cleaned_data['date']
+            employee = form.cleaned_data["employee"]
+            task = form.cleaned_data["task"]
+            level = int(form.cleaned_data["level"])
+            line = form.cleaned_data["line"]
+            training_date = form.cleaned_data["date"]
+            trainer = form.cleaned_data.get("trainer")
 
-            # ══════════════════════════════════════════════════════════
-            # ✅ CRÉATION MANUELLE — NE PAS utiliser form.save()
-            # ══════════════════════════════════════════════════════════
-
-            # Chercher record existant UNIQUEMENT sur cette ligne
-            existing_record = TrainingRecord.objects.filter(
-                employee=employee,
-                task=task,
-                level=level,
-                lines=line,
-            ).first()
-
-            if existing_record:
-                existing_record.date = training_date
-                existing_record.save()
-                record = existing_record
-                action = "mis à jour"
-            else:
-                # ✅ Créer sans aucune ligne d'abord
-                record = TrainingRecord.objects.create(
-                    employee=employee,
-                    task=task,
-                    level=level,
-                    date=training_date,
+            if level != TrainingLevel.IN_TRAINING:
+                messages.error(
+                    request,
+                    (
+                        "❌ Les niveaux L et U doivent être "
+                        "envoyés via une demande RH."
+                    ),
                 )
-                # ✅ Associer UNIQUEMENT la ligne sélectionnée
-                # clear() avant add() pour éviter tout résidu
-                record.lines.clear()
-                record.lines.add(line)
-                action = "enregistré"
 
-            # ── Vérification post-save ────────────────────────────────
-            saved_lines = list(
-                record.lines.values_list('name', flat=True)
-            )
+                return render(
+                    request,
+                    "matrix/trainingrecord_form.html",
+                    {
+                        "form": form,
+                        "selected_line_id": (
+                            effective_line_id
+                        ),
+                    },
+                )
 
-            # ── MatrixEntry ───────────────────────────────────────────
-            matrix_entry, created = MatrixEntry.objects.get_or_create(
-                employee=employee,
-                task=task,
-                defaults={'level': level}
-            )
-            if not created and level > matrix_entry.level:
-                matrix_entry.level = level
-                matrix_entry.save()
+            try:
+                with transaction.atomic():
+                    # --------------------------------------------
+                    # Créer le niveau I en attente
+                    # --------------------------------------------
+                    record = TrainingRecord.objects.create(
+                        employee=employee,
+                        task=task,
+                        level=TrainingLevel.IN_TRAINING,
+                        date=training_date,
+                        trainer=trainer,
+                        approval_status=(
+                            TrainingRecord
+                            .ApprovalStatus
+                            .PENDING
+                        ),
+                    )
 
-            # ── Message succès ────────────────────────────────────────
-            level_label = {
-                TrainingLevel.IN_TRAINING: 'I',
-                TrainingLevel.SUPERVISED:  'L',
-                TrainingLevel.TRAINER:     'U',
-            }.get(level, str(level))
+                    record.lines.set([line])
 
-            date_str = (
-                training_date.strftime("%d/%m/%Y")
-                if training_date else "Sans date"
-            )
+                    # --------------------------------------------
+                    # Enregistrer le questionnaire
+                    # --------------------------------------------
+                    save_level_i_questionnaire(
+                        training_record=record,
+                        form=form,
+                        answered_by=request.user,
+                        line=line,
+                    )
 
-            messages.success(
+                    # --------------------------------------------
+                    # Créer la demande RH
+                    # --------------------------------------------
+                    approval_request = (
+                        TrainingApprovalRequest.objects.create(
+                            employee=employee,
+                            task=task,
+                            requested_level=(
+                                TrainingLevel.IN_TRAINING
+                            ),
+                            requested_by=request.user,
+                            training_date=training_date,
+                            line=line,
+                            training_record=record,
+                            approved=None,
+                        )
+                    )
+
+                    # --------------------------------------------
+                    # Envoyer l'email RH
+                    # --------------------------------------------
+                    form._send_rh_email(
+                        employee=employee,
+                        task=task,
+                        new_level=(
+                            TrainingLevel.IN_TRAINING
+                        ),
+                        days_since_last=0,
+                        training_date=training_date,
+                        request_object=approval_request,
+                        line=line,
+                    )
+
+                    # IMPORTANT :
+                    # ne pas créer ou modifier MatrixEntry ici.
+
+            except Exception as error:
+                messages.error(
+                    request,
+                    (
+                        "❌ Une erreur est survenue pendant "
+                        "la création de la demande RH : "
+                        f"{error}"
+                    ),
+                )
+
+                return render(
+                    request,
+                    "matrix/trainingrecord_form.html",
+                    {
+                        "form": form,
+                        "selected_line_id": (
+                            effective_line_id
+                        ),
+                    },
+                )
+
+            messages.info(
                 request,
-                f"✅ Formation {action} : "
-                f"{employee.first_name} {employee.last_name} — "
-                f"{task} niveau {level_label} "
-                f"du {date_str} sur '{line.name}'"
+                (
+                    "⏳ Le niveau I et son questionnaire ont "
+                    "été enregistrés. La formation est maintenant "
+                    "en attente de validation RH. Elle apparaîtra "
+                    "dans la matrice après approbation."
+                ),
             )
 
-            redirect_line = effective_line_id
-            if redirect_line:
+            if effective_line_id:
                 return redirect(
-                    f"{reverse('matrix_view')}?line_id={redirect_line}"
+                    f"{reverse('matrix_view')}"
+                    f"?line_id={effective_line_id}"
                 )
+
             return redirect("matrix_view")
 
-        # ── CAS 3 : Erreurs réelles ───────────────────────────────────
+        # ========================================================
+        # ERREURS DU FORMULAIRE
+        # ========================================================
         has_real_errors = any(
-            error.code != 'rh_request_pending'
-            for field_errors in form.errors.as_data().values()
+            error.code != "rh_request_pending"
+            for field_errors
+            in form.errors.as_data().values()
             for error in field_errors
         )
 
         if has_real_errors:
             messages.error(
                 request,
-                "❌ Enregistrement impossible. Merci de corriger les erreurs."
+                (
+                    "❌ Enregistrement impossible. "
+                    "Merci de corriger les erreurs "
+                    "du formulaire."
+                ),
             )
 
         return render(
             request,
             "matrix/trainingrecord_form.html",
-            {"form": form, "selected_line_id": line_id}
+            {
+                "form": form,
+                "selected_line_id": effective_line_id,
+            },
         )
 
-    # ── GET ───────────────────────────────────────────────────────────
-    else:
-        initial = {}
-        if employee_id:
-            initial['employee'] = employee_id
-        if task_id:
-            initial['task'] = task_id
+    # ============================================================
+    # GET
+    # ============================================================
+    initial = {}
 
-        form = TrainingRecordForm(
-            user=request.user,
-            initial=initial,
-            selected_line_id=line_id
-        )
+    if employee_id:
+        initial["employee"] = employee_id
+
+    if task_id:
+        initial["task"] = task_id
+
+    # Attention : le niveau I vaut 0.
+    if level_id is not None and level_id != "":
+        initial["level"] = level_id
+
+    form = TrainingRecordForm(
+        user=request.user,
+        initial=initial,
+        selected_line_id=line_id,
+    )
 
     return render(
         request,
         "matrix/trainingrecord_form.html",
-        {"form": form, "selected_line_id": line_id}
+        {
+            "form": form,
+            "selected_line_id": line_id,
+        },
     )
+
+from django.contrib import messages
+from django.contrib.auth.decorators import (
+    login_required,
+    user_passes_test,
+)
+from django.db import transaction
+from django.shortcuts import get_object_or_404, redirect
+from django.utils import timezone
+from django.views.decorators.http import require_POST
+
+from .models import (
+    MatrixEntry,
+    TrainingApprovalRequest,
+    TrainingRecord,
+)
+
+
+def is_rh_user(user):
+    return (
+        user.is_authenticated
+        and (
+            user.is_superuser
+            or user.groups.filter(
+                name__iexact="RH"
+            ).exists()
+        )
+    )
+
+
+from django.contrib import messages
+from django.contrib.auth.decorators import (
+    login_required,
+    user_passes_test,
+)
+from django.db import transaction
+from django.shortcuts import get_object_or_404, redirect
+from django.utils import timezone
+from django.views.decorators.http import require_POST
+
+from .models import (
+    MatrixEntry,
+    TrainingApprovalRequest,
+    TrainingLevel,
+    TrainingRecord,
+)
+
+
+
+
+
+@login_required
+@user_passes_test(is_rh_user)
+@require_POST
+@transaction.atomic
+def review_training_request(request, request_id):
+    """
+    Approuve ou refuse une demande de formation.
+
+    Synchronise :
+    - TrainingApprovalRequest.approved ;
+    - TrainingRecord.approval_status ;
+    - la ligne du TrainingRecord ;
+    - MatrixEntry.
+
+    Cette vue peut également réparer une demande déjà approuvée
+    dont le TrainingRecord est encore en statut pending.
+    """
+
+    approval_request = get_object_or_404(
+        TrainingApprovalRequest.objects
+        .select_for_update()
+        .select_related(
+            "employee",
+            "employee__line",
+            "task",
+            "line",
+            "training_record",
+            "reviewed_by",
+        ),
+        pk=request_id,
+    )
+
+    decision = request.POST.get("decision")
+
+    rejection_reason = (
+        request.POST.get(
+            "rejection_reason",
+            "",
+        )
+        or ""
+    ).strip()
+
+    if decision not in {"approve", "reject"}:
+        messages.error(
+            request,
+            "❌ Décision invalide.",
+        )
+        return redirect("rh_training_approvals")
+
+    # ============================================================
+    # DÉTERMINER LA LIGNE
+    # ============================================================
+
+    training_line = (
+        approval_request.line
+        or approval_request.employee.line
+    )
+
+    if not training_line:
+        messages.error(
+            request,
+            (
+                "❌ Aucune ligne de production n'est associée "
+                "à cette demande."
+            ),
+        )
+        return redirect("rh_training_approvals")
+
+    # ============================================================
+    # RECHERCHER LE TRAINING RECORD
+    # ============================================================
+
+    training_record = approval_request.training_record
+
+    if not training_record:
+        records_queryset = (
+            TrainingRecord.objects
+            .select_for_update()
+            .filter(
+                employee=approval_request.employee,
+                task=approval_request.task,
+                level=approval_request.requested_level,
+            )
+        )
+
+        # 1. Chercher un TrainingRecord pending sur la bonne ligne.
+        training_record = (
+            records_queryset.filter(
+                approval_status=(
+                    TrainingRecord
+                    .ApprovalStatus
+                    .PENDING
+                ),
+                lines=training_line,
+            )
+            .distinct()
+            .order_by("-created_at", "-id")
+            .first()
+        )
+
+        # 2. Chercher un pending sans filtrer la ligne.
+        if not training_record:
+            training_record = (
+                records_queryset.filter(
+                    approval_status=(
+                        TrainingRecord
+                        .ApprovalStatus
+                        .PENDING
+                    ),
+                )
+                .distinct()
+                .order_by("-created_at", "-id")
+                .first()
+            )
+
+        # 3. Chercher une formation déjà approuvée sur la ligne.
+        if not training_record:
+            training_record = (
+                records_queryset.filter(
+                    approval_status=(
+                        TrainingRecord
+                        .ApprovalStatus
+                        .APPROVED
+                    ),
+                    lines=training_line,
+                )
+                .distinct()
+                .order_by("-created_at", "-id")
+                .first()
+            )
+
+        if training_record:
+            approval_request.training_record = (
+                training_record
+            )
+
+    logger.info(
+        "RH training review: request_id=%s training_record_id=%s "
+        "decision=%s status_before=%s",
+        approval_request.pk,
+        training_record.pk if training_record else None,
+        decision,
+        (
+            training_record.approval_status
+            if training_record
+            else None
+        ),
+    )
+
+    # ============================================================
+    # APPROBATION
+    # ============================================================
+
+    if decision == "approve":
+        decision_date = timezone.now()
+
+        # Une demande déjà refusée ne doit pas être réapprouvée.
+        if approval_request.approved is False:
+            messages.error(
+                request,
+                (
+                    "❌ Cette demande a déjà été refusée. "
+                    "Créez une nouvelle demande."
+                ),
+            )
+            return redirect("rh_training_approvals")
+
+        # Si la demande et la formation sont déjà approuvées,
+        # aucune autre modification n'est nécessaire.
+        if (
+            approval_request.approved is True
+            and training_record
+            and training_record.approval_status
+            == TrainingRecord.ApprovalStatus.APPROVED
+            and training_record.lines.filter(
+                pk=training_line.pk
+            ).exists()
+        ):
+            messages.info(
+                request,
+                (
+                    "ℹ️ Cette demande et sa formation "
+                    "sont déjà approuvées."
+                ),
+            )
+            return redirect("rh_training_approvals")
+
+        # --------------------------------------------------------
+        # NIVEAU I
+        # --------------------------------------------------------
+        # Le niveau I doit déjà avoir un TrainingRecord,
+        # créé avec le questionnaire.
+        try:
+            approval_request.validate_training_plan_for_approval()
+        except ValidationError as error:
+            messages.error(request, " ".join(error.messages))
+            return redirect("rh_training_approvals")
+
+        if (
+            approval_request.requested_level
+            == TrainingLevel.IN_TRAINING
+            and not training_record
+        ):
+            messages.error(
+                request,
+                (
+                    "❌ Aucun TrainingRecord de niveau I "
+                    "n'est associé à cette demande."
+                ),
+            )
+            return redirect("rh_training_approvals")
+
+        # --------------------------------------------------------
+        # NIVEAUX L ET U
+        # --------------------------------------------------------
+        # Pour L ou U, créer le TrainingRecord s'il n'existe pas.
+        if not training_record:
+            training_record = (
+                TrainingRecord.objects.create(
+                    employee=approval_request.employee,
+                    task=approval_request.task,
+                    level=(
+                        approval_request.requested_level
+                    ),
+                    date=(
+                        approval_request.training_date
+                        or timezone.localdate()
+                    ),
+                    trainer=None,
+                    approval_status=(
+                        TrainingRecord
+                        .ApprovalStatus
+                        .APPROVED
+                    ),
+                    approved_by=request.user,
+                    approved_at=decision_date,
+                    rejection_reason="",
+                )
+            )
+
+        # ========================================================
+        # MISE À JOUR FORCÉE DU TRAINING RECORD
+        # ========================================================
+        # QuerySet.update() évite qu'un éventuel save() personnalisé
+        # remette approval_status à pending.
+
+        training_record_updates = {
+            "approval_status": (
+                TrainingRecord.ApprovalStatus.APPROVED
+            ),
+            "approved_by_id": request.user.id,
+            "approved_at": decision_date,
+            "rejection_reason": "",
+            "updated_at": decision_date,
+        }
+
+        if (
+            not training_record.date
+            and approval_request.training_date
+        ):
+            training_record_updates["date"] = (
+                approval_request.training_date
+            )
+
+        updated_record_count = (
+            TrainingRecord.objects.filter(
+                pk=training_record.pk
+            ).update(
+                **training_record_updates
+            )
+        )
+
+        if updated_record_count != 1:
+            raise RuntimeError(
+                "Le TrainingRecord n'a pas pu être mis à jour."
+            )
+
+        logger.info(
+            "RH training review: request_id=%s training_record_id=%s "
+            "status_after_save=%s",
+            approval_request.pk,
+            training_record.pk,
+            TrainingRecord.objects.values_list(
+                "approval_status",
+                flat=True,
+            ).get(pk=training_record.pk),
+        )
+
+        training_record.refresh_from_db()
+
+        logger.info(
+            "RH training review: request_id=%s training_record_id=%s "
+            "status_after_refresh=%s",
+            approval_request.pk,
+            training_record.pk,
+            training_record.approval_status,
+        )
+
+        # Associer obligatoirement la ligne au TrainingRecord.
+        training_record.lines.add(training_line)
+
+        logger.info(
+            "RH training review: request_id=%s training_record_id=%s "
+            "line_id=%s line_associated=%s",
+            approval_request.pk,
+            training_record.pk,
+            training_line.pk,
+            training_record.lines.filter(
+                pk=training_line.pk,
+            ).exists(),
+        )
+
+        # ========================================================
+        # MISE À JOUR DE LA DEMANDE RH
+        # ========================================================
+
+        decision_queryset = TrainingApprovalRequest.objects.filter(pk=approval_request.pk)
+        if approval_request.requires_training_plan:
+            # Fail the whole transaction if the plan or decision changed since review.
+            decision_queryset = decision_queryset.filter(
+                approved=approval_request.approved,
+                training_plan_image=approval_request.training_plan_image.name,
+            )
+        updated_request_count = (
+            decision_queryset.update(
+                approved=True,
+                reviewed_by_id=request.user.id,
+                reviewed_at=decision_date,
+                rejection_reason="",
+                notification_seen=False,
+                training_record_id=training_record.id,
+                line_id=training_line.id,
+            )
+        )
+
+        if updated_request_count != 1:
+            raise RuntimeError(
+                "La demande RH n'a pas pu être mise à jour."
+            )
+
+        approval_request.refresh_from_db()
+        training_record.refresh_from_db()
+
+        # ========================================================
+        # VÉRIFIER LA SYNCHRONISATION
+        # ========================================================
+
+        line_is_associated = (
+            training_record.lines.filter(
+                pk=training_line.pk
+            ).exists()
+        )
+
+        visible_in_matrix = (
+            TrainingRecord.objects.filter(
+                pk=training_record.pk,
+                employee_id=approval_request.employee_id,
+                task_id=approval_request.task_id,
+                level=approval_request.requested_level,
+                lines=training_line,
+                approval_status=(
+                    TrainingRecord
+                    .ApprovalStatus
+                    .APPROVED
+                ),
+            )
+            .distinct()
+            .exists()
+        )
+
+        if (
+            approval_request.approved is not True
+            or training_record.approval_status
+            != TrainingRecord.ApprovalStatus.APPROVED
+            or not line_is_associated
+            or not visible_in_matrix
+        ):
+            raise RuntimeError(
+                (
+                    "Échec de synchronisation : "
+                    f"demande={approval_request.approved}, "
+                    f"formation="
+                    f"{training_record.approval_status}, "
+                    f"ligne={line_is_associated}, "
+                    f"visible={visible_in_matrix}."
+                )
+            )
+
+        # ========================================================
+        # METTRE À JOUR MATRIX ENTRY
+        # ========================================================
+
+        matrix_entry, matrix_entry_created = (
+            MatrixEntry.objects.get_or_create(
+                employee=training_record.employee,
+                task=training_record.task,
+                defaults={
+                    "level": training_record.level,
+                    "last_trained": training_record.date,
+                },
+            )
+        )
+
+        if not matrix_entry_created:
+            matrix_entry_updates = {}
+
+            current_matrix_level = matrix_entry.level
+
+            # Ne jamais diminuer le niveau dans MatrixEntry.
+            if (
+                training_record.level
+                > current_matrix_level
+            ):
+                matrix_entry_updates["level"] = (
+                    training_record.level
+                )
+
+            # Mettre à jour la date si le niveau approuvé
+            # est égal ou supérieur au niveau actuel.
+            if (
+                training_record.level
+                >= current_matrix_level
+            ):
+                matrix_entry_updates["last_trained"] = (
+                    training_record.date
+                )
+
+            if matrix_entry_updates:
+                MatrixEntry.objects.filter(
+                    pk=matrix_entry.pk
+                ).update(
+                    **matrix_entry_updates
+                )
+
+        messages.success(
+            request,
+            (
+                "✅ La formation a été approuvée et "
+                "synchronisée avec la matrice. "
+                f"Niveau : "
+                f"{training_record.get_level_display()}. "
+                f"Ligne : {training_line.name}."
+            ),
+        )
+
+        return redirect("rh_training_approvals")
+
+    # ============================================================
+    # REFUS
+    # ============================================================
+
+    # Une demande approuvée ne doit pas être refusée.
+    if approval_request.approved is True:
+        messages.error(
+            request,
+            (
+                "❌ Cette demande est déjà approuvée "
+                "et ne peut plus être refusée."
+            ),
+        )
+        return redirect("rh_training_approvals")
+
+    # Une demande déjà refusée ne doit pas être retraitée.
+    if approval_request.approved is False:
+        messages.info(
+            request,
+            "ℹ️ Cette demande est déjà refusée.",
+        )
+        return redirect("rh_training_approvals")
+
+    if not rejection_reason:
+        messages.error(
+            request,
+            "❌ Le motif du refus est obligatoire.",
+        )
+        return redirect("rh_training_approvals")
+
+    decision_date = timezone.now()
+
+    # ============================================================
+    # REFUSER LA DEMANDE RH
+    # ============================================================
+
+    request_updates = {
+        "approved": False,
+        "reviewed_by_id": request.user.id,
+        "reviewed_at": decision_date,
+        "rejection_reason": rejection_reason,
+        "notification_seen": False,
+        "line_id": training_line.id,
+    }
+
+    if training_record:
+        request_updates["training_record_id"] = (
+            training_record.id
+        )
+
+    updated_request_count = (
+        TrainingApprovalRequest.objects.filter(
+            pk=approval_request.pk
+        ).update(
+            **request_updates
+        )
+    )
+
+    if updated_request_count != 1:
+        raise RuntimeError(
+            "La demande RH n'a pas pu être refusée."
+        )
+
+    # ============================================================
+    # REFUSER LE TRAINING RECORD
+    # ============================================================
+
+    if training_record:
+        updated_record_count = (
+            TrainingRecord.objects.filter(
+                pk=training_record.pk
+            ).update(
+                approval_status=(
+                    TrainingRecord
+                    .ApprovalStatus
+                    .REJECTED
+                ),
+                approved_by_id=request.user.id,
+                approved_at=decision_date,
+                rejection_reason=rejection_reason,
+                updated_at=decision_date,
+            )
+        )
+
+        if updated_record_count != 1:
+            raise RuntimeError(
+                (
+                    "La formation associée n'a pas pu "
+                    "être refusée."
+                )
+            )
+
+    messages.warning(
+        request,
+        (
+            "❌ La demande a été refusée. "
+            "Le niveau ne sera pas affiché dans la matrice."
+        ),
+    )
+
+    return redirect("rh_training_approvals")
 
 
 @login_required
@@ -1121,14 +2808,20 @@ def employee_history(request, employee_id):
 
     records = (
         records
-        .select_related('task', 'trainer', 'trainer__manager')
+        .select_related('task', 'trainer', 'trainer__manager', 'rh_approval_request', 'requalification_record__approval_request')
         .prefetch_related(
             Prefetch(
                 'lines',
                 queryset=ProductionLine.objects.prefetch_related(
-                    'team_leaders'
+                    Prefetch('team_leaders', queryset=User.objects.order_by('pk'))
                 ).order_by('name')
-            )
+            ),
+            Prefetch(
+                'task__lines',
+                queryset=ProductionLine.objects.prefetch_related(
+                    Prefetch('team_leaders', queryset=User.objects.order_by('pk'))
+                ),
+            ),
         )
         .order_by('-date')
     )
@@ -1174,6 +2867,7 @@ def employee_history(request, employee_id):
     # ════════════════════════════════════════════════════════════════
     # ✅ Formations avec chef d'équipe
     # ════════════════════════════════════════════════════════════════
+    can_review_plans = is_rh_user(request.user)
     formations = []
     for r in records:
         lines = list(r.lines.all())
@@ -1208,7 +2902,25 @@ def employee_history(request, employee_id):
                     chef_equipe_name = tl.get_full_name() or tl.username
                     break
 
+        # The document stays on the original request; no archive or file copy.
+        training_plan_url = None
+        training_plan_label = "—"
+        if r.is_approved and r.level in (TrainingLevel.SUPERVISED, TrainingLevel.TRAINER):
+            approval_request = getattr(r, "rh_approval_request", None)
+            training_plan_label = "Plan indisponible"
+            if approval_request and approval_request.is_approved and approval_request.has_training_plan:
+                if can_review_plans or approval_request.requested_by_id == request.user.pk:
+                    training_plan_url = reverse("training_plan_view", args=[approval_request.pk])
+                else:
+                    training_plan_label = "Accès réservé"
+
+        requalification = getattr(r, "requalification_record", None)
+        if requalification:
+            document = plan_display(requalification.approval_request, request.user, is_rh=can_review_plans)
+            training_plan_url = document["training_plan_url"]
+            training_plan_label = document["training_plan_label"]
         formations.append({
+            "requalification": requalification,
             "type":              "formation",
             "date":              r.date,
             "task":              r.task.title if r.task else "Tâche supprimée",
@@ -1217,11 +2929,35 @@ def employee_history(request, employee_id):
             "trainer":           r.trainer,          # ← formateur (Employee)
             "chef_equipe":       chef_equipe,         # ← chef d'équipe (User)
             "chef_equipe_name":  chef_equipe_name,    # ← nom du chef d'équipe
+            "training_plan_url": training_plan_url,
+            "training_plan_label": training_plan_label,
         })
 
     formations.sort(key=lambda x: x["date"], reverse=True)
 
-    history = formations + transfers
+    # Keep formation counts unchanged. Only standalone requalifications are
+    # additional events; a linked TrainingRecord is labelled in place above.
+    requalifications = RequalificationRecord.objects.filter(
+        employee=employee, training_record__isnull=True,
+    ).filter(Q(approval_request__isnull=True) | Q(approval_request__approved=True)).select_related(
+        'approval_request', 'line', 'task', 'evaluated_by',
+    )
+    if selected_line:
+        requalifications = requalifications.filter(line_id=selected_line)
+    if selected_level:
+        requalifications = requalifications.filter(new_level=selected_level)
+    standalone = []
+    for rec in requalifications:
+        standalone.append({
+            "type": "requalification", "date": rec.requalification_date,
+            "task": rec.task.title if rec.task else "Requalification globale",
+            "lines": [rec.line.name] if rec.line else [],
+            "level": rec.get_new_level_display(), "requalification": rec,
+            "chef_equipe_name": rec.get_requalifier_display(),
+            **plan_display(rec.approval_request, request.user, is_rh=can_review_plans),
+        })
+    formation_events = sorted(formations + standalone, key=lambda item: item["date"] or timezone.now().date(), reverse=True)
+    history = formation_events + transfers
     history.sort(key=lambda x: x["date"], reverse=True)
 
     all_lines  = ProductionLine.objects.all().order_by("name")
@@ -1239,6 +2975,7 @@ def employee_history(request, employee_id):
         "employee":      employee,
         "history":       history,
         "formations":    formations,
+        "formation_events": formation_events,
         "transfers":     transfers,
         "all_lines":     all_lines,
         "all_levels":    all_levels,
@@ -1712,18 +3449,41 @@ def line_detail(request, line_id):
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# ✅ VUE MODIFIÉE : rh_training_approvals
+# ✅ VUE MODIFIÉE : rh_training_approvals (Niveaux L & U uniquement)
+# ═══════════════════════════════════════════════════════════════════════════════
 @login_required
 def rh_training_approvals(request):
     """
-    ✅ Affiche et traite les demandes en tenant compte de la ligne.
+    ✅ Affiche et traite UNIQUEMENT les demandes de Niveau L et U.
+    Les niveaux I sont gérés séparément dans rh_level_i_approvals.
     """
     if not request.user.is_superuser:
         messages.error(request, "❌ Accès réservé au service RH.")
         return redirect('matrix_view')
 
+    # Compatibilité avec les anciens formulaires
+    if request.method == "POST":
+        request_id = request.POST.get("request_id")
+        action = request.POST.get("action")
+
+        if not request_id or action not in {"approve", "reject"}:
+            messages.error(request, "Requête de validation RH invalide.")
+            return redirect("rh_training_approvals")
+
+        post_data = request.POST.copy()
+        post_data["decision"] = action
+        request.POST = post_data
+
+        return review_training_request(
+            request,
+            request_id=int(request_id),
+        )
+
+    # ✅ MODIFICATION : Exclure les niveaux I
     pending = TrainingApprovalRequest.objects.filter(
         approved__isnull=True
+    ).exclude(
+        requested_level=TrainingLevel.IN_TRAINING  # ← Nouvelle exclusion
     ).select_related(
         'employee', 'employee__line',
         'task', 'requested_by', 'line'
@@ -1739,7 +3499,6 @@ def rh_training_approvals(request):
 
         req = get_object_or_404(TrainingApprovalRequest, pk=req_id)
 
-        # ── Vérifier que la demande est encore en attente ────────────
         if req.approved is not None:
             messages.warning(
                 request,
@@ -1749,16 +3508,9 @@ def rh_training_approvals(request):
             return redirect("rh_training_approvals")
 
         if action == "approve":
-
-            # ══════════════════════════════════════════════════════════
-            # ✅ DÉTERMINER LA BONNE LIGNE
-            # Priorité absolue : req.line (stockée lors de la demande)
-            # NE PAS utiliser employee.line comme fallback principal
-            # ══════════════════════════════════════════════════════════
             formation_line = req.line
 
             if not formation_line:
-                # Fallback uniquement si aucune ligne dans la demande
                 formation_line = req.employee.line
 
             training_date = (
@@ -1767,7 +3519,6 @@ def rh_training_approvals(request):
                 else timezone.now().date()
             )
 
-            # ── Vérifier doublon sur CETTE ligne ─────────────────────
             existing = None
             if formation_line:
                 existing = TrainingRecord.objects.filter(
@@ -1788,9 +3539,6 @@ def rh_training_approvals(request):
                     f"sur '{formation_line.name if formation_line else 'N/A'}'."
                 )
             else:
-                # ══════════════════════════════════════════════════════
-                # ✅ CRÉER LE TRAININGRECORD SUR LA BONNE LIGNE
-                # ══════════════════════════════════════════════════════
                 record = TrainingRecord.objects.create(
                     employee=req.employee,
                     task=req.task,
@@ -1799,14 +3547,11 @@ def rh_training_approvals(request):
                     trainer=None,
                 )
 
-                # ✅ clear() PUIS add() pour garantir
-                # qu'aucune autre ligne ne s'ajoute
                 record.lines.clear()
 
                 if formation_line:
                     record.lines.add(formation_line)
 
-                # ── Mettre à jour MatrixEntry ─────────────────────────
                 existing_entry = MatrixEntry.objects.filter(
                     employee=req.employee,
                     task=req.task
@@ -1835,15 +3580,14 @@ def rh_training_approvals(request):
                     f"(niveau {req.get_requested_level_display()})."
                 )
 
-            # ── Sauvegarder la décision ───────────────────────────────
-            req.approved          = True
-            req.decision_date     = timezone.now()
+            req.approved = True
+            req.decision_date = timezone.now()
             req.notification_seen = False
             req.save()
 
         elif action == "reject":
-            req.approved          = False
-            req.decision_date     = timezone.now()
+            req.approved = False
+            req.decision_date = timezone.now()
             req.notification_seen = False
             req.save()
 
@@ -1857,15 +3601,11 @@ def rh_training_approvals(request):
             )
 
         else:
-            messages.error(
-                request,
-                f"❌ Action inconnue : '{action}'."
-            )
+            messages.error(request, f"❌ Action inconnue : '{action}'.")
 
         return redirect("rh_training_approvals")
 
-    # ── GET ───────────────────────────────────────────────────────────
-    # Enrichir les demandes avec le record I existant pour contexte
+    # ── GET : Enrichir les demandes L/U ─────────────────────────────
     pending_with_context = []
     for req in pending:
         formation_line = req.line or req.employee.line
@@ -1880,26 +3620,239 @@ def rh_training_approvals(request):
             ).first()
 
         pending_with_context.append({
-            'request':       req,
+            'request': req,
             'formation_line': formation_line,
-            'record_I':      record_I,
-            'days_since_I':  (
+            'record_I': record_I,
+            'days_since_I': (
                 (req.training_date - record_I.date).days
                 if record_I and req.training_date and record_I.date
                 else None
             ),
         })
 
+    # ✅ Compteur pour la sidebar (badges de notification)
+    count_pending_i = TrainingApprovalRequest.objects.filter(
+        approved__isnull=True,
+        requested_level=TrainingLevel.IN_TRAINING
+    ).count()
+
     context = {
-        "pending":              pending,
+        "pending": pending,
         "pending_with_context": pending_with_context,
-        "total_pending":        pending.count(),
+        "total_pending": pending.count(),
+        "count_pending_i": count_pending_i,  # ← Pour la sidebar
     }
     return render(
         request,
         "matrix/rh_training_approvals.html",
         context
-    )# ═══════════════════════════════════════════════════════════════════════════════
+    )
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# ✅ NOUVELLE VUE : rh_level_i_approvals (Niveaux I + Questionnaires)
+# ═══════════════════════════════════════════════════════════════════════════════
+@login_required
+def rh_level_i_approvals(request):
+    """
+    ✅ Affiche et traite UNIQUEMENT les demandes de Niveau I.
+    Affiche les questionnaires complets remplis sur le terrain.
+    """
+    if not request.user.is_superuser:
+        messages.error(request, "❌ Accès réservé au service RH.")
+        return redirect('matrix_view')
+
+    # ── TRAITEMENT POST ─────────────────────────────────────────────
+    if request.method == "POST":
+        req_id = request.POST.get("request_id")
+        action = request.POST.get("action")
+        rejection_reason = request.POST.get("rejection_reason", "").strip()
+
+        if not req_id or action not in {"approve", "reject"}:
+            messages.error(request, "❌ Requête invalide.")
+            return redirect("rh_level_i_approvals")
+
+        req = get_object_or_404(
+            TrainingApprovalRequest,
+            pk=req_id,
+            requested_level=TrainingLevel.IN_TRAINING  # ← Sécurité
+        )
+
+        if req.approved is not None:
+            messages.warning(
+                request,
+                f"⚠️ Cette demande a déjà été traitée "
+                f"({'approuvée' if req.approved else 'refusée'})."
+            )
+            return redirect("rh_level_i_approvals")
+
+        # Déterminer la ligne de formation
+        formation_line = req.line or req.employee.line
+        training_date = req.training_date or timezone.now().date()
+
+        # Trouver le TrainingRecord associé (si créé lors de la saisie)
+        record = TrainingRecord.objects.filter(
+            employee=req.employee,
+            task=req.task,
+            level=TrainingLevel.IN_TRAINING,
+            lines=formation_line,
+        ).first()
+
+        if action == "approve":
+            # Si le record n'existe pas, on le crée
+            if not record:
+                record = TrainingRecord.objects.create(
+                    employee=req.employee,
+                    task=req.task,
+                    level=TrainingLevel.IN_TRAINING,
+                    date=training_date,
+                    trainer=None,
+                )
+                record.lines.clear()
+                if formation_line:
+                    record.lines.add(formation_line)
+
+            # Marquer le record comme approuvé
+            if hasattr(record, 'approval_status'):
+                record.approval_status = TrainingRecord.ApprovalStatus.APPROVED
+                record.save()
+
+            # Mettre à jour MatrixEntry
+            existing_entry = MatrixEntry.objects.filter(
+                employee=req.employee,
+                task=req.task
+            ).first()
+
+            if not existing_entry:
+                MatrixEntry.objects.create(
+                    employee=req.employee,
+                    task=req.task,
+                    level=TrainingLevel.IN_TRAINING
+                )
+            elif TrainingLevel.IN_TRAINING > existing_entry.level:
+                existing_entry.level = TrainingLevel.IN_TRAINING
+                existing_entry.save()
+
+            req.approved = True
+            req.decision_date = timezone.now()
+            req.notification_seen = False
+            req.save()
+
+            line_info = f" sur '{formation_line.name}'" if formation_line else ""
+            messages.success(
+                request,
+                f"✅ Formation Niveau I approuvée : "
+                f"{req.employee.first_name} {req.employee.last_name} — "
+                f"{req.task}{line_info}."
+            )
+
+        elif action == "reject":
+            # Marquer le record comme rejeté (si existant)
+            if record and hasattr(record, 'approval_status'):
+                record.approval_status = TrainingRecord.ApprovalStatus.REJECTED
+                record.save()
+
+            req.approved = False
+            req.decision_date = timezone.now()
+            req.notification_seen = False
+            if hasattr(req, 'rejection_reason'):
+                req.rejection_reason = rejection_reason
+            req.save()
+
+            messages.warning(
+                request,
+                f"❌ Formation Niveau I refusée : "
+                f"{req.employee.first_name} {req.employee.last_name} — "
+                f"{req.task}."
+            )
+
+        return redirect("rh_level_i_approvals")
+
+    # ── GET : Récupération des demandes Niveau I ────────────────────
+    pending = TrainingApprovalRequest.objects.filter(
+        approved__isnull=True,
+        requested_level=TrainingLevel.IN_TRAINING  # ← Uniquement Niveau I
+    ).select_related(
+        'employee', 'employee__line',
+        'task', 'requested_by', 'line'
+    ).order_by("-date_requested")
+
+    # Enrichir chaque demande avec son questionnaire
+    pending_with_questionnaire = []
+    for req in pending:
+        formation_line = req.line or req.employee.line
+
+        # Chercher le TrainingRecord associé
+        record = TrainingRecord.objects.filter(
+            employee=req.employee,
+            task=req.task,
+            level=TrainingLevel.IN_TRAINING,
+            lines=formation_line,
+        ).first()
+
+        # Récupérer les réponses au questionnaire
+        questionnaire_data = None
+        if record:
+            try:
+                questionnaire = record.questionnaire
+                answers_list = []
+                
+                for ans in questionnaire.answers.select_related('question').all():
+                    # Déterminer si la réponse est conforme
+                    is_conforme = None
+                    display_value = "—"
+                    
+                    if ans.question.answer_type == 'YES_NO':
+                        if ans.boolean_answer is True:
+                            display_value = "Oui"
+                        elif ans.boolean_answer is False:
+                            display_value = "Non"
+                        
+                        # Vérifier la conformité
+                        if ans.question.expected_boolean is not None:
+                            is_conforme = (ans.boolean_answer == ans.question.expected_boolean)
+                    else:
+                        display_value = ans.text_answer or "—"
+                    
+                    answers_list.append({
+                        'question': ans.question,
+                        'value': display_value,
+                        'comment': ans.comment or "",
+                        'is_conforme': is_conforme,
+                        'is_blocking': ans.question.is_blocking,
+                    })
+                
+                questionnaire_data = {
+                    'answers': answers_list,
+                    'general_comment': questionnaire.general_comment or "",
+                }
+            except Exception:
+                questionnaire_data = None
+
+        pending_with_questionnaire.append({
+            'request': req,
+            'formation_line': formation_line,
+            'record': record,
+            'questionnaire': questionnaire_data,
+        })
+
+    # Compteur pour la sidebar
+    count_pending_lu = TrainingApprovalRequest.objects.filter(
+        approved__isnull=True
+    ).exclude(
+        requested_level=TrainingLevel.IN_TRAINING
+    ).count()
+
+    context = {
+        "pending_with_questionnaire": pending_with_questionnaire,
+        "total_pending_i": pending.count(),
+        "count_pending_lu": count_pending_lu,
+    }
+    return render(
+        request,
+        "matrix/rh_level_i_approvals.html",
+        context
+    )
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -3401,12 +5354,12 @@ def rh_dashboard(request):
 
     approved_this_month = TrainingApprovalRequest.objects.filter(
         approved=True,
-        decision_date__gte=current_month_start,
+        reviewed_at__gte=current_month_start,
     ).count()
 
     rejected_this_month = TrainingApprovalRequest.objects.filter(
         approved=False,
-        decision_date__gte=current_month_start,
+        reviewed_at__gte=current_month_start,
     ).count()
 
     total_requests_this_month = (
@@ -4522,6 +6475,10 @@ from .models import RequalificationRecord
 
 @login_required
 def employees_to_requalify(request):
+    return _requalification_form_page(request)
+
+
+def _requalification_form_page(request, form=None):
     """
     ✅ Affiche les employés à requalifier après 188 jours.
     Prend en compte les visible_lines (pas seulement la ligne principale).
@@ -4542,7 +6499,7 @@ def employees_to_requalify(request):
         notification_seen=False
     ).select_related('employee', 'task')
 
-    for req in my_decided:
+    for req in (my_decided if form is None else []):
         if req.approved:
             task_info  = f" - {req.task.title}" if req.task else ""
             level_info = (
@@ -4800,7 +6757,14 @@ def employees_to_requalify(request):
     else:
         my_processed_requests = None
 
+    bound_form = form if form is not None else RequalificationForm(user=user)
+    employee_lines = {}
+    for item in employees_to_requalify_list:
+        employee_lines.setdefault(str(item['employee'].pk), []).append({'line_id': item['line'].pk})
     context = {
+        'form': bound_form,
+        'employee_lines_json': employee_lines,
+        'selected_employee': bound_form.cleaned_data.get('employee_id') if bound_form.is_bound else None,
         'employees_to_requalify': employees_to_requalify_list,
         'employees_for_form':     employees_for_form,
         'employees':              employees,
@@ -4835,229 +6799,32 @@ def employees_to_requalify(request):
 
 @login_required
 def process_requalification(request):
-    """
-    ✅ Traite le formulaire de requalification.
-    Utilise la ligne du formulaire (pas employee.line).
-    """
     if request.method != 'POST':
         return redirect('employees_to_requalify')
-
-    user  = request.user
-    today = timezone.now().date()
-
-    # ── Données du formulaire ─────────────────────────────────────────
-    employee_id          = request.POST.get('employee_id', '').strip()
-    task_id              = request.POST.get('task_id', '').strip()
-    line_id              = request.POST.get('line_id', '').strip()  # ← NOUVEAU
-    result               = request.POST.get('result', '').strip()
-    new_level            = request.POST.get('new_level', '').strip()
-    notes                = request.POST.get('notes', '')
-    requalifier_name     = request.POST.get('requalifier_name', '')
-    requalification_date = request.POST.get('requalification_date', '').strip()
-
-    # ── Validations ───────────────────────────────────────────────────
-    if not employee_id:
-        messages.error(request, "❌ Veuillez sélectionner un employé.")
-        return redirect('employees_to_requalify')
-
-    try:
-        employee_id = int(employee_id)
-    except ValueError:
-        messages.error(request, "❌ Identifiant employé invalide.")
-        return redirect('employees_to_requalify')
-
-    if not result or result not in [
-        'PASS', 'UPGRADE', 'DOWNGRADE', 'RETRAIN'
-    ]:
-        messages.error(
-            request,
-            "❌ Veuillez sélectionner un résultat de requalification."
-        )
-        return redirect('employees_to_requalify')
-
-    # ── Date ──────────────────────────────────────────────────────────
-    if requalification_date:
+    # Resolve object authorization before parsing/validating the uploaded image.
+    employees = Employee.objects.all()
+    if not (request.user.is_superuser or request.user.groups.filter(name="RH").exists()):
+        employees = employees.filter(manager=request.user)
+    employee_id = request.POST.get('employee_id', '')
+    if employee_id.isdecimal() and not employees.filter(pk=employee_id).exists():
+        return HttpResponseForbidden("Vous n’êtes pas autorisé à effectuer cette requalification.")
+    form = RequalificationForm(request.POST, request.FILES, user=request.user)
+    if form.is_valid():
         try:
-            from datetime import datetime
-            requalification_date = datetime.strptime(
-                requalification_date, '%Y-%m-%d'
-            ).date()
-        except ValueError:
-            requalification_date = today
-    else:
-        requalification_date = today
-
-    # ── Employé ───────────────────────────────────────────────────────
-    try:
-        employee = Employee.objects.get(id=employee_id)
-    except Employee.DoesNotExist:
-        messages.error(request, "❌ Employé introuvable.")
-        return redirect('matrix_view')
-
-    is_rh = user.is_superuser or user.groups.filter(name="RH").exists()
-
-    if not is_rh and employee.manager != user:
-        messages.error(
-            request,
-            "❌ Vous n'êtes pas autorisé à effectuer cette requalification."
-        )
-        return redirect('matrix_view')
-
-    # ══════════════════════════════════════════════════════════════════
-    # ✅ LIGNE — depuis le formulaire (pas employee.line)
-    # ══════════════════════════════════════════════════════════════════
-    formation_line = None
-    if line_id:
-        try:
-            formation_line = ProductionLine.objects.get(pk=int(line_id))
-        except (ProductionLine.DoesNotExist, ValueError):
-            pass
-
-    # Fallback uniquement si aucune ligne soumise
-    if not formation_line:
-        formation_line = employee.line
-
-    # ── Tâche ─────────────────────────────────────────────────────────
-    task = None
-    if task_id:
-        try:
-            task = Task.objects.get(id=int(task_id))
-        except (ValueError, Task.DoesNotExist):
-            task = None
-
-    # ── Niveau précédent ──────────────────────────────────────────────
-    previous_level = None
-    last_record    = None
-
-    if task and formation_line:
-        # ✅ Chercher le dernier record SUR CETTE LIGNE
-        last_record = TrainingRecord.objects.filter(
-            employee=employee,
-            task=task,
-            lines=formation_line,        # ← filtre par ligne
-        ).order_by('-date').first()
-
-        if last_record:
-            previous_level = last_record.level
-
-    # ── Nouveau niveau ────────────────────────────────────────────────
-    if new_level:
-        try:
-            new_level = int(new_level)
-        except ValueError:
-            new_level = previous_level if previous_level is not None else 0
-    else:
-        new_level = previous_level if previous_level is not None else 0
-
-    # ── Calcul des jours ──────────────────────────────────────────────
-    if last_record and last_record.date:
-        days_since            = (requalification_date - last_record.date).days
-        original_training_date = last_record.date
-    else:
-        days_since            = 0
-        original_training_date = requalification_date
-
-    # Labels
-    result_labels = {
-        'PASS':     'Réussi - Maintien',
-        'UPGRADE':  'Réussi - Montée',
-        'DOWNGRADE':'Échec - Descente',
-        'RETRAIN':  'À reformer',
-    }
-    level_labels = {0: 'I', 1: 'L', 3: 'U'}
-    task_info    = f" - {task.title}" if task else ""
-    line_info    = f" sur '{formation_line.name}'" if formation_line else ""
-    level_info   = (
-        f" → Niveau {level_labels.get(new_level, new_level)}"
-        if task else ""
-    )
-
-    if is_rh:
-        # ── RH : Enregistrement direct ────────────────────────────────
-        RequalificationRecord.objects.create(
-            employee=employee,
-            task=task,
-            line=formation_line,         # ← bonne ligne
-            previous_level=previous_level if previous_level is not None else 0,
-            result=result,
-            new_level=new_level,
-            original_training_date=original_training_date,
-            requalification_date=requalification_date,
-            days_since_training=days_since,
-            evaluated_by=user,
-            notes=notes,
-            requalifier_name=requalifier_name,
-        )
-
-        if task and formation_line:
-            # ✅ Créer le TrainingRecord SUR LA BONNE LIGNE
-            new_training = TrainingRecord.objects.create(
-                employee=employee,
-                task=task,
-                level=new_level,
-                date=requalification_date,
-                trainer=None,
-            )
-            new_training.lines.clear()
-            new_training.lines.add(formation_line)  # ← bonne ligne
-
-            MatrixEntry.objects.update_or_create(
-                employee=employee,
-                task=task,
-                defaults={'level': new_level}
-            )
-
-        messages.success(
-            request,
-            f"✅ Requalification enregistrée : "
-            f"{employee.first_name} {employee.last_name}"
-            f"{task_info}{line_info} "
-            f"({result_labels.get(result, result)}){level_info}"
-        )
-
-    else:
-        # ── Chef d'équipe : Demande d'approbation ─────────────────────
-        existing = RequalificationApprovalRequest.objects.filter(
-            employee=employee,
-            task=task,
-            line=formation_line,         # ← filtre par ligne
-            approved__isnull=True
-        ).first()
-
-        if existing:
-            messages.warning(
-                request,
-                f"⚠️ Une demande est déjà en attente pour "
-                f"{employee.first_name} {employee.last_name}"
-                f"{task_info}{line_info}."
-            )
+            req = create_requalification(form=form, user=request.user)
+        except ValidationError as exc:
+            form.add_error(None, "; ".join(exc.messages))
+        except (OSError, DatabaseError):
+            logger.exception("Requalification creation failed")
+            form.add_error(None, "Enregistrement impossible. Veuillez réessayer.")
+        else:
+            if req.approved is True:
+                messages.success(request, "Requalification enregistrée.")
+            else:
+                messages.info(request, "Demande soumise à RH. En attente de validation RH.")
             return redirect('matrix_view')
+    return _requalification_form_page(request, form=form)
 
-        RequalificationApprovalRequest.objects.create(
-            employee=employee,
-            task=task,
-            line=formation_line,         # ← bonne ligne
-            previous_level=previous_level,
-            requested_result=result,
-            requested_new_level=new_level,
-            original_training_date=original_training_date,
-            requalification_date=requalification_date,
-            days_since_training=days_since,
-            notes=notes,
-            requested_by=user,
-            requalifier_name=requalifier_name,
-        )
-
-        messages.info(
-            request,
-            f"📋 Demande soumise à RH : "
-            f"{employee.first_name} {employee.last_name}"
-            f"{task_info}{line_info} "
-            f"({result_labels.get(result, result)}){level_info}. "
-            f"En attente de validation RH."
-        )
-
-    return redirect('matrix_view')
 
 @login_required
 def rh_requalification_approvals(request):
@@ -5087,98 +6854,29 @@ def rh_requalification_approvals(request):
         decision_notes = request.POST.get("decision_notes", "")
 
         req = get_object_or_404(RequalificationApprovalRequest, pk=req_id)
-
-        if req.approved is not None:
-            messages.warning(
-                request,
-                f"⚠️ Cette demande a déjà été traitée."
-            )
-            return redirect("rh_requalification_approvals")
-
-        if action == "approve":
-
-            # ══════════════════════════════════════════════════════════
-            # ✅ LIGNE CORRECTE : req.line (stockée dans la demande)
-            # ══════════════════════════════════════════════════════════
-            formation_line = req.line or req.employee.line
-
-            req.approved       = True
-            req.decision_date  = timezone.now()
-            req.decision_by    = request.user
-            req.decision_notes = decision_notes
-            req.notification_seen = False
-            req.save()
-
-            # ── Créer RequalificationRecord ───────────────────────────
-            RequalificationRecord.objects.create(
-                employee=req.employee,
-                task=req.task,
-                line=formation_line,     # ← bonne ligne
-                previous_level=(
-                    req.previous_level
-                    if req.previous_level is not None else 0
-                ),
-                result=req.requested_result,
-                new_level=req.requested_new_level,
-                original_training_date=req.original_training_date,
-                requalification_date=req.requalification_date,
-                days_since_training=req.days_since_training,
-                evaluated_by=req.requested_by,
-                notes=req.notes,
-                requalifier_name=req.requalifier_name,
-            )
-
-            # ── Créer TrainingRecord SUR LA BONNE LIGNE ───────────────
-            if req.task and formation_line:
-                new_training = TrainingRecord.objects.create(
-                    employee=req.employee,
-                    task=req.task,
-                    level=req.requested_new_level,
-                    date=req.requalification_date,
-                    trainer=None,
+        if action not in ("approve", "reject"):
+            messages.error(request, "Décision invalide.")
+        else:
+            try:
+                decide_requalification(
+                    request_id=req.pk, user=request.user, approve=action == "approve",
+                    decision_notes=decision_notes,
                 )
-                # ✅ clear() PUIS add() sur la bonne ligne
-                new_training.lines.clear()
-                new_training.lines.add(formation_line)
-
-                MatrixEntry.objects.update_or_create(
-                    employee=req.employee,
-                    task=req.task,
-                    defaults={'level': req.requested_new_level}
-                )
-
-            line_info = (
-                f" sur '{formation_line.name}'"
-                if formation_line else ""
-            )
-            messages.success(
-                request,
-                f"✅ Requalification approuvée : "
-                f"{req.employee}{line_info} "
-                f"({req.get_result_display()}). "
-                f"Chef {req.requested_by.get_full_name() or req.requested_by.username} "
-                f"sera notifié."
-            )
-
-        elif action == "reject":
-            req.approved       = False
-            req.decision_date  = timezone.now()
-            req.decision_by    = request.user
-            req.decision_notes = decision_notes
-            req.notification_seen = False
-            req.save()
-
-            messages.warning(
-                request,
-                f"❌ Requalification refusée : {req.employee}. "
-                f"Chef {req.requested_by.get_full_name() or req.requested_by.username} "
-                f"sera notifié."
-            )
-
+            except ValidationError as exc:
+                messages.error(request, "; ".join(exc.messages))
+            except (OSError, DatabaseError):
+                logger.exception("Requalification decision failed")
+                messages.error(request, "La décision n’a pas été enregistrée. Veuillez réessayer.")
+            else:
+                messages.success(request, "Requalification approuvée." if action == "approve" else "Requalification refusée.")
         return redirect("rh_requalification_approvals")
 
+    pending = list(pending)
+    for req in pending:
+        req.plan_available = req.has_training_plan
+
     stats = {
-        'pending': pending.count(),
+        'pending': len(pending),
         'approved_today': RequalificationApprovalRequest.objects.filter(
             approved=True,
             decision_date__date=timezone.now().date()
@@ -5372,7 +7070,7 @@ def requalification_history(request):
         requalifications = requalifications.filter(requalification_date__lte=date_to)
     
     requalifications = requalifications.select_related(
-        'employee', 'task', 'line', 'evaluated_by'
+        'employee', 'task', 'line', 'evaluated_by', 'approval_request'
     ).order_by('-requalification_date')
     
     # Statistiques
@@ -5390,6 +7088,10 @@ def requalification_history(request):
     else:
         all_lines = ProductionLine.objects.filter(team_leaders=user)
     
+    for rec in requalifications:
+        document = plan_display(rec.approval_request, user, is_rh=is_rh)
+        rec.training_plan_url = document["training_plan_url"]
+        rec.training_plan_label = document["training_plan_label"]
     context = {
         'requalifications': requalifications,
         'stats': stats,
@@ -5694,13 +7396,13 @@ def rh_employees_to_requalify(request):
     if is_rh:
         recent_requalifications = RequalificationRecord.objects.all(
         ).select_related(
-            'employee', 'task', 'line', 'evaluated_by'
+            'employee', 'task', 'line', 'evaluated_by', 'approval_request'
         ).order_by('-requalification_date')[:20]
     else:
         recent_requalifications = RequalificationRecord.objects.filter(
             evaluated_by=user
         ).select_related(
-            'employee', 'task', 'line', 'evaluated_by'
+            'employee', 'task', 'line', 'evaluated_by', 'approval_request'
         ).order_by('-requalification_date')[:10]
 
     if not is_rh:
@@ -5716,6 +7418,10 @@ def rh_employees_to_requalify(request):
     # ══════════════════════════════════════════════════════════════════
     # CONTEXT
     # ══════════════════════════════════════════════════════════════════
+    for rec in recent_requalifications:
+        document = plan_display(rec.approval_request, user, is_rh=is_rh)
+        rec.training_plan_url = document['training_plan_url']
+        rec.training_plan_label = document['training_plan_label']
     context = {
         'employees_to_requalify':  employees_to_requalify_list,
         'employees_for_form':      employees_for_form,
@@ -5772,154 +7478,39 @@ def rh_requalify_team_leader(request):
         messages.error(request, "❌ Accès réservé au service RH et aux Superviseurs.")
         return redirect('matrix_view')
 
-    threshold_days = 188
-    threshold_date = today - timedelta(days=threshold_days)
+    threshold_days = LEADER_REQUALIFICATION_DAYS
 
     # ══════════════════════════════════════════════════════════════
     # POST : Traitement du formulaire (requalification GLOBALE)
     # ══════════════════════════════════════════════════════════════
-    if request.method == 'POST':
-        employee_id          = request.POST.get('employee_id', '').strip()
-        line_id              = request.POST.get('line_id', '').strip()
-        result               = request.POST.get('result', '').strip()
-        new_level            = request.POST.get('new_level', '').strip()
-        notes                = request.POST.get('notes', '')
-        requalifier_name     = request.POST.get('requalifier_name', '')
-        requalification_date = request.POST.get('requalification_date', '').strip()
-
-        # ── Validations ───────────────────────────────────────────
-        errors = []
-        if not employee_id:
-            errors.append("Veuillez sélectionner un chef d'équipe.")
-        if not result or result not in ['PASS', 'UPGRADE', 'DOWNGRADE', 'RETRAIN']:
-            errors.append("Veuillez sélectionner un résultat.")
-        if not line_id:
-            errors.append("Veuillez sélectionner une ligne.")
-
-        if errors:
-            for error in errors:
-                messages.error(request, f"❌ {error}")
-            return redirect('rh_requalify_team_leader')
-
-        # ── Date ──────────────────────────────────────────────────
-        if requalification_date:
-            try:
-                requalification_date = datetime.strptime(
-                    requalification_date, '%Y-%m-%d'
-                ).date()
-            except ValueError:
-                requalification_date = today
+    form = RequalificationForm(
+        request.POST if request.method == "POST" else None,
+        request.FILES if request.method == "POST" else None,
+        user=user, direct_leader=True,
+    )
+    if request.method == 'POST' and form.is_valid():
+        try:
+            create_requalification(form=form, user=user, direct_leader=True)
+        except ValidationError as exc:
+            form.add_error(None, "; ".join(exc.messages))
+        except (OSError, DatabaseError) as exc:
+            if isinstance(exc, OperationalError) and "locked" in str(exc).lower():
+                # Do not query the still-locked rows to rebuild the form.
+                return HttpResponse(
+                    "Une requalification est en cours d’enregistrement. Actualisez la page avant de réessayer.",
+                    status=409,
+                )
+            logger.exception("Direct leader requalification failed")
+            form.add_error(None, "Enregistrement impossible. Veuillez réessayer.")
         else:
-            requalification_date = today
-
-        # ── Employé ───────────────────────────────────────────────
-        try:
-            employee = Employee.objects.get(id=int(employee_id))
-        except (Employee.DoesNotExist, ValueError):
-            messages.error(request, "❌ Chef d'équipe introuvable.")
+            messages.success(request, "Requalification enregistrée.")
             return redirect('rh_requalify_team_leader')
-
-        # ── Sécurité ──────────────────────────────────────────────
-        if hasattr(employee, 'user') and employee.user == user:
-            messages.error(
-                request,
-                "❌ Vous ne pouvez pas vous requalifier vous-même."
-            )
-            return redirect('rh_requalify_team_leader')
-
-        # ── Ligne ─────────────────────────────────────────────────
-        try:
-            formation_line = ProductionLine.objects.get(pk=int(line_id))
-        except (ProductionLine.DoesNotExist, ValueError):
-            messages.error(request, "❌ Ligne introuvable.")
-            return redirect('rh_requalify_team_leader')
-
-        # ── Nouveau niveau ────────────────────────────────────────
-        try:
-            new_level = int(new_level)
-        except (ValueError, TypeError):
-            new_level = 0
-
-        # ── Requalificateur ───────────────────────────────────────
-        rh_employee = Employee.objects.filter(
-            Q(user=user) |
-            Q(
-                first_name__iexact=user.first_name,
-                last_name__iexact=user.last_name
-            ) |
-            Q(matricule__iexact=user.username)
-        ).first()
-
-        evaluator_name = (
-            requalifier_name or
-            (
-                f"{rh_employee.first_name} {rh_employee.last_name}"
-                if rh_employee else None
-            ) or
-            user.get_full_name() or
-            user.username
-        )
-
-        # ── Dernière formation globale sur cette ligne ────────────
-        last_global = TrainingRecord.objects.filter(
-            employee=employee,
-            lines=formation_line,
-        ).order_by('-date').first()
-
-        original_training_date = (
-            last_global.date
-            if last_global and last_global.date
-            else requalification_date
-        )
-        days_since = (
-            (requalification_date - original_training_date).days
-            if last_global and last_global.date
-            else 0
-        )
-
-        # ══════════════════════════════════════════════════════════
-        # ✅ Enregistrer UNIQUEMENT le RequalificationRecord
-        # ❌ PAS de TrainingRecord
-        # ❌ PAS de MatrixEntry
-        # ══════════════════════════════════════════════════════════
-        RequalificationRecord.objects.create(
-            employee=employee,
-            task=None,
-            line=formation_line,
-            previous_level=last_global.level if last_global else 0,
-            result=result,
-            new_level=new_level,
-            original_training_date=original_training_date,
-            requalification_date=requalification_date,
-            days_since_training=days_since,
-            evaluated_by=user,
-            notes=notes,
-            requalifier_name=evaluator_name,
-        )
-
-        result_labels = {
-            'PASS':     'Réussi - Maintien du niveau',
-            'UPGRADE':  'Réussi - Montée en niveau',
-            'RETRAIN':  'À reformer complètement',
-        }
-
-        messages.success(
-            request,
-            f"✅ Requalification enregistrée !\n"
-            f"Chef d'équipe : {employee.first_name} {employee.last_name}\n"
-            f"Ligne : {formation_line.code} — {formation_line.name}\n"
-            f"Résultat : {result_labels.get(result, result)}\n"
-            f"Évaluateur : {evaluator_name}\n"
-            f"Date : {requalification_date.strftime('%d/%m/%Y')}"
-        )
-
-        return redirect('rh_requalify_team_leader')
 
     # ══════════════════════════════════════════════════════════════
     # GET : Construire les données
     # ══════════════════════════════════════════════════════════════
 
-    team_leader_users = User.objects.filter(
+    team_leader_users = User.objects.exclude(pk=user.pk).filter(
         managed_lines__isnull=False
     ).distinct()
 
@@ -5928,14 +7519,7 @@ def rh_requalify_team_leader(request):
     for tl_user in team_leader_users:
 
         # ── Trouver l'employé lié à ce chef ───────────────────────
-        leader_emp = Employee.objects.filter(
-            Q(user=tl_user) |
-            Q(
-                first_name__iexact=tl_user.first_name,
-                last_name__iexact=tl_user.last_name
-            ) |
-            Q(matricule__iexact=tl_user.username)
-        ).first()
+        leader_emp = Employee.objects.filter(user=tl_user).first()
 
         if not leader_emp:
             continue
@@ -5952,76 +7536,7 @@ def rh_requalify_team_leader(request):
             # ── Toutes les tâches de cette ligne ───────────────────
             tasks_on_line = Task.objects.filter(lines=line)
 
-            if not tasks_on_line.exists():
-                continue
-
-            tasks_overdue = []
-
-            for task in tasks_on_line:
-
-                # Dernière formation du chef sur CETTE tâche + CETTE ligne
-                last_record = TrainingRecord.objects.filter(
-                    employee=leader_emp,
-                    task=task,
-                    lines=line,
-                ).order_by('-date').first()
-
-                # ── Jamais formé sur cette tâche → critique ────────
-                if not last_record or not last_record.date:
-                    tasks_overdue.append({
-                        'task':                  task,
-                        'task_str':              str(task),
-                        'last_date':             None,
-                        'days_since':            None,
-                        'days_overdue':          None,
-                        'urgency':               'critical',
-                        'current_level':         0,
-                        'current_level_display': 'Jamais formé',
-                    })
-                    continue
-
-                # ── Formation récente → OK ─────────────────────────
-                if last_record.date > threshold_date:
-                    continue
-
-                days_since   = (today - last_record.date).days
-                days_overdue = days_since - threshold_days
-
-                # ── Requalification récente sur CETTE tâche ────────
-                recent_task_requalif = RequalificationRecord.objects.filter(
-                    employee=leader_emp,
-                    line=line,
-                    task=task,
-                    requalification_date__gte=threshold_date,
-                ).exists()
-
-                # ── Requalification GLOBALE récente (task=None) ────
-                recent_global_requalif = RequalificationRecord.objects.filter(
-                    employee=leader_emp,
-                    line=line,
-                    task__isnull=True,
-                    requalification_date__gte=threshold_date,
-                ).exists()
-
-                if recent_task_requalif or recent_global_requalif:
-                    continue
-
-                urgency = (
-                    'critical' if days_since > 250 else
-                    'warning'  if days_since > 200 else
-                    'info'
-                )
-
-                tasks_overdue.append({
-                    'task':                  task,
-                    'task_str':              str(task),
-                    'last_date':             last_record.date,
-                    'days_since':            days_since,
-                    'days_overdue':          days_overdue,
-                    'urgency':               urgency,
-                    'current_level':         last_record.level,
-                    'current_level_display': last_record.get_level_display(),
-                })
+            tasks_overdue = leader_tasks_to_requalify(leader_emp, line, today)
 
             # ── Pas de tâches en retard → passer ───────────────────
             if not tasks_overdue:
@@ -6090,7 +7605,7 @@ def rh_requalify_team_leader(request):
     recent_requalifications = RequalificationRecord.objects.filter(
         employee_id__in=all_team_leader_emp_ids
     ).select_related(
-        'employee', 'task', 'line', 'evaluated_by'
+        'employee', 'task', 'line', 'evaluated_by', 'approval_request'
     ).order_by('-requalification_date')[:15]
 
     # ── Statistiques ──────────────────────────────────────────────
@@ -6121,7 +7636,23 @@ def rh_requalify_team_leader(request):
         ]),
     }
 
+    for rec in recent_requalifications:
+        document = plan_display(rec.approval_request, user, is_rh=is_rh)
+        rec.training_plan_url = document['training_plan_url']
+        rec.training_plan_label = document['training_plan_label']
+    leaders_lines_data = [{
+        'employee_id': item['employee'].pk,
+        'lines_detail': [{
+            'id': line_data['line'].pk, 'code': line_data['line'].code,
+            'name': line_data['line'].name, 'task_count': line_data['task_count'],
+            'overdue_count': line_data['overdue_count'], 'urgency': line_data['urgency'],
+            'last_date': line_data['last_date'].isoformat() if line_data['last_date'] else '',
+        } for line_data in item['lines_to_requalify']],
+    } for item in leaders_data]
     context = {
+        'leaders_lines_data': leaders_lines_data,
+        'form': form,
+        'selected_employee': form.cleaned_data.get('employee_id') if form.is_bound else None,
         'leaders_data':            leaders_data,
         'recent_requalifications': recent_requalifications,
         'stats':                   stats,
@@ -6165,26 +7696,20 @@ from .models import Employee, ProductionLine, Task, TrainingRecord
 
 @login_required
 def export_matrice_excel(request):
-    """
-    Export de la matrice de formation en Excel.
-    ✅ Utilise visible_lines (M2M) pour inclure tous les opérateurs
-    visibles sur la ligne sélectionnée, même si leur ligne principale
-    (FK line) est différente.
-    """
     from openpyxl import Workbook
     from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
     from openpyxl.utils import get_column_letter
     from openpyxl.drawing.image import Image
+    from openpyxl.worksheet.page import PageMargins
     from django.http import HttpResponse
     from django.conf import settings
+    from django.db.models import Q
+    from django.contrib.auth.models import User
     from datetime import datetime
-    from django.db.models import Q, Count
     import os
 
-    # ═══════════════════════════════════════════════════════
-    # RÉCUPÉRATION DES DONNÉES
-    # ═══════════════════════════════════════════════════════
     selected_line_id = request.GET.get('line_id')
+    selected_emp_ids = request.GET.getlist('emp_ids')
     current_user     = request.user
 
     if not selected_line_id or selected_line_id == 'None':
@@ -6196,43 +7721,36 @@ def export_matrice_excel(request):
         else:
             wb = Workbook()
             ws = wb.active
-            ws.cell(row=1, column=1).value = (
-                "Aucune ligne de production disponible"
-            )
+            ws.cell(row=1, column=1).value = "Aucune ligne de production disponible"
             response = HttpResponse(
-                content_type=(
-                    'application/vnd.openxmlformats-officedocument'
-                    '.spreadsheetml.sheet'
-                )
+                content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
             )
-            response['Content-Disposition'] = (
-                'attachment; filename="Matrice_Vide.xlsx"'
-            )
+            response['Content-Disposition'] = 'attachment; filename="Matrice_Vide.xlsx"'
             wb.save(response)
             return response
 
     try:
-        production_line   = ProductionLine.objects.get(id=selected_line_id)
+        production_line    = ProductionLine.objects.get(id=selected_line_id)
         selected_line_name = production_line.name
     except ProductionLine.DoesNotExist:
-        selected_line_name = "Ligne inconnue"
         production_line    = None
+        selected_line_name = "Ligne inconnue"
 
     # ═══════════════════════════════════════════════════════
-    # VÉRIFICATION DES DROITS
+    # DROITS
     # ═══════════════════════════════════════════════════════
-    is_team_leader      = False
-    team_leader_name    = "Non assigné"
+    is_team_leader       = False
+    team_leader_name     = "Non assigne"
     team_leader_employee = None
 
     if production_line:
         if current_user in production_line.team_leaders.all():
             is_team_leader   = True
             team_leader_name = (
-                current_user.get_full_name() or current_user.username
+                current_user.get_full_name() or
+                current_user.username
             )
 
-            # Trouver le profil Employee du chef
             if hasattr(current_user, 'employee_profile'):
                 try:
                     team_leader_employee = current_user.employee_profile
@@ -6248,7 +7766,6 @@ def export_matrice_excel(request):
 
         elif (current_user.is_superuser or
               current_user.groups.filter(name='RH').exists()):
-            is_team_leader   = False
             team_leader_name = (
                 f"Tous les chefs "
                 f"({production_line.team_leaders.count()} chef(s))"
@@ -6256,66 +7773,35 @@ def export_matrice_excel(request):
         else:
             wb = Workbook()
             ws = wb.active
-            ws.cell(row=1, column=1).value = "⚠️ ACCÈS REFUSÉ"
-            ws.cell(row=2, column=1).value = (
-                f"Vous n'êtes pas chef d'équipe de la ligne : "
-                f"{selected_line_name}"
-            )
+            ws.cell(row=1, column=1).value = "ACCES REFUSE"
             response = HttpResponse(
-                content_type=(
-                    'application/vnd.openxmlformats-officedocument'
-                    '.spreadsheetml.sheet'
-                )
+                content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
             )
-            response['Content-Disposition'] = (
-                'attachment; filename="Acces_Refuse.xlsx"'
-            )
+            response['Content-Disposition'] = 'attachment; filename="Acces_Refuse.xlsx"'
             wb.save(response)
             return response
 
     # ═══════════════════════════════════════════════════════
-    # ✅ IDs des profils chefs (pour les exclure des opérateurs)
+    # IDs des chefs
     # ═══════════════════════════════════════════════════════
-    all_team_leader_user_ids = User.objects.filter(
+    team_leader_user_ids = User.objects.filter(
         managed_lines__isnull=False
     ).distinct().values_list('id', flat=True)
 
     leader_employee_ids = set(
         Employee.objects.filter(
-            user_id__in=all_team_leader_user_ids
+            user_id__in=team_leader_user_ids
         ).values_list('id', flat=True)
     )
 
     # ═══════════════════════════════════════════════════════
-    # ✅ FILTRER LES EMPLOYÉS VIA visible_lines (M2M)
-    # Un opérateur apparaît dans l'export s'il a coché cette ligne
-    # dans ses visible_lines, peu importe sa ligne principale (FK)
+    # EMPLOYÉS — même logique que matrix_view
     # ═══════════════════════════════════════════════════════
     if production_line:
         if is_team_leader:
-            # Chef connecté → ses opérateurs visibles sur cette ligne
             operators_qs = Employee.objects.filter(
-                visible_lines=production_line,   # ✅ M2M
-                manager=current_user
-            ).exclude(
-                id__in=leader_employee_ids       # Exclure les autres chefs
-            ).select_related(
-                'manager', 'line'
-            ).order_by('last_name', 'first_name')
-
-            employees_list = list(operators_qs)
-
-            # Ajouter le chef lui-même en tête
-            if team_leader_employee:
-                if team_leader_employee.id not in [
-                    e.id for e in employees_list
-                ]:
-                    employees_list.insert(0, team_leader_employee)
-
-        else:
-            # RH / superuser → tous les opérateurs visibles sur cette ligne
-            operators_qs = Employee.objects.filter(
-                visible_lines=production_line    # ✅ M2M
+                visible_lines=production_line,
+                manager=current_user          # ✅ filtre par chef
             ).exclude(
                 id__in=leader_employee_ids
             ).select_related(
@@ -6324,7 +7810,16 @@ def export_matrice_excel(request):
 
             employees_list = list(operators_qs)
 
-            # ✅ Ajouter tous les chefs d'équipe de la ligne
+            if team_leader_employee and team_leader_employee.id not in [
+                e.id for e in employees_list
+            ]:
+                employees_list.insert(0, team_leader_employee)
+
+        else:
+            # RH : grouper par chef, comme export_matrice_select
+            employees_list = []
+            seen_ids       = set()
+
             for leader in production_line.team_leaders.all():
                 leader_emp = None
                 if hasattr(leader, 'employee_profile'):
@@ -6338,12 +7833,25 @@ def export_matrice_excel(request):
                           last_name__iexact=leader.last_name) |
                         Q(matricule__iexact=leader.username)
                     ).first()
-                if leader_emp and leader_emp.id not in [
-                    e.id for e in employees_list
-                ]:
-                    employees_list.insert(0, leader_emp)
+
+                if leader_emp and leader_emp.id not in seen_ids:
+                    employees_list.append(leader_emp)
+                    seen_ids.add(leader_emp.id)
+
+                leader_operators = Employee.objects.filter(
+                    visible_lines=production_line,
+                    manager=leader            # ✅ filtre par chef
+                ).exclude(
+                    id__in=leader_employee_ids
+                ).select_related(
+                    'manager', 'line'
+                ).order_by('last_name', 'first_name')
+
+                for emp in leader_operators:
+                    if emp.id not in seen_ids:
+                        employees_list.append(emp)
+                        seen_ids.add(emp.id)
     else:
-        # Pas de ligne trouvée
         if current_user.is_superuser:
             employees_list = list(
                 Employee.objects.all()
@@ -6357,46 +7865,50 @@ def export_matrice_excel(request):
                 .order_by('last_name', 'first_name')
             )
 
+    # ═══════════════════════════════════════════════════════
+    # FILTRER PAR SÉLECTION (si emp_ids fournis)
+    # ═══════════════════════════════════════════════════════
+    if selected_emp_ids:
+        selected_ids_int = set()
+        for x in selected_emp_ids:
+            try:
+                selected_ids_int.add(int(x))
+            except (ValueError, TypeError):
+                pass
+        if selected_ids_int:
+            employees_list = [
+                e for e in employees_list
+                if e.id in selected_ids_int
+            ]
+
     if not employees_list:
         wb = Workbook()
         ws = wb.active
-        ws.cell(row=1, column=1).value = "⚠️ AUCUN EMPLOYÉ TROUVÉ"
-        ws.cell(row=2, column=1).value = f"Ligne : {selected_line_name}"
-        ws.cell(row=3, column=1).value = (
-            f"Chef d'équipe : {team_leader_name}"
-        )
+        ws.cell(row=1, column=1).value = "AUCUN EMPLOYE TROUVE"
         response = HttpResponse(
-            content_type=(
-                'application/vnd.openxmlformats-officedocument'
-                '.spreadsheetml.sheet'
-            )
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         )
-        response['Content-Disposition'] = (
-            'attachment; filename="Matrice_SansEmployes.xlsx"'
-        )
+        response['Content-Disposition'] = 'attachment; filename="Matrice_SansEmployes.xlsx"'
         wb.save(response)
         return response
 
     # ═══════════════════════════════════════════════════════
-    # TÂCHES DE LA LIGNE
+    # TÂCHES
     # ═══════════════════════════════════════════════════════
     if production_line:
         tasks = Task.objects.filter(
             lines=production_line
-        ).order_by('order', 'task_number')
+        ).distinct().order_by('order', 'task_number')
     else:
         tasks = Task.objects.all().order_by('order', 'task_number')
 
-    # ═══════════════════════════════════════════════════════
-    # ✅ CONSTRUIRE LA MATRICE AVEC FILTRE PAR LIGNE
-    # ═══════════════════════════════════════════════════════
     employee_ids = [e.id for e in employees_list]
 
     all_training_records = TrainingRecord.objects.filter(
         employee_id__in=employee_ids,
         task__in=tasks,
-        lines=production_line    # ✅ Formations sur CETTE ligne uniquement
-    ).select_related('employee', 'task', 'trainer')
+        lines=production_line
+    ).select_related('employee', 'task', 'trainer').distinct()
 
     training_dict = {}
     for rec in all_training_records:
@@ -6412,42 +7924,23 @@ def export_matrice_excel(request):
             elif new_date and not existing_date:
                 training_dict[key] = rec
 
-    # ✅ Identifier les opérateurs multi-lignes pour info dans l'export
-    multiline_emp_ids = set(
-        Employee.objects.filter(
-            id__in=employee_ids
-        ).annotate(
-            vl_count=Count('visible_lines')
-        ).filter(vl_count__gte=2).values_list('id', flat=True)
-    )
-
-    # ✅ Identifier les opérateurs dont la ligne principale ≠ cette ligne
-    # (présents ici uniquement via visible_lines)
-    secondary_emp_ids = set(
-        Employee.objects.filter(
-            id__in=employee_ids
-        ).exclude(
-            line=production_line
-        ).exclude(
-            id__in=leader_employee_ids
-        ).values_list('id', flat=True)
-    )
-
+    # ═══════════════════════════════════════════════════════
+    # MATRICE
+    # ═══════════════════════════════════════════════════════
     matrix = []
     for task in tasks:
         row = {'task': task, 'cells': []}
-
         for employee in employees_list:
-            is_chef = (
+            is_chef = bool(
                 team_leader_employee and
                 employee.id == team_leader_employee.id
             )
-
             emp_manager      = getattr(employee, 'manager', None)
             emp_manager_name = None
             if emp_manager:
                 emp_manager_name = (
-                    emp_manager.last_name or emp_manager.username
+                    emp_manager.last_name or
+                    emp_manager.username
                 )
 
             row['cells'].append({
@@ -6456,23 +7949,32 @@ def export_matrice_excel(request):
                 'U':               training_dict.get((employee.id, task.id, 3)),
                 'employee':        employee,
                 'is_team_leader':  is_chef,
-                'team_leader':     emp_manager,
                 'team_leader_name': emp_manager_name,
-                # ✅ NOUVEAU : Infos multi-lignes pour l'export
-                'is_multiline':    employee.id in multiline_emp_ids,
-                'is_secondary':    employee.id in secondary_emp_ids,
             })
-
         matrix.append(row)
 
     # ═══════════════════════════════════════════════════════
-    # CRÉATION DU WORKBOOK
+    # WORKBOOK
     # ═══════════════════════════════════════════════════════
     wb = Workbook()
     ws = wb.active
-    ws.title = "Matrice de Formation"
 
-    # ── Styles ──────────────────────────────────────────────
+    invalid_chars = ['\\', '/', '?', '*', '[', ']', ':']
+    safe_title    = selected_line_name
+    for ch in invalid_chars:
+        safe_title = safe_title.replace(ch, '-')
+    ws.title = f"Matrice {safe_title[:22]}"
+
+    ws.sheet_view.showGridLines = False
+    ws.page_setup.orientation   = 'landscape'
+    ws.page_setup.paperSize     = ws.PAPERSIZE_A3
+    ws.page_setup.fitToWidth    = 1
+    ws.page_setup.fitToHeight   = 0
+    ws.page_margins = PageMargins(
+        left=0.4, right=0.4,
+        top=0.5,  bottom=0.5
+    )
+
     thin_border = Border(
         left   = Side(style='thin', color='D1D5DB'),
         right  = Side(style='thin', color='D1D5DB'),
@@ -6480,58 +7982,36 @@ def export_matrice_excel(request):
         bottom = Side(style='thin', color='D1D5DB'),
     )
 
-    header_fill = PatternFill(
-        start_color="F3F4F6", end_color="F3F4F6", fill_type="solid"
-    )
-    header_font = Font(size=11, bold=True, color="374151")
-
-    chef_fill = PatternFill(
-        start_color="EDE9FE", end_color="EDE9FE", fill_type="solid"
-    )
-    chef_font = Font(size=9, bold=True, color="5B21B6")
-
-    # ✅ NOUVEAU : Style pour opérateur secondaire (via visible_lines)
-    secondary_fill = PatternFill(
-        start_color="FFF7ED", end_color="FFF7ED", fill_type="solid"
-    )
-    secondary_font = Font(size=9, bold=True, color="C2410C")
-
-    # ✅ NOUVEAU : Style pour opérateur multi-lignes
-    multiline_fill = PatternFill(
-        start_color="EFF6FF", end_color="EFF6FF", fill_type="solid"
-    )
+    header_fill = PatternFill(start_color="F3F4F6", end_color="F3F4F6", fill_type="solid")
+    header_font = Font(name="Calibri", size=11, bold=True, color="374151")
+    chef_fill   = PatternFill(start_color="EDE9FE", end_color="EDE9FE", fill_type="solid")
+    chef_font   = Font(name="Calibri", size=9, bold=True, color="5B21B6")
 
     level_styles = {
-        'I': PatternFill(
-            start_color="FEE2E2", end_color="FEE2E2", fill_type="solid"
-        ),
-        'L': PatternFill(
-            start_color="FFFBEB", end_color="FFFBEB", fill_type="solid"
-        ),
-        'U': PatternFill(
-            start_color="ECFCCB", end_color="ECFCCB", fill_type="solid"
-        ),
-        'default': PatternFill(
-            start_color="F9FAFB", end_color="F9FAFB", fill_type="solid"
-        ),
+        'I':       PatternFill(start_color="FEE2E2", end_color="FEE2E2", fill_type="solid"),
+        'L':       PatternFill(start_color="FFFBEB", end_color="FFFBEB", fill_type="solid"),
+        'U':       PatternFill(start_color="ECFCCB", end_color="ECFCCB", fill_type="solid"),
+        'default': PatternFill(start_color="F9FAFB", end_color="F9FAFB", fill_type="solid"),
     }
 
     level_fonts = {
-        'I':       Font(color="B91C1C", bold=True, size=10),
-        'L':       Font(color="D97706", bold=True, size=10),
-        'U':       Font(color="65A30D", bold=True, size=10),
-        'default': Font(color="6B7280", size=9),
+        'I':       Font(name="Calibri", color="B91C1C", bold=True, size=10),
+        'L':       Font(name="Calibri", color="D97706", bold=True, size=10),
+        'U':       Font(name="Calibri", color="65A30D", bold=True, size=10),
+        'default': Font(name="Calibri", color="6B7280", size=9),
     }
 
     total_cols = len(employees_list) + 1
 
-    # ── Logo ─────────────────────────────────────────────────
-    logo_paths = [
+    ws.column_dimensions['A'].width = 35
+    for i in range(2, total_cols + 1):
+        ws.column_dimensions[get_column_letter(i)].width = 18
+
+    for logo_path in [
         os.path.join(settings.BASE_DIR, 'static', 'images', 'logo.png'),
         os.path.join(settings.BASE_DIR, 'matrix', 'static', 'images', 'logo.png'),
         os.path.join(settings.BASE_DIR, 'static', 'logo.png'),
-    ]
-    for logo_path in logo_paths:
+    ]:
         if os.path.exists(logo_path):
             try:
                 logo        = Image(logo_path)
@@ -6545,347 +8025,201 @@ def export_matrice_excel(request):
     ws.row_dimensions[1].height = 25
     ws.row_dimensions[2].height = 25
     ws.row_dimensions[3].height = 25
-
-    # ── En-tête ──────────────────────────────────────────────
-    ws.merge_cells(
-        start_row=1, start_column=3,
-        end_row=1,   end_column=total_cols
-    )
-    title_cell       = ws.cell(row=1, column=3)
-    title_cell.value = "MATRICE DE FORMATION"
-    title_cell.font  = Font(size=18, bold=True, color="4F46E5")
-    title_cell.alignment = Alignment(
-        horizontal="center", vertical="center"
-    )
-
-    ws.merge_cells(
-        start_row=2, start_column=3,
-        end_row=2,   end_column=total_cols
-    )
-    info_cell       = ws.cell(row=2, column=3)
-    info_cell.value = f"Ligne de production : {selected_line_name}"
-    info_cell.font  = Font(size=12, bold=True, color="1F2937")
-    info_cell.alignment = Alignment(
-        horizontal="center", vertical="center"
-    )
-
-    ws.merge_cells(
-        start_row=3, start_column=3,
-        end_row=3,   end_column=total_cols
-    )
-    chef_cell = ws.cell(row=3, column=3)
-
-    # ✅ Compter opérateurs et opérateurs secondaires
-    operator_count   = len([
-        e for e in employees_list
-        if not (team_leader_employee and
-                e.id == team_leader_employee.id)
-    ])
-    secondary_count  = len([
-        e for e in employees_list
-        if e.id in secondary_emp_ids
-    ])
-    multiline_count  = len([
-        e for e in employees_list
-        if e.id in multiline_emp_ids
-    ])
-    chef_included    = "👑 Chef inclus" if team_leader_employee else ""
-
-    chef_text  = f"Chef d'équipe : {team_leader_name}"
-    chef_text += f"  |  Opérateurs : {operator_count}"
-    if secondary_count:
-        chef_text += f"  |  🔀 Multi-lignes : {secondary_count}"
-    if chef_included:
-        chef_text += f"  |  {chef_included}"
-    chef_text += f"  |  Date : {datetime.now().strftime('%d/%m/%Y %H:%M')}"
-
-    chef_cell.value     = chef_text
-    chef_cell.font      = Font(size=11, color="374151")
-    chef_cell.alignment = Alignment(
-        horizontal="center", vertical="center"
-    )
-
     ws.row_dimensions[4].height = 10
 
-    # ── Légende ──────────────────────────────────────────────
-    legend_row = 5
-    ws.cell(row=legend_row, column=1).value = "LÉGENDE :"
-    ws.cell(row=legend_row, column=1).font  = Font(bold=True, size=11)
+    # Titre
+    ws.merge_cells(start_row=1, start_column=3, end_row=1, end_column=total_cols)
+    c           = ws.cell(row=1, column=3)
+    c.value     = "MATRICE DE FORMATION"
+    c.font      = Font(name="Calibri", size=18, bold=True, color="4F46E5")
+    c.alignment = Alignment(horizontal="center", vertical="center")
 
-    legend_items = [
-        ("I",  "En période de formation (sous supervision)", "FEE2E2", "B91C1C"),
-        ("L",  "Approuvé (autonome)",                        "FFFBEB", "D97706"),
-        ("U",  "Préparé pour former d'autres (formateur)",   "ECFCCB", "65A30D"),
-        ("👑", "Chef d'équipe",                              "EDE9FE", "5B21B6"),
-        ("🎓", "Formateur (qui a formé l'employé)",          "F3E8FF", "7C3AED"),
-        ("👔", "Chef d'équipe responsable",                  "DBEAFE", "2563EB"),
-        # ✅ NOUVEAU
-        ("🔀", "Opérateur présent sur plusieurs lignes",     "FFF7ED", "C2410C"),
-        ("⭐", "Ligne principale de l'opérateur",            "F0FDF4", "166534"),
-    ]
+    # Ligne de production
+    ws.merge_cells(start_row=2, start_column=3, end_row=2, end_column=total_cols)
+    c           = ws.cell(row=2, column=3)
+    c.value     = f"Ligne de production : {selected_line_name}"
+    c.font      = Font(name="Calibri", size=12, bold=True, color="1F2937")
+    c.alignment = Alignment(horizontal="center", vertical="center")
 
-    for idx, (symbol, description, bg_color, text_color) in enumerate(
-        legend_items
-    ):
-        row = legend_row + idx + 1
+    # Infos
+    ws.merge_cells(start_row=3, start_column=3, end_row=3, end_column=total_cols)
+    c = ws.cell(row=3, column=3)
 
-        symbol_cell       = ws.cell(row=row, column=1)
-        symbol_cell.value = symbol
-        symbol_cell.fill  = PatternFill(
-            start_color=bg_color, end_color=bg_color, fill_type="solid"
-        )
-        symbol_cell.font  = Font(bold=True, size=12, color=text_color)
-        symbol_cell.alignment = Alignment(
-            horizontal="center", vertical="center"
-        )
-        symbol_cell.border = thin_border
+    operator_count = len([
+        e for e in employees_list
+        if not (team_leader_employee and e.id == team_leader_employee.id)
+    ])
 
-        desc_cell       = ws.cell(row=row, column=2)
-        desc_cell.value = description
-        desc_cell.font  = Font(size=9)
-        ws.merge_cells(
-            start_row=row, start_column=2,
-            end_row=row,   end_column=5
-        )
-
-    ws.row_dimensions[14].height = 10
-
-    # ── En-têtes colonnes (Employés) ─────────────────────────
-    header_row = 15
-
-    task_header       = ws.cell(row=header_row, column=1)
-    task_header.value = "Tâche / Niveau"
-    task_header.fill  = header_fill
-    task_header.font  = header_font
-    task_header.alignment = Alignment(
-        horizontal="center", vertical="center"
+    c.value = (
+        f"Chef d'equipe : {team_leader_name}"
+        f"  |  Operateurs : {operator_count}"
+        f"  |  Taches : {tasks.count()}"
+        f"  |  Date : {datetime.now().strftime('%d/%m/%Y %H:%M')}"
     )
-    task_header.border = thin_border
-    ws.column_dimensions['A'].width = 35
+    c.font      = Font(name="Calibri", size=11, color="374151")
+    c.alignment = Alignment(horizontal="center", vertical="center")
+
+    # En-têtes employés
+    header_row = 5
+    ws.row_dimensions[header_row].height = 50
+
+    task_header           = ws.cell(row=header_row, column=1)
+    task_header.value     = "Tache / Niveau"
+    task_header.fill      = header_fill
+    task_header.font      = header_font
+    task_header.alignment = Alignment(horizontal="center", vertical="center")
+    task_header.border    = thin_border
 
     for idx, emp in enumerate(employees_list, start=2):
-        col_letter = get_column_letter(idx)
-        cell       = ws.cell(row=header_row, column=idx)
-
-        is_chef      = (
+        cell    = ws.cell(row=header_row, column=idx)
+        is_chef = bool(
             team_leader_employee and
             emp.id == team_leader_employee.id
         )
-        is_secondary = emp.id in secondary_emp_ids
-        is_multi     = emp.id in multiline_emp_ids
 
         emp_name      = f"{emp.first_name or ''} {emp.last_name or ''}".strip()
         emp_matricule = emp.matricule or ''
 
-        # ✅ Construire le nom d'en-tête avec indicateurs
         if is_chef:
-            header_text = f"👑 {emp_name}\n({emp_matricule})\n[CHEF]"
-            cell.fill   = chef_fill
-            cell.font   = chef_font
-
-        elif is_secondary:
-            # Opérateur dont la ligne principale est ailleurs
-            main_line_name = emp.line.code if emp.line else '?'
-            header_text = (
-                f"🔀 {emp_name}\n"
-                f"({emp_matricule})\n"
-                f"[Ligne princ.: {main_line_name}]"
-            )
-            cell.fill = secondary_fill
-            cell.font = secondary_font
-
-        elif is_multi:
-            # Opérateur multi-lignes dont la ligne principale est ici
-            header_text = (
-                f"⭐ {emp_name}\n"
-                f"({emp_matricule})\n"
-                f"[Multi-lignes]"
-            )
-            cell.fill = multiline_fill
-            cell.font = Font(size=9, bold=True, color="1D4ED8")
-
+            cell.value = f"{emp_name}\n({emp_matricule})\n[CHEF]"
+            cell.fill  = chef_fill
+            cell.font  = chef_font
         else:
-            header_text = f"{emp_name}\n({emp_matricule})"
-            cell.fill   = header_fill
-            cell.font   = Font(size=9, bold=True)
+            cell.value = f"{emp_name}\n({emp_matricule})"
+            cell.fill  = header_fill
+            cell.font  = Font(name="Calibri", size=9, bold=True)
 
-        cell.value     = header_text
-        cell.alignment = Alignment(
-            horizontal="center", vertical="center", wrap_text=True
-        )
-        cell.border = thin_border
-        ws.column_dimensions[col_letter].width = 18
+        cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+        cell.border    = thin_border
 
-    ws.row_dimensions[header_row].height = 60
-
-    # ─────────────────────────────────────────────────────────
-    # ✅ REMPLISSAGE DE LA MATRICE
-    # ─────────────────────────────────────────────────────────
+    # Matrice
     current_row = header_row + 1
 
     for row_data in matrix:
         task       = row_data['task']
         cells_data = row_data['cells']
 
-        # En-tête de tâche
         ws.merge_cells(
             start_row=current_row, start_column=1,
             end_row=current_row,   end_column=total_cols
         )
-        task_cell       = ws.cell(row=current_row, column=1)
-        task_cell.value = f"#{task.task_number} - {task.title}"
-        task_cell.fill  = PatternFill(
-            start_color="E5E7EB", end_color="E5E7EB", fill_type="solid"
-        )
-        task_cell.font      = Font(bold=True, size=10, color="1F2937")
-        task_cell.alignment = Alignment(
-            horizontal="left", vertical="center"
-        )
-        task_cell.border = thin_border
+        task_cell           = ws.cell(row=current_row, column=1)
+        task_cell.value     = f"  {task.task_number:02d}.  {task.title}"
+        task_cell.fill      = PatternFill(start_color="E5E7EB", end_color="E5E7EB", fill_type="solid")
+        task_cell.font      = Font(name="Calibri", bold=True, size=10, color="1F2937")
+        task_cell.alignment = Alignment(horizontal="left", vertical="center")
+        task_cell.border    = thin_border
         ws.row_dimensions[current_row].height = 25
         current_row += 1
 
-        # Lignes I, L, U
         for level in ['I', 'L', 'U']:
-            level_cell       = ws.cell(row=current_row, column=1)
-            level_cell.value = level
-            level_cell.fill  = level_styles[level]
-            level_cell.font  = level_fonts[level]
-            level_cell.alignment = Alignment(
-                horizontal="center", vertical="center"
-            )
-            level_cell.border = thin_border
+            level_cell           = ws.cell(row=current_row, column=1)
+            level_cell.value     = level
+            level_cell.fill      = level_styles[level]
+            level_cell.font      = level_fonts[level]
+            level_cell.alignment = Alignment(horizontal="center", vertical="center")
+            level_cell.border    = thin_border
 
             for idx, cell_data in enumerate(cells_data, start=2):
-                cell         = ws.cell(row=current_row, column=idx)
-                record       = cell_data.get(level)
-                is_chef      = cell_data.get('is_team_leader', False)
-                team_leader  = cell_data.get('team_leader')
-                tl_name      = cell_data.get('team_leader_name')
-                is_secondary = cell_data.get('is_secondary', False)
-                is_multi     = cell_data.get('is_multiline', False)
+                cell    = ws.cell(row=current_row, column=idx)
+                record  = cell_data.get(level)
+                is_chef = cell_data.get('is_team_leader', False)
+                tl_name = cell_data.get('team_leader_name')
 
                 if record:
                     content_parts = [level]
 
-                    # Date
                     if record.date:
-                        content_parts.append(
-                            record.date.strftime('%d/%m/%Y')
-                        )
+                        content_parts.append(record.date.strftime('%d/%m/%Y'))
 
-                    # Chef / Formateur
+                    display_name = None
                     if is_chef:
                         if record.trainer:
-                            trainer_name = (
+                            display_name = (
                                 record.trainer.last_name or
                                 record.trainer.matricule or
-                                '?'
+                                "RH"
                             )
-                            content_parts.append(f"🎓 {trainer_name}")
                         else:
-                            content_parts.append("🏢 RH")
+                            display_name = "RH"
                     else:
-                        if team_leader:
-                            chef_name = (
-                                team_leader.last_name or
-                                team_leader.username
-                            )
-                            content_parts.append(f"👔 {chef_name}")
-                        elif tl_name:
-                            content_parts.append(f"👔 {tl_name}")
+                        if tl_name:
+                            display_name = tl_name
 
-                    # ✅ NOUVEAU : Indicateur si opérateur secondaire
-                    if is_secondary:
-                        emp = cell_data.get('employee')
-                        main_code = (
-                            emp.line.code if emp and emp.line else '?'
-                        )
-                        content_parts.append(f"🔀 Princ.:{main_code}")
+                    if display_name:
+                        content_parts.append(display_name)
 
                     cell.value = "\n".join(content_parts)
                     cell.fill  = level_styles[level]
                     cell.font  = Font(
-                        size=8, bold=True,
-                        color=level_fonts[level].color
+                        name="Calibri", size=8,
+                        bold=True, color=level_fonts[level].color
                     )
-
                 else:
-                    cell.value = "-"
+                    cell.value = ""
                     cell.fill  = level_styles['default']
                     cell.font  = level_fonts['default']
 
-                cell.alignment = Alignment(
-                    horizontal="center",
-                    vertical="center",
-                    wrap_text=True
-                )
-                cell.border = thin_border
+                cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+                cell.border    = thin_border
 
             ws.row_dimensions[current_row].height = 55
             current_row += 1
 
-    # ── Pied de page ─────────────────────────────────────────
+    # Légende
     current_row += 1
-    stats_row    = current_row + 1
+    ws.row_dimensions[current_row].height = 10
+    current_row += 1
 
-    ws.merge_cells(
-        start_row=stats_row, start_column=1,
-        end_row=stats_row,   end_column=4
-    )
-    stats_header       = ws.cell(row=stats_row, column=1)
-    stats_header.value = "INFORMATIONS DE L'EXPORT"
-    stats_header.font  = Font(bold=True, size=11, color="1F2937")
-    stats_header.fill  = PatternFill(
-        start_color="E5E7EB", end_color="E5E7EB", fill_type="solid"
-    )
-    stats_header.border = thin_border
+    ws.merge_cells(start_row=current_row, start_column=1, end_row=current_row, end_column=5)
+    leg_h           = ws.cell(row=current_row, column=1)
+    leg_h.value     = "LEGENDE"
+    leg_h.font      = Font(name="Calibri", bold=True, size=11, color="FFFFFF")
+    leg_h.fill      = PatternFill(start_color="374151", end_color="374151", fill_type="solid")
+    leg_h.alignment = Alignment(horizontal="center", vertical="center")
+    leg_h.border    = thin_border
+    ws.row_dimensions[current_row].height = 22
 
-    stats_data = [
-        ("Ligne de production :", selected_line_name),
-        ("Chef d'équipe :",       team_leader_name),
-        ("Opérateurs :",          f"{operator_count} employé(s)"),
-        # ✅ NOUVEAU
-        ("Dont multi-lignes :",   f"{multiline_count} opérateur(s)"),
-        ("Dont secondaires :",
-         f"{secondary_count} opérateur(s) "
-         f"(ligne principale différente)"),
-        ("Nombre de tâches :",    str(tasks.count())),
-        ("Date d'export :",       datetime.now().strftime('%d/%m/%Y à %H:%M')),
+    legend_items = [
+        ("I",    "En periode de formation (sous supervision)", "FEE2E2", "B91C1C"),
+        ("L",    "Approuve (autonome)",                        "FFFBEB", "D97706"),
+        ("U",    "Prepare pour former d'autres (formateur)",   "ECFCCB", "65A30D"),
+        
     ]
 
-    for idx, (label, value) in enumerate(stats_data):
-        row = stats_row + idx + 1
+    for idx, (symbol, description, bg_color, text_color) in enumerate(legend_items):
+        row = current_row + idx + 1
+        ws.row_dimensions[row].height = 16
 
-        label_cell        = ws.cell(row=row, column=1)
-        label_cell.value  = label
-        label_cell.font   = Font(size=9, bold=True)
-        label_cell.border = thin_border
+        s       = ws.cell(row=row, column=1)
+        s.value = symbol
+        s.fill  = PatternFill(start_color=bg_color, end_color=bg_color, fill_type="solid")
+        s.font  = Font(name="Calibri", bold=True, size=9, color=text_color)
+        s.alignment = Alignment(horizontal="center", vertical="center")
+        s.border    = thin_border
 
-        value_cell       = ws.cell(row=row, column=2)
-        value_cell.value = value
-        value_cell.font  = Font(size=9)
-        ws.merge_cells(
-            start_row=row, start_column=2,
-            end_row=row,   end_column=4
-        )
-        value_cell.border = thin_border
+        ws.merge_cells(start_row=row, start_column=2, end_row=row, end_column=5)
+        d           = ws.cell(row=row, column=2)
+        d.value     = description
+        d.font      = Font(name="Calibri", size=9, color="374151")
+        d.alignment = Alignment(horizontal="left", vertical="center")
+        d.border    = thin_border
 
-    # ── Réponse HTTP ─────────────────────────────────────────
+    ws.freeze_panes = f"B{header_row + 1}"
+
     response = HttpResponse(
-        content_type=(
-            'application/vnd.openxmlformats-officedocument'
-            '.spreadsheetml.sheet'
-        )
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
-    safe_line = "".join(
-        c for c in selected_line_name
-        if c.isalnum() or c in (' ', '-', '_')
-    ).replace(' ', '_')
+
+    safe_line = selected_line_name
+    for ch in invalid_chars:
+        safe_line = safe_line.replace(ch, '-')
+    safe_line = safe_line.replace(' ', '_')
+
     safe_chef = "".join(
-        c for c in team_leader_name.split()[0]
-        if c.isalnum()
+        c for c in team_leader_name.split()[0] if c.isalnum()
     )[:20]
+
     filename = (
         f"Matrice_{safe_line}_{safe_chef}_"
         f"{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx"
@@ -6896,6 +8230,173 @@ def export_matrice_excel(request):
     return response
 
 
+
+
+
+@login_required
+def export_matrice_select(request):
+    current_user     = request.user
+    selected_line_id = request.GET.get('line_id')
+
+    # ═══════════════════════════════════════════════════════
+    # TOUTES les lignes du chef (pour le sélecteur)
+    # ═══════════════════════════════════════════════════════
+    is_rh = (
+        current_user.is_superuser or
+        current_user.groups.filter(name='RH').exists()
+    )
+
+    if is_rh:
+        all_user_lines = ProductionLine.objects.all().order_by('name')
+    else:
+        all_user_lines = ProductionLine.objects.filter(
+            team_leaders=current_user
+        ).order_by('name')
+
+    # ═══════════════════════════════════════════════════════
+    # Ligne sélectionnée
+    # ═══════════════════════════════════════════════════════
+    if not selected_line_id or selected_line_id == 'None':
+        first_line = all_user_lines.first()
+        if first_line:
+            selected_line_id = first_line.id
+        else:
+            messages.warning(request, "Aucune ligne de production disponible.")
+            return redirect('matrix_view')
+
+    try:
+        selected_line_id = int(selected_line_id)
+        production_line  = ProductionLine.objects.get(id=selected_line_id)
+    except (ProductionLine.DoesNotExist, ValueError, TypeError):
+        messages.error(request, "Ligne de production introuvable.")
+        return redirect('matrix_view')
+
+    # Vérifier les droits
+    is_team_leader = current_user in production_line.team_leaders.all()
+
+    if not is_team_leader and not is_rh:
+        messages.error(request, "Vous n'avez pas acces a cette ligne.")
+        return redirect('matrix_view')
+
+    # ═══════════════════════════════════════════════════════
+    # IDs des chefs
+    # ═══════════════════════════════════════════════════════
+    team_leader_user_ids = User.objects.filter(
+        managed_lines__isnull=False
+    ).distinct().values_list('id', flat=True)
+
+    leader_employee_ids = set(
+        Employee.objects.filter(
+            user_id__in=team_leader_user_ids
+        ).values_list('id', flat=True)
+    )
+
+    # ═══════════════════════════════════════════════════════
+    # Profil Employee du chef connecté
+    # ═══════════════════════════════════════════════════════
+    team_leader_employee = None
+
+    if is_team_leader:
+        if hasattr(current_user, 'employee_profile'):
+            try:
+                team_leader_employee = current_user.employee_profile
+            except Exception:
+                pass
+        if not team_leader_employee:
+            team_leader_employee = Employee.objects.filter(
+                Q(first_name__iexact=current_user.first_name,
+                  last_name__iexact=current_user.last_name) |
+                Q(matricule__iexact=current_user.username)
+            ).first()
+
+    # ═══════════════════════════════════════════════════════
+    # EMPLOYÉS — même logique que matrix_view
+    # ═══════════════════════════════════════════════════════
+    if is_team_leader:
+        operators_qs = Employee.objects.filter(
+            visible_lines=production_line,
+            manager=current_user
+        ).exclude(
+            id__in=leader_employee_ids
+        ).select_related(
+            'manager', 'line'
+        ).order_by('last_name', 'first_name')
+
+        employees_list = list(operators_qs)
+
+        if team_leader_employee:
+            if team_leader_employee.id not in [e.id for e in employees_list]:
+                employees_list.insert(0, team_leader_employee)
+    else:
+        employees_list = []
+        seen_ids       = set()
+
+        for leader in production_line.team_leaders.all():
+            leader_emp = None
+            if hasattr(leader, 'employee_profile'):
+                try:
+                    leader_emp = leader.employee_profile
+                except Exception:
+                    pass
+            if not leader_emp:
+                leader_emp = Employee.objects.filter(
+                    Q(first_name__iexact=leader.first_name,
+                      last_name__iexact=leader.last_name) |
+                    Q(matricule__iexact=leader.username)
+                ).first()
+
+            if leader_emp and leader_emp.id not in seen_ids:
+                employees_list.append(leader_emp)
+                seen_ids.add(leader_emp.id)
+
+            leader_operators = Employee.objects.filter(
+                visible_lines=production_line,
+                manager=leader
+            ).exclude(
+                id__in=leader_employee_ids
+            ).select_related(
+                'manager', 'line'
+            ).order_by('last_name', 'first_name')
+
+            for emp in leader_operators:
+                if emp.id not in seen_ids:
+                    employees_list.append(emp)
+                    seen_ids.add(emp.id)
+
+    # ═══════════════════════════════════════════════════════
+    # Préparer les données
+    # ═══════════════════════════════════════════════════════
+    employees_with_meta = []
+    for emp in employees_list:
+        is_chef = bool(
+            team_leader_employee and
+            emp.id == team_leader_employee.id
+        )
+
+        emp_manager_name = None
+        if emp.manager:
+            emp_manager_name = (
+                emp.manager.get_full_name() or
+                emp.manager.username
+            )
+
+        employees_with_meta.append({
+            'emp':          emp,
+            'is_chef':      is_chef,
+            'manager_name': emp_manager_name,
+        })
+
+    context = {
+        'production_line':      production_line,
+        'all_user_lines':       all_user_lines,
+        'employees_with_meta':  employees_with_meta,
+        'team_leader_employee': team_leader_employee,
+        'total_count':          len(employees_list),
+        'is_rh':                is_rh,
+        'selected_line_id':     selected_line_id,
+    }
+
+    return render(request, 'matrix/export_select.html', context)
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # TRANSFERT CHEF D'ÉQUIPE (avec approbation RH)
@@ -8427,15 +9928,22 @@ def quality_dashboard(request):
 
     # ── Répartition des niveaux ───────────────────────────────────
     level_stats = {
-        'in_training': MatrixEntry.objects.filter(
+
+        # Niveau I : En formation
+        'in_training': TrainingRecord.objects.filter(
             level=TrainingLevel.IN_TRAINING
         ).count(),
-        'supervised': MatrixEntry.objects.filter(
+
+        # Niveau L : Approuvé
+        'supervised': TrainingRecord.objects.filter(
             level=TrainingLevel.SUPERVISED
         ).count(),
-        'trainer': MatrixEntry.objects.filter(
+
+        # Niveau U : Formateur
+        'trainer': TrainingRecord.objects.filter(
             level=TrainingLevel.TRAINER
         ).count(),
+
     }
 
     # ── Demandes en attente ───────────────────────────────────────
@@ -8600,175 +10108,498 @@ def quality_team_leaders(request):
 
 # matrix/views.py  ← REMPLACER quality_operator_detail
 
+
 @quality_required
 def quality_operator_detail(request, employee_id):
     """
-    Fiche complète d'un opérateur avec TOUS les niveaux (I, L, U)
-    par tâche et par ligne.
+    Fiche complète d'un opérateur avec :
+
+    - Tous les niveaux historiques I, L et U.
+    - Une matrice regroupée par tâche.
+    - Un historique chronologique des formations.
+    - Les requalifications et les transferts.
+    - Les demandes en attente.
+    - Des statistiques cohérentes avec la matrice affichée.
     """
 
+    # =====================================================
+    # 1. RÉCUPÉRATION DE L'OPÉRATEUR
+    # =====================================================
+
     employee = get_object_or_404(
-        Employee.objects.select_related('line', 'manager'),
+        Employee.objects.select_related(
+            'line',
+            'manager'
+        ),
         pk=employee_id
     )
 
-    # ── Matrice groupée par group_title ────────────────────────────
+    # =====================================================
+    # 2. MATRICE ACTUELLE
+    # =====================================================
+
     entries = MatrixEntry.objects.filter(
         employee=employee
-    ).select_related('task').order_by(
-        'task__group_title', 'task__order', 'task__task_number'
+    ).select_related(
+        'task'
+    ).order_by(
+        'task__group_title',
+        'task__order',
+        'task__task_number'
     )
 
+    # Regrouper les entrées par groupe de tâches.
     groups = {}
-    for entry in entries:
-        group = entry.task.group_title or "Général"
-        groups.setdefault(group, []).append(entry)
 
-    # ═══════════════════════════════════════════════════════════════
-    # ✅ HISTORIQUE FORMATIONS AVEC TOUS LES NIVEAUX PAR TÂCHE
-    # ═══════════════════════════════════════════════════════════════
+    for entry in entries:
+
+        group = entry.task.group_title or "Général"
+
+        groups.setdefault(
+            group,
+            []
+        ).append(entry)
+
+    # =====================================================
+    # 3. RÉCUPÉRER TOUTES LES FORMATIONS
+    # =====================================================
+
     all_training_records = TrainingRecord.objects.filter(
         employee=employee
     ).select_related(
-        'task', 'trainer'
-    ).prefetch_related('lines').order_by('task__group_title', 'task__order', '-date')
+        'task',
+        'trainer'
+    ).prefetch_related(
+        'lines'
+    ).order_by(
+        'task__group_title',
+        'task__order',
+        '-date'
+    )
 
-    # Regrouper par tâche avec tous les niveaux
+    # =====================================================
+    # 4. REGROUPER LES FORMATIONS PAR TÂCHE
+    # =====================================================
+
     training_by_task = {}
+
     for rec in all_training_records:
+
         task_id = rec.task_id
+
+        # Initialiser une tâche si elle n'existe pas.
         if task_id not in training_by_task:
+
             training_by_task[task_id] = {
+
                 'task': rec.task,
-                'group_title': rec.task.group_title or 'Général',
+
+                'group_title': (
+                    rec.task.group_title or 'Général'
+                ),
+
                 'records': [],
+
                 'record_I': None,
+
                 'record_L': None,
+
                 'record_U': None,
+
                 'lines': set(),
+
             }
 
-        training_by_task[task_id]['records'].append(rec)
+        data = training_by_task[task_id]
 
-        # Garder le record le plus récent pour chaque niveau
-        if rec.level == TrainingLevel.IN_TRAINING and training_by_task[task_id]['record_I'] is None:
-            training_by_task[task_id]['record_I'] = rec
-        elif rec.level == TrainingLevel.SUPERVISED and training_by_task[task_id]['record_L'] is None:
-            training_by_task[task_id]['record_L'] = rec
-        elif rec.level == TrainingLevel.TRAINER and training_by_task[task_id]['record_U'] is None:
-            training_by_task[task_id]['record_U'] = rec
+        # Ajouter l'enregistrement à son historique.
+        data['records'].append(rec)
 
-        # Collecter les lignes
+        # -------------------------------------------------
+        # Garder le dernier enregistrement de chaque niveau.
+        #
+        # Le QuerySet est trié par date décroissante
+        # à l'intérieur de chaque tâche.
+        # -------------------------------------------------
+
+        if rec.level == TrainingLevel.IN_TRAINING:
+
+            if data['record_I'] is None:
+
+                data['record_I'] = rec
+
+        elif rec.level == TrainingLevel.SUPERVISED:
+
+            if data['record_L'] is None:
+
+                data['record_L'] = rec
+
+        elif rec.level == TrainingLevel.TRAINER:
+
+            if data['record_U'] is None:
+
+                data['record_U'] = rec
+
+        # -------------------------------------------------
+        # Récupérer les lignes liées à la formation.
+        # -------------------------------------------------
+
         for line in rec.lines.all():
-            training_by_task[task_id]['lines'].add(line)
 
-    # Convertir en liste groupée
+            data['lines'].add(line)
+
+    # =====================================================
+    # 5. CONSTRUIRE LES GROUPES DE FORMATION
+    # =====================================================
+
     training_groups = {}
+
     for task_id, data in training_by_task.items():
+
         group = data['group_title']
+
         if group not in training_groups:
+
             training_groups[group] = []
 
-        # Déterminer le niveau le plus élevé
+        # Déterminer le niveau le plus élevé enregistré.
         highest = None
-        if data['record_U']:
+
+        if data['record_U'] is not None:
+
             highest = 'U'
-        elif data['record_L']:
+
+        elif data['record_L'] is not None:
+
             highest = 'L'
-        elif data['record_I']:
+
+        elif data['record_I'] is not None:
+
             highest = 'I'
 
+        # Ajouter la tâche au groupe.
         training_groups[group].append({
-            'task':         data['task'],
-            'record_I':     data['record_I'],
-            'record_L':     data['record_L'],
-            'record_U':     data['record_U'],
-            'lines':        list(data['lines']),
-            'highest':      highest,
+
+            'task': data['task'],
+
+            'record_I': data['record_I'],
+
+            'record_L': data['record_L'],
+
+            'record_U': data['record_U'],
+
+            'lines': sorted(
+                data['lines'],
+                key=lambda line: line.name
+            ),
+
+            'highest': highest,
+
             'total_records': len(data['records']),
+
         })
 
-    # ═══════════════════════════════════════════════════════════════
-    # ✅ HISTORIQUE CHRONOLOGIQUE (tous les enregistrements)
-    # ═══════════════════════════════════════════════════════════════
+    # =====================================================
+    # 6. HISTORIQUE CHRONOLOGIQUE DES FORMATIONS
+    # =====================================================
+
     training_timeline = TrainingRecord.objects.filter(
         employee=employee
     ).select_related(
-        'task', 'trainer'
-    ).prefetch_related('lines').order_by('-date')
+        'task',
+        'trainer'
+    ).prefetch_related(
+        'lines'
+    ).order_by(
+        '-date'
+    )
 
     timeline_data = []
-    for rec in training_timeline:
-        level_label = ''
-        level_class = ''
-        if rec.level == TrainingLevel.IN_TRAINING:
-            level_label, level_class = 'I', 'warning'
-        elif rec.level == TrainingLevel.SUPERVISED:
-            level_label, level_class = 'L', 'success'
-        elif rec.level == TrainingLevel.TRAINER:
-            level_label, level_class = 'U', 'primary'
 
+    for rec in training_timeline:
+
+        level_label = ''
+
+        level_class = ''
+
+        # Niveau I
+        if rec.level == TrainingLevel.IN_TRAINING:
+
+            level_label = 'I'
+
+            level_class = 'warning'
+
+        # Niveau L
+        elif rec.level == TrainingLevel.SUPERVISED:
+
+            level_label = 'L'
+
+            level_class = 'success'
+
+        # Niveau U
+        elif rec.level == TrainingLevel.TRAINER:
+
+            level_label = 'U'
+
+            level_class = 'primary'
+
+        # Préparer la date.
+        date_str = (
+            rec.date.strftime('%d/%m/%Y')
+            if rec.date
+            else '—'
+        )
+
+        # Ajouter l'événement.
         timeline_data.append({
-            'record':      rec,
+
+            'record': rec,
+
             'level_label': level_label,
+
             'level_class': level_class,
-            'date_str':    rec.date.strftime('%d/%m/%Y') if rec.date else '—',
-            'lines':       list(rec.lines.all()),
+
+            'date_str': date_str,
+
+            'lines': list(rec.lines.all()),
+
         })
 
-    # ── Requalifications ───────────────────────────────────────────
-    requalif_history = RequalificationRecord.objects.filter(
-        employee=employee
-    ).select_related('task', 'line').order_by('-requalification_date')[:15]
+    # =====================================================
+    # 7. HISTORIQUE DES REQUALIFICATIONS
+    # =====================================================
 
-    # ── Transferts ─────────────────────────────────────────────────
+    # QuerySet complet.
+    requalif_queryset = RequalificationRecord.objects.filter(
+        employee=employee
+    ).select_related(
+        'task',
+        'line'
+    )
+
+    # Nombre TOTAL de requalifications.
+    # Important : calculer avant la limitation à 15.
+    total_requalifs = requalif_queryset.count()
+
+    # Afficher uniquement les 15 plus récentes.
+    requalif_history = requalif_queryset.order_by(
+        '-requalification_date'
+    )[:15]
+
+    # =====================================================
+    # 8. HISTORIQUE DES TRANSFERTS
+    # =====================================================
+
     transfer_history = LineTransfer.objects.filter(
         employee=employee
     ).select_related(
-        'from_line', 'to_line', 'transferred_by'
-    ).order_by('-transfer_date')
+        'from_line',
+        'to_line',
+        'transferred_by'
+    ).order_by(
+        '-transfer_date'
+    )
 
-    # ── Demandes en attente ────────────────────────────────────────
-    pending_training_req = TrainingApprovalRequest.objects.filter(
-        employee=employee,
-        approved__isnull=True
-    ).select_related('task').order_by('-date_requested')
+    # Nombre total de transferts.
+    total_transfers = transfer_history.count()
 
-    pending_requalif_req = RequalificationApprovalRequest.objects.filter(
-        employee=employee,
-        approved__isnull=True
-    ).select_related('task').order_by('-date_requested')
+    # =====================================================
+    # 9. DEMANDES DE FORMATION EN ATTENTE
+    # =====================================================
 
-    # ── Stats ──────────────────────────────────────────────────────
-    nb_I = entries.filter(level=TrainingLevel.IN_TRAINING).count()
-    nb_L = entries.filter(level=TrainingLevel.SUPERVISED).count()
-    nb_U = entries.filter(level=TrainingLevel.TRAINER).count()
+    pending_training_req = (
+        TrainingApprovalRequest.objects.filter(
+            employee=employee,
+            approved__isnull=True
+        )
+        .select_related(
+            'task',
+            'requested_by'
+        )
+        .order_by(
+            '-date_requested'
+        )
+    )
+
+    # Nombre de demandes de formation.
+    total_pending_training = pending_training_req.count()
+
+    # =====================================================
+    # 10. DEMANDES DE REQUALIFICATION EN ATTENTE
+    # =====================================================
+
+    pending_requalif_req = (
+        RequalificationApprovalRequest.objects.filter(
+            employee=employee,
+            approved__isnull=True
+        )
+        .select_related(
+            'task'
+        )
+        .order_by(
+            '-date_requested'
+        )
+    )
+
+    # Nombre de demandes de requalification.
+    total_pending_requalif = pending_requalif_req.count()
+
+    # =====================================================
+    # 11. CORRECTION DES STATISTIQUES I / L / U
+    # =====================================================
+
+    # IMPORTANT :
+    #
+    # On utilise TrainingRecord via training_by_task.
+    #
+    # On ne compte plus les niveaux depuis MatrixEntry,
+    # puisque le tableau affiche les niveaux historiques.
+    #
+    # Une même tâche peut avoir :
+    # I = 1, L = 1 et U = 1.
+    #
+    # Chaque niveau est compté une seule fois par tâche.
+
+    # -------------------------------------------------
+    # NIVEAU I
+    # -------------------------------------------------
+
+    nb_I = sum(
+        1
+        for data in training_by_task.values()
+        if data['record_I'] is not None
+    )
+
+    # -------------------------------------------------
+    # NIVEAU L
+    # -------------------------------------------------
+
+    nb_L = sum(
+        1
+        for data in training_by_task.values()
+        if data['record_L'] is not None
+    )
+
+    # -------------------------------------------------
+    # NIVEAU U
+    # -------------------------------------------------
+
+    nb_U = sum(
+        1
+        for data in training_by_task.values()
+        if data['record_U'] is not None
+    )
+
+    # =====================================================
+    # 12. CALCUL DES TOTAUX
+    # =====================================================
+
+    # Nombre de tâches distinctes possédant
+    # au moins un historique de formation.
+    total_tasks = len(training_by_task)
+
+    # Nombre total d'enregistrements de formation.
+    # Le QuerySet a déjà été évalué dans la boucle.
+    total_trainings = len(all_training_records)
+
+    # Somme des niveaux historiques.
+    total_levels = nb_I + nb_L + nb_U
+
+    # Nombre total de demandes en attente.
+    total_pending = (
+        total_pending_training
+        + total_pending_requalif
+    )
+
+    # =====================================================
+    # 13. STATISTIQUES FINALES
+    # =====================================================
 
     stats = {
-        'total_tasks':     entries.count(),
-        'nb_I':            nb_I,
-        'nb_L':            nb_L,
-        'nb_U':            nb_U,
-        'nb_transfers':    transfer_history.count(),
-        'nb_requalifs':    requalif_history.count(),
-        'total_trainings': all_training_records.count(),
-        'nb_pending':      pending_training_req.count() + pending_requalif_req.count(),
+
+        # Nombre de tâches avec formation.
+        'total_tasks': total_tasks,
+
+        # Compteurs de compétences.
+        'nb_I': nb_I,
+
+        'nb_L': nb_L,
+
+        'nb_U': nb_U,
+
+        # Somme des niveaux I + L + U.
+        'total_levels': total_levels,
+
+        # Nombre total de formations enregistrées.
+        'total_trainings': total_trainings,
+
+        # Nombre total de transferts.
+        'nb_transfers': total_transfers,
+
+        # Nombre total de requalifications.
+        'nb_requalifs': total_requalifs,
+
+        # Demandes en attente.
+        'nb_pending': total_pending,
+
+        # Détail des demandes.
+        'nb_pending_training': total_pending_training,
+
+        'nb_pending_requalif': total_pending_requalif,
+
     }
 
+    # =====================================================
+    # 14. CONTEXTE ENVOYÉ AU TEMPLATE
+    # =====================================================
+
     context = {
-        'employee':             employee,
-        'groups':               groups,
-        'training_groups':      training_groups,
-        'training_timeline':    timeline_data,
-        'requalif_history':     requalif_history,
-        'transfer_history':     transfer_history,
+
+        # Opérateur.
+        'employee': employee,
+
+        # Matrice actuelle.
+        'groups': groups,
+
+        # Niveaux historiques par tâche.
+        'training_groups': training_groups,
+
+        # Historique chronologique.
+        'training_timeline': timeline_data,
+
+        # Requalifications.
+        'requalif_history': requalif_history,
+
+        # Transferts.
+        'transfer_history': transfer_history,
+
+        # Demandes en attente.
         'pending_training_req': pending_training_req,
+
         'pending_requalif_req': pending_requalif_req,
-        'stats':                stats,
-        'TrainingLevel':        TrainingLevel,
-        'all_lines':            ProductionLine.objects.all().order_by('name'),
+
+        # Statistiques.
+        'stats': stats,
+
+        # Enum des niveaux.
+        'TrainingLevel': TrainingLevel,
+
+        # Lignes disponibles.
+        'all_lines': ProductionLine.objects.all().order_by(
+            'name'
+        ),
+
     }
-    return render(request, 'matrix/quality_operator_detail.html', context)
+
+    # =====================================================
+    # 15. AFFICHAGE DE LA PAGE
+    # =====================================================
+
+    return render(
+        request,
+        'matrix/quality_operator_detail.html',
+        context
+    )
 
 
 
@@ -9236,3 +11067,51 @@ def quality_line_detail(request, line_id):
     }
 
     return render(request, "matrix/quality_line_detail.html", context)
+
+
+
+from django.http import JsonResponse
+from django.db.models import Q
+from .models import TrainingQuestion, TrainingLevel
+
+
+def get_questionnaire_by_task(request):
+    """
+    Retourne les questions RH actives pour une tâche + une ligne + un niveau spécifique.
+    """
+    task_id = request.GET.get("task_id")
+    line_id = request.GET.get("line_id")
+    level_id = request.GET.get("level")  # ✅ Récupération dynamique du niveau envoyé en paramètre
+
+    try:
+        task_id = int(task_id)
+        line_id = int(line_id)
+        level_id = int(level_id)  # ✅ Conversion en entier (0 pour I, 1 pour L, 3 pour U)
+    except (TypeError, ValueError):
+        return JsonResponse({"questions": []})
+
+    # Filtrage dynamique par niveau
+    questions = (
+        TrainingQuestion.objects.filter(
+            is_active=True,
+            level=level_id,  # ✅ Filtre appliqué dynamiquement
+        )
+        .filter(Q(task__isnull=True) | Q(task_id=task_id))
+        .filter(Q(line__isnull=True) | Q(line_id=line_id))
+        .order_by("order", "id")
+    )
+
+    data = [
+        {
+            "id": q.pk,
+            "text": q.text,
+            "help_text": q.help_text or "",
+            "answer_type": q.answer_type,   # "YES_NO" ou "TEXT"
+            "is_required": q.is_required,
+            "is_blocking": q.is_blocking,
+            "requires_comment_if_no": q.requires_comment_if_no,
+        }
+        for q in questions
+    ]
+
+    return JsonResponse({"questions": data})

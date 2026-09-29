@@ -1,0 +1,27 @@
+{% extends "matrix/training_requests_base.html" %}
+{% block title %}Plan de formation — Demande #{{ approval_request.pk }}{% endblock %}
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <a href="{% url 'training_requests_list' %}" class="text-sm text-blue-700 underline">Retour à mes demandes</a>
+    <h1 class="text-2xl font-bold mt-5 mb-2">{% if approval_request.has_training_plan %}Remplacer{% else %}Ajouter{% endif %} le plan de formation</h1>
+    <p class="text-gray-600 mb-6">Demande #{{ approval_request.pk }} — {{ approval_request.employee }} — {{ approval_request.task }} — {{ approval_request.get_requested_level_display }}</p>
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+        {% if approval_request.has_training_plan %}
+        <a href="{% url 'training_plan_view' approval_request.pk %}" target="_blank" rel="noopener" class="inline-block text-blue-700 underline mb-5">Voir le plan actuel (nouvel onglet)</a>
+        {% endif %}
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            {{ form.non_field_errors }}
+            <label for="{{ form.training_plan_image.id_for_label }}" class="block font-semibold mb-2">{{ form.training_plan_image.label }}</label>
+            {{ form.training_plan_image }}
+            <p class="mt-2 text-sm text-gray-500">{{ form.training_plan_image.help_text }}</p>
+            {% for error in form.training_plan_image.errors %}<p role="alert" class="mt-2 text-sm text-red-700">{{ error }}</p>{% endfor %}
+            <p class="mt-5 rounded-lg bg-blue-50 p-4 text-sm text-blue-800">La demande restera en attente de décision RH après l’enregistrement du plan.</p>
+            <div class="flex flex-wrap gap-4 mt-6">
+                <button type="submit" class="rounded-lg bg-blue-700 hover:bg-blue-800 text-white px-5 py-3 font-medium">Enregistrer le plan</button>
+                <a href="{% url 'training_requests_list' %}" class="rounded-lg border border-gray-300 px-5 py-3 text-gray-700">Annuler</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

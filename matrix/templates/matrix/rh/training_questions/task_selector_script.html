@@ -1,0 +1,46 @@
+<script>
+(() => {
+    const line = document.getElementById('id_line');
+    const task = document.getElementById('id_task');
+    if (!line || !task) return;
+    const endpoint = "{% url 'training_question_tasks_by_line' %}";
+    let generation = 0;
+
+    task.form.addEventListener('submit', event => {
+        if (task.disabled || !task.reportValidity()) event.preventDefault();
+    });
+
+    line.addEventListener('change', async () => {
+        const current = new Set(Array.from(task.selectedOptions, option => option.value));
+        const requestGeneration = ++generation;
+        const selectedLine = line.value;
+        task.disabled = true;
+        try {
+            let options;
+            if (!selectedLine && task.multiple) {
+                const resp = await fetch(endpoint + '?all_tasks=1', {credentials: 'same-origin'});
+                if (!resp.ok) throw new Error('Chargement des tâches impossible');
+                options = (await resp.json()).tasks.map(item => ({id: String(item.id), label: item.code + ' - ' + item.title}));
+            } else if (!selectedLine) {
+                options = [];
+            } else {
+                const resp = await fetch(endpoint + '?line_id=' + encodeURIComponent(selectedLine), {credentials: 'same-origin'});
+                if (!resp.ok) throw new Error('Chargement des tâches impossible');
+                options = (await resp.json()).tasks.map(item => ({id: String(item.id), label: item.code + ' - ' + item.title}));
+            }
+            if (requestGeneration !== generation) return;
+            task.replaceChildren();
+            if (!task.multiple) task.add(new Option('---------', ''));
+            for (const item of options) {
+                task.add(new Option(item.label, item.id, false, current.has(item.id)));
+            }
+            task.setCustomValidity('');
+        } catch (error) {
+            if (requestGeneration !== generation) return;
+            task.setCustomValidity('Impossible de charger les tâches. Sélectionnez à nouveau la ligne.');
+        } finally {
+            if (requestGeneration === generation) task.disabled = false;
+        }
+    });
+})();
+</script>

@@ -281,7 +281,7 @@
         </div>
     </div>
 
-    {% if not leaders_data %}
+    {% if not leaders_data and not form.is_bound %}
     <!-- ══ Aucun chef ══ -->
     <div class="bg-green-50 border border-green-200 rounded-xl p-12 text-center">
         <div class="w-16 h-16 bg-green-100 rounded-full flex items-center
@@ -343,9 +343,12 @@
                 <!-- Formulaire -->
                 <form method="post"
                       action="{% url 'rh_requalify_team_leader' %}"
-                      id="requalif-form"
+                      id="requalif-form" enctype="multipart/form-data"
                       class="px-5 py-4 space-y-4">
                     {% csrf_token %}
+                    {% include 'matrix/requalification_form_errors.html' %}
+                    {{ form.new_level.as_hidden }}
+                    {{ form.requalifier_name.as_hidden }}
 
                     <!-- Chef -->
                     <div>
@@ -356,6 +359,9 @@
                         <select id="select-leader" name="employee_id"
                                 class="field-input" required>
                             <option value="">-- Sélectionner --</option>
+                            {% if selected_employee %}
+                            <option value="{{ selected_employee.pk }}" selected>{{ selected_employee }}</option>
+                            {% endif %}
                             {% for item in leaders_data %}
                             <option value="{{ item.employee.id }}">
                                 {% if item.global_urgency == 'critical' %}🔴
@@ -376,7 +382,7 @@
                             Ligne à requalifier
                             <span class="required-star">*</span>
                         </label>
-                        <select id="select-line" name="line_id"
+                        <select id="select-line" name="line_id" data-bound-line="{{ form.line_id.value|default_if_none:'' }}"
                                 class="field-input" required disabled>
                             <option value="">-- Sélectionner un chef --</option>
                         </select>
@@ -400,7 +406,7 @@
                                 class="field-input" required>
                             <option value="">-- Sélectionner --</option>
                             {% for value, label in result_choices %}
-                            <option value="{{ value }}">{{ label }}</option>
+                            <option value="{{ value }}" {% if form.result.value == value %}selected{% endif %}>{{ label }}</option>
                             {% endfor %}
                         </select>
                     </div>
@@ -419,7 +425,7 @@
                                id="input-date"
                                name="requalification_date"
                                class="field-input"
-                               value="{{ today|date:'Y-m-d' }}">
+                               value="{% if form.is_bound %}{{ form.requalification_date.value|default_if_none:'' }}{% else %}{{ today|date:'Y-m-d' }}{% endif %}">
                     </div>
 
                     <!-- Notes -->
@@ -429,8 +435,9 @@
                         </label>
                         <textarea id="input-notes" name="notes"
                                   class="field-input" rows="2"
-                                  placeholder="Observations..."></textarea>
+                                  placeholder="Observations...">{{ form.notes.value|default_if_none:"" }}</textarea>
                     </div>
+
 
                     <!-- Actions -->
                     <div class="flex items-center justify-between
@@ -751,7 +758,8 @@
                             </td>
                             <td class="px-4 py-3">
                                 <span class="text-xs text-gray-500">
-                                    {{ rec.get_requalifier_display }}
+                                    {{ rec.get_requalifier_display }}<br>
+                                  
                                 </span>
                             </td>
                         </tr>
@@ -782,10 +790,11 @@
 </div>
 
 <!-- ══ JAVASCRIPT ══ -->
+{{ leaders_lines_data|json_script:"requalification-leader-lines" }}
 <script>
 (function () {
 
-const leadersLinesData = {{ leaders_lines_json|safe }};
+const leadersLinesData = JSON.parse(document.getElementById('requalification-leader-lines').textContent) || [];
 
 const selectLeader = document.getElementById('select-leader');
 const selectLine   = document.getElementById('select-line');
@@ -793,6 +802,7 @@ const lineInfoDiv  = document.getElementById('line-info');
 const lineInfoText = document.getElementById('line-info-text');
 const btnSubmit    = document.getElementById('btn-submit');
 const form         = document.getElementById('requalif-form');
+if (!form) return;
 
 // ── Accordéon chef ──────────────────────────────────────────────
 window.toggleLeader = function (panelId, chevronId) {
@@ -934,6 +944,14 @@ if (form) {
             this.classList.remove('has-error');
         });
     });
+}
+
+if (selectLeader.value) {
+    selectLeader.dispatchEvent(new Event('change'));
+    if (selectLine.dataset.boundLine) {
+        selectLine.value = selectLine.dataset.boundLine;
+        selectLine.dispatchEvent(new Event('change'));
+    }
 }
 
 // ── Toast ────────────────────────────────────────────────────────

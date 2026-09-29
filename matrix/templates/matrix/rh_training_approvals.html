@@ -495,27 +495,376 @@
             color: var(--accent-color);
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         }
-        .sidebar-footer-compact {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-}
+        /* =====================================================
+   LOGOUT
+===================================================== */
 
 .logout-item {
-  color: #FCA5A5 !important;
-  background: rgba(220, 38, 38, 0.1);
+    width: 100%;
+
+    min-height: 58px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    padding: 10px 12px;
+
+    border-radius: 10px;
+
+    text-decoration: none;
+
+    background: rgba(220, 38, 38, 0.08);
+
+    border: 1px solid rgba(220, 38, 38, 0.14);
+
+    transition: all 0.2s ease;
+
+    box-sizing: border-box;
 }
 
+
 .logout-item:hover {
-  background: rgba(220, 38, 38, 0.2) !important;
-  color: #FEE2E2 !important;
+    background: rgba(220, 38, 38, 0.15);
+
+    border-color: rgba(248, 113, 113, 0.25);
+
+    transform: translateY(-1px);
 }
+
+
+/* =====================================================
+   CONTENU LOGOUT
+===================================================== */
+
+.logout-main {
+    display: flex;
+
+    align-items: center;
+
+    gap: 12px;
+
+    min-width: 0;
+
+    flex: 1;
+}
+
+
+.logout-main > i {
+    width: 20px;
+
+    text-align: center;
+
+    color: #F87171;
+
+    flex-shrink: 0;
+}
+
+
+/* =====================================================
+   TEXTE LOGOUT
+===================================================== */
+
+.logout-content {
+    display: flex;
+
+    flex-direction: column;
+
+    min-width: 0;
+
+    flex: 1;
+}
+
+
+.logout-label {
+    color: #FCA5A5;
+
+    font-size: 13px;
+
+    font-weight: 600;
+
+    line-height: 1.3;
+}
+
+
+.logout-username {
+    color: rgba(255, 255, 255, 0.45);
+
+    font-size: 10px;
+
+    margin-top: 2px;
+
+    white-space: nowrap;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+    max-width: 150px;
+}
+
+
+/* =====================================================
+   FLECHE LOGOUT
+===================================================== */
+
+.logout-arrow {
+    color: rgba(248, 113, 113, 0.45);
+
+    font-size: 10px;
+
+    margin-left: 8px;
+
+    flex-shrink: 0;
+
+    transition: all 0.2s ease;
+}
+
+
+.logout-item:hover .logout-arrow {
+    color: #FCA5A5;
+
+    transform: translateX(2px);
+}
+
+
+/* =====================================================
+   SCROLLBAR SIDEBAR
+===================================================== */
+
+.sidebar-nav::-webkit-scrollbar {
+    width: 5px;
+}
+
+
+.sidebar-nav::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+
+.sidebar-nav::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.12);
+
+    border-radius: 10px;
+}
+
+
+.sidebar-nav::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
     </style>
 </head>
 <body>
+{% if messages %}
+<div
+    id="toast-container"
+    class="fixed top-5 right-5 z-[9999] flex w-full max-w-md flex-col gap-3 px-4 sm:px-0"
+    aria-live="polite"
+    aria-atomic="true"
+>
+    {% for message in messages %}
+    <div
+        class="toast-message group relative overflow-hidden rounded-xl border bg-white shadow-lg
+               transition-all duration-300 ease-out"
+        data-timeout="{% if 'error' in message.tags %}7000{% elif 'warning' in message.tags %}6000{% else %}4500{% endif %}"
 
+        {% if 'success' in message.tags %}
+            style="border-color: rgb(209 250 229);"
+        {% elif 'error' in message.tags %}
+            style="border-color: rgb(254 205 211);"
+        {% elif 'warning' in message.tags %}
+            style="border-color: rgb(253 230 138);"
+        {% else %}
+            style="border-color: rgb(191 219 254);"
+        {% endif %}
+    >
+
+        <!-- Barre latérale -->
+        <div class="
+            absolute inset-y-0 left-0 w-1
+            {% if 'success' in message.tags %}
+                bg-emerald-500
+            {% elif 'error' in message.tags %}
+                bg-rose-500
+            {% elif 'warning' in message.tags %}
+                bg-amber-500
+            {% else %}
+                bg-blue-500
+            {% endif %}
+        "></div>
+
+        <div class="flex items-start gap-4 p-4 pl-5">
+
+            <!-- Icône -->
+            <div class="
+                flex h-10 w-10 shrink-0 items-center justify-center rounded-lg
+                {% if 'success' in message.tags %}
+                    bg-emerald-50 text-emerald-600
+                {% elif 'error' in message.tags %}
+                    bg-rose-50 text-rose-600
+                {% elif 'warning' in message.tags %}
+                    bg-amber-50 text-amber-600
+                {% else %}
+                    bg-blue-50 text-blue-600
+                {% endif %}
+            ">
+
+                {% if 'success' in message.tags %}
+                    <svg
+                        class="h-5 w-5"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            d="M5 13l4 4L19 7"
+                        />
+                    </svg>
+
+                {% elif 'error' in message.tags %}
+                    <svg
+                        class="h-5 w-5"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                    >
+                        <circle cx="12" cy="12" r="9"/>
+                        <path
+                            stroke-linecap="round"
+                            d="M15 9l-6 6M9 9l6 6"
+                        />
+                    </svg>
+
+                {% elif 'warning' in message.tags %}
+                    <svg
+                        class="h-5 w-5"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            d="M12 9v4m0 4h.01M10.3 4.3L2.6 18
+                               A1.5 1.5 0 004 20h16
+                               a1.5 1.5 0 001.3-2L13.7 4.3
+                               a1.5 1.5 0 00-3.4 0z"
+                        />
+                    </svg>
+
+                {% else %}
+                    <svg
+                        class="h-5 w-5"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                    >
+                        <circle cx="12" cy="12" r="9"/>
+                        <path
+                            stroke-linecap="round"
+                            d="M12 11v5m0-8h.01"
+                        />
+                    </svg>
+                {% endif %}
+            </div>
+
+            <!-- Texte -->
+            <div class="min-w-0 flex-1">
+
+                <div class="flex items-start justify-between gap-4">
+
+                    <div>
+                        <h3 class="
+                            text-sm font-semibold
+                            {% if 'success' in message.tags %}
+                                text-emerald-900
+                            {% elif 'error' in message.tags %}
+                                text-rose-900
+                            {% elif 'warning' in message.tags %}
+                                text-amber-900
+                            {% else %}
+                                text-blue-900
+                            {% endif %}
+                        ">
+                            {% if 'success' in message.tags %}
+                                Opération réussie
+                            {% elif 'error' in message.tags %}
+                                Action impossible
+                            {% elif 'warning' in message.tags %}
+                                Attention
+                            {% else %}
+                                Information
+                            {% endif %}
+                        </h3>
+
+                        <p class="mt-1 text-sm leading-5 text-slate-600">
+                            {{ message|linebreaksbr }}
+                        </p>
+                    </div>
+
+                    <!-- Bouton fermer -->
+                    <button
+                        type="button"
+                        class="toast-close -mr-1 -mt-1 flex h-8 w-8 shrink-0 items-center
+                               justify-center rounded-lg text-slate-400
+                               transition hover:bg-slate-100 hover:text-slate-600
+                               focus:outline-none focus:ring-2 focus:ring-slate-200"
+                        aria-label="Fermer"
+                    >
+                        <svg
+                            class="h-4 w-4"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                d="M6 6l12 12M18 6L6 18"
+                            />
+                        </svg>
+                    </button>
+
+                </div>
+
+                <div class="mt-3 flex items-center gap-2">
+                    <span class="text-xs font-medium text-slate-400">
+                        Maintenant
+                    </span>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Barre de progression -->
+        <div class="h-[3px] bg-slate-100">
+            <div class="
+                toast-progress h-full w-full origin-left
+                {% if 'success' in message.tags %}
+                    bg-emerald-500
+                {% elif 'error' in message.tags %}
+                    bg-rose-500
+                {% elif 'warning' in message.tags %}
+                    bg-amber-500
+                {% else %}
+                    bg-blue-500
+                {% endif %}
+            "></div>
+        </div>
+
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
 <div class="main-container">
     
     <!-- SIDEBAR -->
@@ -545,12 +894,23 @@
 
             <div style="margin-bottom: 24px;">
                 <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255, 255, 255, 0.5); padding: 0 24px 12px;">Gestion</div>
+                <a href="{% url 'rh_level_i_approvals' %}" class="menu-item ">
+                    <i class="fas fa-graduation-cap"></i>
+                    <span>Demandes Niveau I</span>
+                    {% if total_pending_i > 0 %}
+                    <span class="badge-count">{{ total_pending_i }}</span>
+                    {% endif %}
+                </a>
                 <a href="{% url 'rh_training_approvals' %}" class="menu-item active">
                     <i class="fas fa-clock"></i>
-                    <span>Demandes Formations</span>
-                    {% if pending.count > 0 %}
-                    <span style="background: var(--warning-color); color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px; margin-left: auto;">{{ pending.count }}</span>
+                    <span>Demandes L / U</span>
+                    {% if pending_count > 0 %}
+                    <span class="menu-badge">{{ pending_count }}</span>
                     {% endif %}
+                </a>
+                        <a href="{% url 'training_question_list' %}" class="menu-item">
+                    <i class="fas fa-question-circle"></i>
+                    <span>Gestion des questions</span>
                 </a>
                 <a href="{% url 'rh_requalification_approvals' %}" class="menu-item">
                     <i class="fas fa-clipboard-check"></i>
@@ -571,15 +931,31 @@
             </div>
         </nav>
               <!-- Version compacte -->
-<div class="sidebar-footer-compact">
-  <a href="{% url 'login' %}" class="menu-item logout-item">
-    <i class="fas fa-sign-out-alt"></i>
-    <span>Déconnexion</span>
-    <span style="margin-left: auto; font-size: 11px; opacity: 0.7;">
-      {{ request.user.username }}
-    </span>
-  </a>
-</div>
+    <div class="sidebar-footer">
+
+        <a href="{% url 'login' %}" class="logout-item">
+
+            <div class="logout-main">
+
+                <i class="fas fa-sign-out-alt"></i>
+
+                <div class="logout-content">
+                    <span class="logout-label">
+                        Déconnexion
+                    </span>
+
+                    <span class="logout-username">
+                        {{ request.user.username }}
+                    </span>
+                </div>
+
+            </div>
+
+            <i class="fas fa-chevron-right logout-arrow"></i>
+
+        </a>
+
+    </div>
     </aside>
 
     <!-- MAIN CONTENT -->
@@ -700,6 +1076,7 @@
                                     <th><i class="fas fa-calendar-check" style="margin-right: 8px;"></i>Date Formation</th>
                                     <th><i class="fas fa-user-tie" style="margin-right: 8px;"></i>Demandé par</th>
                                     <th><i class="far fa-calendar" style="margin-right: 8px;"></i>Date demande</th>
+                                    <th>Plan de formation</th>
                                     <th style="text-align: center;"><i class="fas fa-cog" style="margin-right: 8px;"></i>Actions</th>
                                 </tr>
                             </thead>
@@ -784,11 +1161,24 @@
                                         </div>
                                     </td>
                                     <td>
-                                        <form method="post" style="display: flex; gap: 8px; justify-content: center;">
+                                        {% if req.has_training_plan %}
+                                            <span style="color: var(--success-color);">Disponible</span>
+                                            <a href="{% url 'training_plan_view' req.pk %}" target="_blank" rel="noopener" class="btn btn-success" style="margin-top: 8px;">Voir le plan</a>
+                                        {% elif req.requires_training_plan %}
+                                            <span style="color: var(--gray-600);">En attente du plan de formation du Chef d’équipe.</span>
+                                        {% else %}
+                                            Non requis
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <form method="post" style="display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;">
                                             {% csrf_token %}
                                             <input type="hidden" name="request_id" value="{{ req.id }}" />
+                                            <label style="width: 100%; font-size: 12px;">Motif en cas de refus
+                                                <input type="text" name="rejection_reason" placeholder="Motif du refus" style="display: block; width: 100%; padding: 6px; border: 1px solid var(--gray-300); border-radius: 6px;" />
+                                            </label>
                                             
-                                            <button type="submit" name="action" value="approve" class="btn btn-success" title="Approuver cette demande">
+                                            <button type="submit" name="action" value="approve" class="btn btn-success" {% if req.requires_training_plan and not req.has_training_plan %}disabled style="opacity: .5; cursor: not-allowed;" title="En attente du plan de formation du Chef d’équipe."{% else %}title="Approuver cette demande"{% endif %}>
                                                 <i class="fas fa-check"></i>
                                                 Approuver
                                             </button>
@@ -802,7 +1192,7 @@
                                 </tr>
                                 {% empty %}
                                 <tr>
-                                    <td colspan="8" style="text-align: center; padding: 60px 20px; color: var(--gray-400);">
+                                    <td colspan="9" style="text-align: center; padding: 60px 20px; color: var(--gray-400);">
                                         <i class="fas fa-check-double" style="font-size: 48px; margin-bottom: 16px; display: block; opacity: 0.3; color: var(--success-color);"></i>
                                         <p style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">Aucune demande en attente</p>
                                         <p style="font-size: 14px; opacity: 0.8;">
@@ -873,6 +1263,138 @@
             </div>
             {% endif %}
 
+
+            {% for approval_request in approval_requests %}
+    <div class="card mb-3">
+        <div class="card-body">
+            <h5>
+                {{ approval_request.employee }}
+            </h5>
+
+            <p>
+                Tâche :
+                {{ approval_request.task }}
+            </p>
+
+            <p>
+                Niveau demandé :
+                {{ approval_request.get_requested_level_display }}
+            </p>
+
+            <p>
+                Ligne :
+                {{ approval_request.line }}
+            </p>
+
+            <p>
+                Date de formation :
+                {{ approval_request.training_date|date:"d/m/Y" }}
+            </p>
+
+            {% if approval_request.training_record %}
+                <p>
+                    Statut :
+                    {{ approval_request.training_record.get_approval_status_display }}
+                </p>
+            {% endif %}
+
+            {% if approval_request.approved is None %}
+    <div class="d-flex gap-2">
+        <form
+            method="post"
+            action="{% url 'review_training_request' approval_request.id %}"
+        >
+            {% csrf_token %}
+
+            <input
+                type="hidden"
+                name="decision"
+                value="approve"
+            >
+
+            <button
+                type="submit"
+                class="btn btn-success"
+            >
+                Approuver
+            </button>
+        </form>
+
+        <form
+            method="post"
+            action="{% url 'review_training_request' approval_request.id %}"
+            class="d-flex gap-2"
+        >
+            {% csrf_token %}
+
+            <input
+                type="hidden"
+                name="decision"
+                value="reject"
+            >
+
+            <input
+                type="text"
+                name="rejection_reason"
+                class="form-control"
+                placeholder="Motif du refus"
+                required
+            >
+
+            <button
+                type="submit"
+                class="btn btn-danger"
+            >
+                Refuser
+            </button>
+        </form>
+    </div>
+
+{% elif approval_request.approved and approval_request.training_record.approval_status != "approved" %}
+    <div class="alert alert-warning">
+        La demande est approuvée, mais la formation n'est pas synchronisée.
+    </div>
+
+    <form
+        method="post"
+        action="{% url 'review_training_request' approval_request.id %}"
+    >
+        {% csrf_token %}
+
+        <input
+            type="hidden"
+            name="decision"
+            value="approve"
+        >
+
+        <button
+            type="submit"
+            class="btn btn-warning"
+        >
+            Synchroniser la formation
+        </button>
+    </form>
+
+{% elif approval_request.approved %}
+    <span class="badge bg-success">
+        Approuvée
+    </span>
+
+{% else %}
+    <span class="badge bg-danger">
+        Refusée
+    </span>
+
+    {% if approval_request.rejection_reason %}
+        <p class="mt-2 text-danger">
+            Motif : {{ approval_request.rejection_reason }}
+        </p>
+    {% endif %}
+{% endif %}
+        </div>
+    </div>
+{% endfor %}
+
         </div>
 
     </div>
@@ -935,6 +1457,47 @@
         observer.observe(el);
     });
 </script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const toasts = document.querySelectorAll(".toast-message");
 
+    toasts.forEach((toast) => {
+        const timeout = parseInt(
+            toast.dataset.timeout || "5000",
+            10
+        );
+
+        const progress = toast.querySelector(".toast-progress");
+        const closeButton = toast.querySelector(".toast-close");
+
+        if (progress) {
+            progress.style.transition =
+                `transform ${timeout}ms linear`;
+
+            requestAnimationFrame(() => {
+                progress.style.transform = "scaleX(0)";
+            });
+        }
+
+        const removeToast = () => {
+            toast.style.opacity = "0";
+            toast.style.transform = "translateX(20px)";
+
+            setTimeout(() => {
+                toast.remove();
+            }, 300);
+        };
+
+        const timer = setTimeout(removeToast, timeout);
+
+        if (closeButton) {
+            closeButton.addEventListener("click", () => {
+                clearTimeout(timer);
+                removeToast();
+            });
+        }
+    });
+});
+</script>
 </body>
 </html>

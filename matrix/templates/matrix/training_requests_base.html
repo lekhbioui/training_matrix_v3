@@ -1,0 +1,29 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Mes demandes de formation{% endblock %}</title>
+    <link rel="icon" type="image/png" href="{% static 'images/logo.png' %}">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>body { font-family: Inter, sans-serif; } a:focus-visible, button:focus-visible { outline: 3px solid #2563eb; outline-offset: 3px; }</style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+    <nav class="bg-white border-b border-gray-200 px-4 sm:px-8 py-4 flex flex-wrap items-center justify-between gap-4" aria-label="Navigation Chef d’équipe">
+        <a href="{% url 'matrix_view' %}" class="text-blue-700 font-semibold"><i class="fas fa-table mr-2" aria-hidden="true"></i>Matrice de formation</a>
+        <div class="flex flex-wrap items-center gap-4 text-sm">
+            <a href="{% url 'training_requests_list' %}" class="text-blue-700 font-medium">Mes demandes de formation</a>
+            <span class="text-gray-500">{{ request.user.get_full_name|default:request.user.username }}</span>
+        </div>
+    </nav>
+    <main class="max-w-7xl mx-auto px-4 sm:px-8 py-8">
+        {% for message in messages %}
+        <div role="status" class="mb-4 rounded-lg border p-4 {% if message.tags == 'error' %}bg-red-50 border-red-200 text-red-800{% else %}bg-blue-50 border-blue-200 text-blue-800{% endif %}">{{ message }}</div>
+        {% endfor %}
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>

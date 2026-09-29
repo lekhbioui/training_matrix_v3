@@ -1,0 +1,749 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Export Matrice — {{ production_line.name }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg: #f5f7fb;
+            --card: #ffffff;
+            --text: #0f172a;
+            --muted: #64748b;
+            --line: #e2e8f0;
+            --primary: #2563eb;
+            --primary-600: #1d4ed8;
+            --primary-50: #eff6ff;
+            --success: #059669;
+            --chef: #7c3aed;
+            --chef-50: #f5f3ff;
+            --shadow-sm: 0 2px 10px rgba(15,23,42,0.04);
+            --shadow-md: 0 10px 30px rgba(15,23,42,0.08);
+            --shadow-lg: 0 18px 45px rgba(15,23,42,0.10);
+            --radius: 14px;
+        }
+
+        * { box-sizing: border-box; }
+
+        html, body {
+            margin: 0; padding: 0;
+            font-family: "Inter", sans-serif;
+            background:
+                radial-gradient(circle at top right, rgba(37,99,235,0.08), transparent 26%),
+                radial-gradient(circle at top left, rgba(124,58,237,0.06), transparent 20%),
+                var(--bg);
+            color: var(--text);
+        }
+
+        a { text-decoration: none; }
+
+        .page { min-height: 100vh; padding: 32px 18px 48px; }
+        .container { max-width: 1100px; margin: 0 auto; }
+
+        /* ── Hero ────────────────────────────────── */
+        .hero {
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 55%, #2563eb 100%);
+            color: white;
+            border-radius: 24px;
+            padding: 28px;
+            box-shadow: var(--shadow-lg);
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 22px;
+        }
+
+        .hero::after {
+            content: "";
+            position: absolute;
+            right: -60px; top: -60px;
+            width: 220px; height: 220px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.08);
+        }
+
+        .hero-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px; flex-wrap: wrap;
+            position: relative; z-index: 1;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .brand-logo {
+            width: 58px; height: 58px;
+            border-radius: 16px;
+            background: rgba(255,255,255,0.12);
+            display: flex; align-items: center; justify-content: center;
+            overflow: hidden;
+            backdrop-filter: blur(6px);
+            border: 1px solid rgba(255,255,255,0.12);
+        }
+
+        .brand-logo img { width: 42px; height: 42px; object-fit: contain; }
+        .brand-fallback { font-size: 26px; font-weight: 800; color: white; }
+
+        .hero h1 {
+            margin: 0 0 6px;
+            font-size: 28px; font-weight: 800;
+            letter-spacing: -0.02em;
+        }
+
+        .hero p { margin: 0; font-size: 14px; color: rgba(255,255,255,0.82); }
+
+        .hero-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+        /* ── Buttons ─────────────────────────────── */
+        .btn {
+            appearance: none; border: none; cursor: pointer;
+            display: inline-flex; align-items: center; justify-content: center;
+            gap: 8px; padding: 11px 16px; border-radius: 12px;
+            font-size: 14px; font-weight: 700;
+            transition: 0.2s ease;
+            text-decoration: none; white-space: nowrap;
+        }
+        .btn:hover { transform: translateY(-1px); }
+
+        .btn-light {
+            background: rgba(255,255,255,0.12);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.14);
+        }
+        .btn-light:hover { background: rgba(255,255,255,0.18); }
+
+        .btn-white {
+            background: white; color: var(--primary);
+            box-shadow: 0 10px 24px rgba(0,0,0,0.12);
+        }
+        .btn-white:hover { background: #f8fafc; }
+
+        .btn-outline {
+            background: white; color: var(--text);
+            border: 1px solid var(--line);
+        }
+        .btn-outline:hover { background: #f8fafc; }
+
+        .btn-export {
+            background: linear-gradient(135deg, var(--success), #10b981);
+            color: white; min-width: 220px;
+            box-shadow: 0 12px 26px rgba(5,150,105,0.25);
+        }
+        .btn-export:hover:not(:disabled) {
+            background: linear-gradient(135deg, #047857, #059669);
+        }
+        .btn-export:disabled {
+            background: #cbd5e1; color: #64748b;
+            box-shadow: none; cursor: not-allowed; transform: none;
+        }
+
+        /* ── Line Selector ───────────────────────── */
+        .line-selector {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            box-shadow: var(--shadow-sm);
+            padding: 16px 20px;
+            margin-bottom: 18px;
+        }
+
+        .line-selector-label {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--muted);
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .line-tabs {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .line-tab {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 18px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            border: 2px solid var(--line);
+            background: white;
+            color: var(--muted);
+            cursor: pointer;
+            transition: 0.2s ease;
+            text-decoration: none;
+        }
+
+        .line-tab:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: var(--primary-50);
+        }
+
+        .line-tab.active {
+            border-color: var(--primary);
+            background: var(--primary-50);
+            color: var(--primary);
+            box-shadow: 0 4px 12px rgba(37,99,235,0.15);
+        }
+
+        .line-tab-dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: var(--line);
+        }
+
+        .line-tab.active .line-tab-dot {
+            background: var(--primary);
+        }
+
+        /* ── Summary ─────────────────────────────── */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 14px; margin-bottom: 22px;
+        }
+
+        .summary-card {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            padding: 18px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .summary-label {
+            font-size: 12px; text-transform: uppercase;
+            letter-spacing: 0.08em; color: var(--muted);
+            font-weight: 700; margin-bottom: 10px;
+        }
+
+        .summary-value {
+            font-size: 24px; font-weight: 800;
+            color: var(--text); line-height: 1;
+        }
+
+        .summary-sub {
+            margin-top: 8px; font-size: 13px; color: var(--muted);
+        }
+
+        /* ── Toolbar ─────────────────────────────── */
+        .toolbar {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            box-shadow: var(--shadow-sm);
+            padding: 16px; margin-bottom: 18px;
+        }
+
+        .toolbar-row {
+            display: flex; align-items: center;
+            justify-content: space-between;
+            gap: 14px; flex-wrap: wrap;
+        }
+
+        .toolbar-left, .toolbar-right {
+            display: flex; align-items: center;
+            gap: 10px; flex-wrap: wrap;
+        }
+
+        .search-wrap {
+            position: relative; min-width: 280px; flex: 1;
+        }
+
+        .search-wrap input {
+            width: 100%; height: 46px;
+            border-radius: var(--radius);
+            border: 1px solid var(--line);
+            background: #fff; padding: 0 14px 0 46px;
+            font-size: 14px; color: var(--text); outline: none;
+            transition: 0.2s ease;
+        }
+
+        .search-wrap input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(37,99,235,0.10);
+        }
+
+        .search-icon {
+            position: absolute; left: 15px; top: 50%;
+            transform: translateY(-50%);
+            color: var(--muted); font-size: 16px;
+        }
+
+        .counter-badge {
+            display: inline-flex; align-items: center; gap: 10px;
+            height: 46px; padding: 0 16px;
+            background: var(--primary-50); color: var(--primary);
+            border-radius: var(--radius);
+            font-size: 14px; font-weight: 700;
+            border: 1px solid #dbeafe;
+        }
+
+        /* ── Panel ───────────────────────────────── */
+        .panel {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: 20px;
+            box-shadow: var(--shadow-md);
+            overflow: hidden;
+        }
+
+        .panel-head {
+            display: flex; align-items: center;
+            justify-content: space-between;
+            gap: 12px; padding: 16px 20px;
+            background: linear-gradient(to right, #f8fafc, #ffffff);
+            border-bottom: 1px solid var(--line);
+            flex-wrap: wrap;
+        }
+
+        .panel-title {
+            font-size: 15px; font-weight: 800;
+            color: var(--text);
+            display: flex; align-items: center; gap: 10px;
+        }
+
+        .panel-title-badge {
+            font-size: 12px; font-weight: 700;
+            color: var(--muted); background: #f1f5f9;
+            border: 1px solid var(--line);
+            padding: 4px 10px; border-radius: 999px;
+        }
+
+        .select-all-inline {
+            display: flex; align-items: center;
+            gap: 10px; font-size: 14px;
+            color: var(--text); font-weight: 600;
+            cursor: pointer; user-select: none;
+        }
+
+        /* ── Employee items ──────────────────────── */
+        .employee-list { display: flex; flex-direction: column; }
+
+        .employee-item {
+            display: flex; align-items: center; gap: 14px;
+            padding: 16px 20px;
+            border-bottom: 1px solid #f1f5f9;
+            transition: background 0.18s ease;
+            cursor: pointer; user-select: none;
+        }
+
+        .employee-item:last-child { border-bottom: none; }
+        .employee-item:hover { background: #fafcff; }
+        .employee-item.selected { background: #eff6ff; }
+        .employee-item.is-chef { background: var(--chef-50); }
+        .employee-item.is-chef:hover { background: #ede9fe; }
+        .employee-item.hidden { display: none; }
+
+        .emp-check {
+            width: 18px; height: 18px;
+            accent-color: var(--primary);
+            flex-shrink: 0; cursor: pointer;
+        }
+
+        .avatar {
+            width: 46px; height: 46px;
+            border-radius: var(--radius);
+            background: linear-gradient(135deg, #dbeafe, #eff6ff);
+            color: var(--primary);
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 800; font-size: 14px; flex-shrink: 0;
+        }
+
+        .employee-item.is-chef .avatar {
+            background: linear-gradient(135deg, #ede9fe, #f5f3ff);
+            color: var(--chef);
+        }
+
+        .emp-main { flex: 1; min-width: 0; }
+
+        .emp-name-row {
+            display: flex; align-items: center;
+            gap: 10px; flex-wrap: wrap;
+        }
+
+        .emp-name { font-size: 15px; font-weight: 700; color: var(--text); }
+
+        .emp-matricule {
+            font-size: 12px; color: var(--muted);
+            margin-top: 4px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        }
+
+        .tag-chef {
+            display: inline-flex; align-items: center;
+            padding: 4px 10px; border-radius: 999px;
+            background: var(--chef-50); color: var(--chef);
+            font-size: 11px; font-weight: 800;
+            border: 1px solid #ddd6fe;
+            text-transform: uppercase; letter-spacing: 0.04em;
+        }
+
+        .emp-line { text-align: right; flex-shrink: 0; }
+
+        .emp-line-title {
+            font-size: 11px; color: var(--muted);
+            text-transform: uppercase; letter-spacing: 0.08em;
+            font-weight: 700;
+        }
+
+        .emp-line-value {
+            margin-top: 4px; font-size: 13px;
+            color: var(--text); font-weight: 600;
+        }
+
+        .no-results {
+            display: none; padding: 42px 20px;
+            text-align: center; color: var(--muted);
+        }
+
+        .no-results-icon {
+            width: 56px; height: 56px;
+            margin: 0 auto 14px;
+            border-radius: 18px; background: #f1f5f9;
+            color: var(--muted);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 24px;
+        }
+
+        /* ── Sticky bar ──────────────────────────── */
+        .sticky-bar {
+            position: sticky; bottom: 18px;
+            margin-top: 22px; z-index: 30;
+        }
+
+        .sticky-inner {
+            max-width: 700px; margin: 0 auto;
+            background: rgba(255,255,255,0.94);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(226,232,240,0.9);
+            border-radius: 18px;
+            box-shadow: var(--shadow-lg);
+            padding: 14px 16px;
+            display: flex; align-items: center;
+            justify-content: space-between;
+            gap: 14px; flex-wrap: wrap;
+        }
+
+        .sticky-text { font-size: 14px; color: var(--muted); font-weight: 600; }
+        .sticky-text strong { color: var(--primary); font-size: 18px; font-weight: 800; }
+
+        /* ── Responsive ──────────────────────────── */
+        @media (max-width: 900px) {
+            .summary-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+        }
+
+        @media (max-width: 640px) {
+            .page { padding: 18px 12px 36px; }
+            .hero { padding: 20px; border-radius: 18px; }
+            .hero h1 { font-size: 22px; }
+            .summary-grid { grid-template-columns: 1fr; }
+            .toolbar-row { flex-direction: column; align-items: stretch; }
+            .search-wrap { min-width: unset; width: 100%; }
+            .emp-line { display: none; }
+            .sticky-inner { padding: 14px; }
+            .btn-export { width: 100%; }
+            .line-tabs { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+<div class="page">
+<div class="container">
+
+    <!-- ── Hero ────────────────────────────────── -->
+    <div class="hero">
+        <div class="hero-top">
+            <div class="brand">
+                <div class="brand-logo">
+                    <img src="{% static 'images/logo.png' %}" alt="Logo"
+                         onerror="this.style.display='none';this.parentNode.innerHTML='<div class=brand-fallback>M</div>';">
+                </div>
+                <div>
+                    <h1>Export de la matrice</h1>
+                    <p>Selectionnez la ligne et les operateurs a inclure dans l'export Excel.</p>
+                </div>
+            </div>
+
+            <div class="hero-actions">
+                <a href="{% url 'matrix_view' %}?line_id={{ production_line.id }}" class="btn btn-light">
+                    Retour a la matrice
+                </a>
+                <a href="{% url 'export_matrice_excel' %}?line_id={{ production_line.id }}" class="btn btn-white">
+                    Export total
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Sélecteur de ligne ──────────────────── -->
+    {% if all_user_lines|length > 1 %}
+    <div class="line-selector">
+        <div class="line-selector-label">Choisir une ligne de production</div>
+        <div class="line-tabs">
+            {% for line in all_user_lines %}
+            <a href="{% url 'export_matrice_select' %}?line_id={{ line.id }}"
+               class="line-tab {% if line.id == selected_line_id %}active{% endif %}">
+                <span class="line-tab-dot"></span>
+                {{ line.name }}
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ── Summary ─────────────────────────────── -->
+    <div class="summary-grid">
+        <div class="summary-card">
+            <div class="summary-label">Ligne selectionnee</div>
+            <div class="summary-value" style="font-size:18px;">{{ production_line.name }}</div>
+            <div class="summary-sub">Ligne de production</div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-label">Population</div>
+            <div class="summary-value">{{ total_count }}</div>
+            <div class="summary-sub">Employe(s) disponible(s)</div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-label">Type</div>
+            <div class="summary-value" style="font-size:18px;">Selection</div>
+            <div class="summary-sub">Export personnalise</div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-label">Format</div>
+            <div class="summary-value" style="font-size:18px;">Excel</div>
+            <div class="summary-sub">Fichier .xlsx</div>
+        </div>
+    </div>
+
+    <!-- ── Formulaire ──────────────────────────── -->
+    <form method="GET" action="{% url 'export_matrice_excel' %}" id="exportForm">
+        <input type="hidden" name="line_id" value="{{ production_line.id }}">
+
+        <!-- ── Toolbar ─────────────────────────── -->
+        <div class="toolbar">
+            <div class="toolbar-row">
+                <div class="toolbar-left">
+                    <div class="search-wrap">
+                        <span class="search-icon">&#x2315;</span>
+                        <input type="text" id="searchInput"
+                               placeholder="Rechercher par nom ou matricule..."
+                               autocomplete="off">
+                    </div>
+                    <div class="counter-badge">
+                        <span id="selectedCount">0</span>
+                        <span>selectionne(s)</span>
+                    </div>
+                </div>
+                <div class="toolbar-right">
+                    <button type="button" class="btn btn-outline" onclick="selectAllVisible()">
+                        Tout selectionner
+                    </button>
+                    <button type="button" class="btn btn-outline" onclick="deselectAll()">
+                        Tout effacer
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Panel ───────────────────────────── -->
+        <div class="panel">
+            <div class="panel-head">
+                <div class="panel-title">
+                    Operateurs — {{ production_line.name }}
+                    <span class="panel-title-badge">{{ total_count }}</span>
+                </div>
+                <label class="select-all-inline">
+                    <input type="checkbox" id="selectAllCheckbox" class="emp-check"
+                           onchange="toggleSelectAll(this)">
+                    Selectionner tout
+                </label>
+            </div>
+
+            <div class="employee-list" id="employeeList">
+                {% for item in employees_with_meta %}
+                <div class="employee-item {% if item.is_chef %}is-chef{% endif %}"
+                     data-name="{{ item.emp.first_name|lower }} {{ item.emp.last_name|lower }}"
+                     data-matricule="{{ item.emp.matricule|lower }}"
+                     onclick="toggleCheckbox(this)">
+
+                    <input type="checkbox" name="emp_ids" value="{{ item.emp.id }}"
+                           class="emp-check emp-checkbox"
+                           onclick="event.stopPropagation(); updateCount();"
+                           {% if item.is_chef %}checked{% endif %}>
+
+                    <div class="avatar">
+                        {{ item.emp.first_name|first|upper }}{{ item.emp.last_name|first|upper }}
+                    </div>
+
+                    <div class="emp-main">
+                        <div class="emp-name-row">
+                            <div class="emp-name">
+                                {{ item.emp.first_name }} {{ item.emp.last_name }}
+                            </div>
+                            {% if item.is_chef %}
+                                <span class="tag-chef">Chef</span>
+                            {% endif %}
+                        </div>
+                        <div class="emp-matricule">
+                            Matricule : {{ item.emp.matricule }}
+                        </div>
+                    </div>
+
+                    <div class="emp-line">
+                        <div class="emp-line-title">Ligne principale</div>
+                        <div class="emp-line-value">
+                            {% if item.emp.line %}
+                                {{ item.emp.line.name }}
+                            {% else %}
+                                Non assignee
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="no-results" style="display:block;">
+                    <div class="no-results-icon">&#x2205;</div>
+                    <div>Aucun operateur disponible pour cette ligne.</div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="no-results" id="noResults">
+                <div class="no-results-icon">&#x2315;</div>
+                <div>Aucun resultat trouve.</div>
+            </div>
+        </div>
+
+        <!-- ── Sticky bar ──────────────────────── -->
+        <div class="sticky-bar">
+            <div class="sticky-inner">
+                <div class="sticky-text">
+                    <strong id="selectedCountBottom">0</strong>
+                    operateur(s) pret(s) pour l'export
+                </div>
+                <button type="submit" class="btn btn-export" id="exportBtn" disabled>
+                    Exporter la selection
+                </button>
+            </div>
+        </div>
+    </form>
+
+</div>
+</div>
+
+<script>
+    function getAllCheckboxes() {
+        return document.querySelectorAll('.emp-checkbox');
+    }
+
+    function getVisibleCheckboxes() {
+        return Array.from(document.querySelectorAll('.emp-checkbox')).filter(function(cb) {
+            var item = cb.closest('.employee-item');
+            return item && !item.classList.contains('hidden');
+        });
+    }
+
+    function updateCount() {
+        var checked = document.querySelectorAll('.emp-checkbox:checked').length;
+
+        document.getElementById('selectedCount').textContent       = checked;
+        document.getElementById('selectedCountBottom').textContent = checked;
+
+        document.getElementById('exportBtn').disabled = (checked === 0);
+
+        var master   = document.getElementById('selectAllCheckbox');
+        var visible  = getVisibleCheckboxes();
+        var visCheck = visible.filter(function(cb) { return cb.checked; }).length;
+
+        if (visible.length === 0) {
+            master.checked = false;
+            master.indeterminate = false;
+        } else if (visCheck === visible.length) {
+            master.checked = true;
+            master.indeterminate = false;
+        } else if (visCheck > 0) {
+            master.checked = false;
+            master.indeterminate = true;
+        } else {
+            master.checked = false;
+            master.indeterminate = false;
+        }
+
+        document.querySelectorAll('.employee-item').forEach(function(item) {
+            var cb = item.querySelector('.emp-checkbox');
+            if (!cb) return;
+            if (cb.checked) {
+                item.classList.add('selected');
+            } else {
+                item.classList.remove('selected');
+            }
+        });
+    }
+
+    function toggleCheckbox(item) {
+        var cb = item.querySelector('.emp-checkbox');
+        if (!cb) return;
+        cb.checked = !cb.checked;
+        updateCount();
+    }
+
+    function toggleSelectAll(master) {
+        getVisibleCheckboxes().forEach(function(cb) {
+            cb.checked = master.checked;
+        });
+        updateCount();
+    }
+
+    function selectAllVisible() {
+        getVisibleCheckboxes().forEach(function(cb) { cb.checked = true; });
+        updateCount();
+    }
+
+    function deselectAll() {
+        getAllCheckboxes().forEach(function(cb) { cb.checked = false; });
+        updateCount();
+    }
+
+    document.getElementById('searchInput').addEventListener('input', function() {
+        var query   = this.value.toLowerCase().trim();
+        var items   = document.querySelectorAll('.employee-item');
+        var visible = 0;
+
+        items.forEach(function(item) {
+            var name = item.dataset.name      || '';
+            var mat  = item.dataset.matricule || '';
+
+            if (name.indexOf(query) >= 0 || mat.indexOf(query) >= 0) {
+                item.classList.remove('hidden');
+                visible++;
+            } else {
+                item.classList.add('hidden');
+            }
+        });
+
+        document.getElementById('noResults').style.display =
+            visible === 0 ? 'block' : 'none';
+
+        updateCount();
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        updateCount();
+    });
+</script>
+</body>
+</html>

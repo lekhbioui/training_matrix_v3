@@ -1,7 +1,48 @@
 from django.utils import timezone  
 from django.db import models
+from django.db import transaction
+import logging
 from django.contrib.auth.models import User
 from django.db.models import Q
+from django.conf import settings
+from django.core.exceptions import ValidationError
+from pathlib import Path
+from uuid import uuid4
+from django.db import models
+from django.utils import timezone
+
+def training_plan_upload_to(instance, filename):
+    """A unique name prevents a replacement from overwriting the reviewed file."""
+    return f"training_plans/{instance.pk}/{uuid4().hex}{Path(filename).suffix.lower()}"
+
+
+def requalification_plan_upload_to(instance, filename):
+    # The request has no primary key yet during its initial upload.
+    return f"requalification_plans/{uuid4().hex}{Path(filename).suffix.lower()}"
+
+
+def delete_unused_requalification_plan(storage, name):
+    if name:
+        try:
+            storage.delete(name)
+        except OSError:
+            logging.getLogger(__name__).exception("Could not remove unused requalification plan %s", name)
+
+
+class RequalificationQuerySet(models.QuerySet):
+    def update(self, **kwargs):
+        protected = {"approved", "training_plan_image", "requested_by", "requested_by_id", "approval_request",
+                     "approval_request_id", "training_record", "training_record_id"}
+        if protected.intersection(kwargs):
+            raise ValidationError("Utilisez le workflow de requalification pour cette modification.")
+        return super().update(**kwargs)
+
+    def bulk_create(self, *args, **kwargs):
+        raise ValidationError("Utilisez le formulaire de requalification avec un plan valide.")
+
+    def _record_decision(self, **kwargs):
+        """Internal conditional write used by the transactional decision service."""
+        return super().update(**kwargs)
 
 
 class ProductionLine(models.Model):
@@ -168,28 +209,283 @@ class MatrixEntry(models.Model):
         return f"{self.employee} - {self.task} : {self.get_level_display()}"
 
 class TrainingRecord(models.Model):
-    employee = models.ForeignKey(Employee, on_delete=models.CASCADE)
-    task = models.ForeignKey(Task, on_delete=models.CASCADE)
-    lines = models.ManyToManyField(  
-        ProductionLine,
+    """
+    Représente un niveau de formation attribué à un employé
+    pour une tâche et une ou plusieurs lignes de production.
+
+    Le niveau n'est pris en compte dans la matrice que lorsque
+    approval_status = APPROVED.
+    """
+
+    class ApprovalStatus(models.TextChoices):
+        PENDING = "pending", "En attente RH"
+        APPROVED = "approved", "Approuvé"
+        REJECTED = "rejected", "Refusé"
+
+    employee = models.ForeignKey(
+        "Employee",
+        on_delete=models.CASCADE,
         related_name="training_records",
-        blank=True,
-        help_text="Lignes sur lesquelles la formation a été réalisée."
+        verbose_name="Employé",
     )
-    level = models.IntegerField(choices=TrainingLevel.choices)
-    date = models.DateField(null=True, blank=True)
-    trainer = models.ForeignKey(
-        Employee,
+
+    task = models.ForeignKey(
+        "Task",
+        on_delete=models.CASCADE,
+        related_name="training_records",
+        verbose_name="Tâche",
+    )
+
+    level = models.IntegerField(
+        choices=TrainingLevel.choices,
+        verbose_name="Niveau",
+    )
+
+    date = models.DateField(
         null=True,
         blank=True,
-        related_name="records_given",
+        verbose_name="Date de formation",
+)
+
+    trainer = models.ForeignKey(
+        "Employee",
         on_delete=models.SET_NULL,
-        limit_choices_to={'matrixentry__level': TrainingLevel.TRAINER}
+        null=True,
+        blank=True,
+        related_name="trainings_given",
+        verbose_name="Formateur",
     )
-    note = models.TextField(blank=True)
+
+    lines = models.ManyToManyField(
+        "ProductionLine",
+        related_name="training_records",
+        verbose_name="Lignes de production",
+    )
+
+    note = models.TextField(
+        blank=True,
+        default="",
+        verbose_name="Note",
+    )
+
+    # ============================================================
+    # VALIDATION RH
+    # ============================================================
+
+    approval_status = models.CharField(
+        max_length=20,
+        choices=ApprovalStatus.choices,
+        default=ApprovalStatus.APPROVED,
+        db_index=True,
+        verbose_name="Statut d'approbation",
+        help_text=(
+            "Les anciennes formations sont considérées comme "
+            "approuvées. Un nouveau niveau I doit être créé avec "
+            "le statut En attente RH."
+        ),
+    )
+
+    approved_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="approved_training_records",
+        verbose_name="Approuvé ou refusé par",
+    )
+
+    approved_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Date de décision RH",
+    )
+
+    rejection_reason = models.TextField(
+        blank=True,
+        default="",
+        verbose_name="Motif du refus",
+    )
+
+    # ============================================================
+    # AUDIT
+    # ============================================================
+
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        editable=False,
+        verbose_name="Créé le",
+    )
+
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name="Modifié le",
+    )
+
+    class Meta:
+        verbose_name = "Enregistrement de formation"
+        verbose_name_plural = "Enregistrements de formation"
+
+        ordering = [
+            "-date",
+            "-created_at",
+        ]
+
+        indexes = [
+            models.Index(
+                fields=[
+                    "employee",
+                    "task",
+                    "level",
+                ],
+                name="training_emp_task_lvl_idx",
+            ),
+            models.Index(
+                fields=[
+                    "approval_status",
+                    "date",
+                ],
+                name="training_status_date_idx",
+            ),
+        ]
 
     def __str__(self):
-        return f"{self.date} | {self.employee} - {self.task} ({self.get_level_display()})"
+        level_display = self.get_level_display()
+
+        return (
+            f"{self.employee} - "
+            f"{self.task} - "
+            f"{level_display}"
+        )
+
+    def clean(self):
+        """
+        Vérifications de cohérence du statut RH.
+        """
+
+        super().clean()
+
+        if (
+            self.approval_status
+            == self.ApprovalStatus.REJECTED
+            and not self.rejection_reason.strip()
+        ):
+            raise ValidationError(
+                {
+                    "rejection_reason": (
+                        "Le motif du refus est obligatoire "
+                        "lorsque la formation est refusée."
+                    )
+                }
+            )
+
+        if (
+            self.approval_status
+            == self.ApprovalStatus.PENDING
+            and self.approved_at
+        ):
+            raise ValidationError(
+                {
+                    "approved_at": (
+                        "Une formation en attente ne peut pas "
+                        "avoir de date de décision RH."
+                    )
+                }
+            )
+
+    @property
+    def is_pending(self):
+        return (
+            self.approval_status
+            == self.ApprovalStatus.PENDING
+        )
+
+    @property
+    def is_approved(self):
+        return (
+            self.approval_status
+            == self.ApprovalStatus.APPROVED
+        )
+
+    @property
+    def is_rejected(self):
+        return (
+            self.approval_status
+            == self.ApprovalStatus.REJECTED
+        )
+
+    def mark_as_pending(self):
+        """
+        Place la formation en attente de validation RH.
+        """
+
+        self.approval_status = self.ApprovalStatus.PENDING
+        self.approved_by = None
+        self.approved_at = None
+        self.rejection_reason = ""
+
+        self.save(
+            update_fields=[
+                "approval_status",
+                "approved_by",
+                "approved_at",
+                "rejection_reason",
+                "updated_at",
+            ]
+        )
+
+    def approve(self, user):
+        """
+        Approuve la formation.
+
+        La mise à jour de MatrixEntry doit être effectuée
+        dans la vue ou dans un service transactionnel.
+        """
+
+        approval_request = TrainingApprovalRequest.objects.filter(training_record=self).first()
+        if approval_request:
+            approval_request.validate_training_plan_for_approval()
+        self.approval_status = self.ApprovalStatus.APPROVED
+        self.approved_by = user
+        self.approved_at = timezone.now()
+        self.rejection_reason = ""
+
+        self.save(
+            update_fields=[
+                "approval_status",
+                "approved_by",
+                "approved_at",
+                "rejection_reason",
+                "updated_at",
+            ]
+        )
+
+    def reject(self, user, reason):
+        """
+        Refuse la formation.
+        """
+
+        reason = str(reason or "").strip()
+
+        if not reason:
+            raise ValidationError(
+                "Le motif du refus est obligatoire."
+            )
+
+        self.approval_status = self.ApprovalStatus.REJECTED
+        self.approved_by = user
+        self.approved_at = timezone.now()
+        self.rejection_reason = reason
+
+        self.save(
+            update_fields=[
+                "approval_status",
+                "approved_by",
+                "approved_at",
+                "rejection_reason",
+                "updated_at",
+            ]
+        )
+
 
 
 
@@ -197,106 +493,373 @@ class TrainingRecord(models.Model):
 # models.py
 
 class TrainingApprovalRequest(models.Model):
+    """
+    Demande d'approbation envoyée au service RH.
+
+    approved :
+    - None  : demande en attente ;
+    - True  : demande approuvée ;
+    - False : demande refusée.
+
+    Pour le niveau I, training_record contient le TrainingRecord
+    créé en attente avec son questionnaire.
+
+    Pour les niveaux L et U, training_record peut rester vide
+    jusqu'à l'approbation RH.
+    """
+
     employee = models.ForeignKey(
-        Employee, 
-        on_delete=models.CASCADE
-    )
-    task = models.ForeignKey(
-        Task, 
-        on_delete=models.CASCADE
-    )
-    requested_level = models.IntegerField(
-        choices=TrainingLevel.choices
-    )
-    requested_by = models.ForeignKey(
-        User, 
-        on_delete=models.CASCADE
-    )
-    date_requested = models.DateTimeField(
-        auto_now_add=True
-    )
-    approved = models.BooleanField(
-        null=True, 
-        blank=True
-    )
-    decision_date = models.DateTimeField(
-        null=True, 
-        blank=True
-    )
-    comment = models.TextField(blank=True)
-    notification_seen = models.BooleanField(default=True)
-    
-    # Date de formation saisie par le chef d'équipe
-    training_date = models.DateField(
-        null=True, 
-        blank=True,
-        verbose_name="Date de formation",
-        help_text="Date à laquelle la formation a eu lieu"
+        "Employee",
+        on_delete=models.CASCADE,
+        related_name="training_approval_requests",
+        verbose_name="Employé",
     )
 
-    # ✅ NOUVEAU : Ligne sur laquelle la formation a été faite
-    # Indispensable pour approuver sur la bonne matrice
+    task = models.ForeignKey(
+        "Task",
+        on_delete=models.CASCADE,
+        related_name="training_approval_requests",
+        verbose_name="Tâche",
+    )
+
+    requested_level = models.IntegerField(
+        choices=TrainingLevel.choices,
+        verbose_name="Niveau demandé",
+    )
+
     line = models.ForeignKey(
-        'ProductionLine',
+        "ProductionLine",
+        on_delete=models.CASCADE,
+        related_name="training_approval_requests",
+        null=True,
+        blank=True,
+        verbose_name="Ligne de production",
+    )
+
+    training_date = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name="Date de formation",
+    )
+
+    requested_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='training_approval_requests',
-        verbose_name="Ligne de production",
+        related_name="requested_training_approvals",
+        verbose_name="Demandé par",
+    )
+
+    date_requested = models.DateTimeField(
+        auto_now_add=True,
+        db_index=True,
+        verbose_name="Date de la demande",
+    )
+
+    training_plan_image = models.ImageField(
+        upload_to=training_plan_upload_to,
+        blank=True,
+        null=True,
+        verbose_name="Plan de formation",
+    )
+
+    # ============================================================
+    # LIEN VERS LA FORMATION
+    # ============================================================
+
+    training_record = models.OneToOneField(
+        TrainingRecord,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="rh_approval_request",
+        verbose_name="Formation associée",
         help_text=(
-            "Ligne sur laquelle la formation a été enregistrée. "
-            "Utilisée pour associer le TrainingRecord à la bonne ligne "
-            "lors de l'approbation RH."
-        )
+            "Pour le niveau I, la formation est créée en attente "
+            "avant la validation RH."
+        ),
+    )
+
+    # ============================================================
+    # DÉCISION RH
+    # ============================================================
+
+    approved = models.BooleanField(
+        null=True,
+        blank=True,
+        default=None,
+        db_index=True,
+        verbose_name="Décision RH",
+        help_text=(
+            "Vide = en attente, Oui = approuvé, "
+            "Non = refusé."
+        ),
+    )
+
+    reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="reviewed_training_approvals",
+        verbose_name="Traité par",
+    )
+
+    reviewed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Date de traitement",
+    )
+
+    rejection_reason = models.TextField(
+        blank=True,
+        default="",
+        verbose_name="Motif du refus",
+    )
+
+    notification_seen = models.BooleanField(
+        default=False,
+        db_index=True,
+        verbose_name="Notification consultée",
     )
 
     class Meta:
-        verbose_name          = "Demande d'approbation de formation"
-        verbose_name_plural   = "Demandes d'approbation de formations"
-        ordering              = ['-date_requested']
+        verbose_name = "Demande d'approbation de formation"
+        verbose_name_plural = (
+            "Demandes d'approbation de formation"
+        )
+
+        ordering = [
+            "-date_requested",
+        ]
+
+        indexes = [
+            models.Index(
+                fields=[
+                    "approved",
+                    "date_requested",
+                ],
+                name="approval_pending_date_idx",
+            ),
+            models.Index(
+                fields=[
+                    "employee",
+                    "task",
+                    "requested_level",
+                ],
+                name="approval_emp_task_lvl_idx",
+            ),
+            models.Index(
+                fields=[
+                    "line",
+                    "approved",
+                ],
+                name="approval_line_status_idx",
+            ),
+        ]
 
     def __str__(self):
-        status = "En attente"
-        if self.approved is True:
-            status = "Approuvé"
-        elif self.approved is False:
-            status = "Refusé"
-        
-        line_info = f" [{self.line.code}]" if self.line else ""
-        
+        status = self.status_label
+
         return (
-            f"{self.employee} - {self.task}{line_info} → "
-            f"{self.get_requested_level_display()} ({status})"
+            f"{self.employee} - "
+            f"{self.task} - "
+            f"{self.get_requested_level_display()} - "
+            f"{status}"
         )
 
-    def get_requested_level_display(self):
-        return dict(TrainingLevel.choices).get(
-            self.requested_level, 
-            str(self.requested_level)
+    def clean(self):
+        """
+        Contrôle la cohérence de la décision RH.
+        """
+
+        super().clean()
+
+        # Preserve historical approvals, but do not allow a new approval in admin.
+        if self.approved is True and self.requires_training_plan:
+            historical_approval = type(self).objects.filter(
+                pk=self.pk, approved=True, requested_level=self.requested_level,
+            ).exists()
+            if not historical_approval:
+                self.validate_training_plan_for_approval()
+
+        if self.approved is None:
+            if self.reviewed_by:
+                raise ValidationError(
+                    {
+                        "reviewed_by": (
+                            "Une demande en attente ne peut pas "
+                            "avoir d'utilisateur RH associé."
+                        )
+                    }
+                )
+
+            if self.reviewed_at:
+                raise ValidationError(
+                    {
+                        "reviewed_at": (
+                            "Une demande en attente ne peut pas "
+                            "avoir de date de traitement."
+                        )
+                    }
+                )
+
+        if (
+            self.approved is False
+            and not self.rejection_reason.strip()
+        ):
+            raise ValidationError(
+                {
+                    "rejection_reason": (
+                        "Le motif du refus est obligatoire."
+                    )
+                }
+            )
+
+        if (
+            self.training_record
+            and self.training_record.employee_id
+            != self.employee_id
+        ):
+            raise ValidationError(
+                {
+                    "training_record": (
+                        "La formation associée n'appartient pas "
+                        "à l'employé sélectionné."
+                    )
+                }
+            )
+
+        if (
+            self.training_record
+            and self.training_record.task_id
+            != self.task_id
+        ):
+            raise ValidationError(
+                {
+                    "training_record": (
+                        "La tâche de la formation associée ne "
+                        "correspond pas à la demande."
+                    )
+                }
+            )
+
+        if (
+            self.training_record
+            and self.training_record.level
+            != self.requested_level
+        ):
+            raise ValidationError(
+                {
+                    "training_record": (
+                        "Le niveau de la formation associée ne "
+                        "correspond pas au niveau demandé."
+                    )
+                }
+            )
+
+    @property
+    def is_pending(self):
+        return self.approved is None
+
+    @property
+    def is_approved(self):
+        return self.approved is True
+
+    @property
+    def is_rejected(self):
+        return self.approved is False
+
+    @property
+    def status_label(self):
+        if self.approved is True:
+            return "Approuvée"
+
+        if self.approved is False:
+            return "Refusée"
+
+        return "En attente RH"
+
+    def approve_request(self, user):
+        """
+        Marque uniquement la demande comme approuvée.
+
+        La création de MatrixEntry doit rester dans la vue ou
+        dans un service entouré par transaction.atomic().
+        """
+
+        self.validate_training_plan_for_approval()
+        self.approved = True
+        self.reviewed_by = user
+        self.reviewed_at = timezone.now()
+        self.rejection_reason = ""
+
+        self.save(
+            update_fields=[
+                "approved",
+                "reviewed_by",
+                "reviewed_at",
+                "rejection_reason",
+            ]
         )
 
-    # ✅ Propriété utile pour les templates
-    @property
-    def formation_line(self):
-        """
-        Retourne la ligne de formation.
-        Priorité : champ line → ligne principale de l'employé
-        """
-        return self.line or self.employee.line
+        if self.training_record:
+            self.training_record.approve(user)
 
     @property
-    def status_display(self):
-        """Retourne le statut sous forme lisible"""
-        if self.approved is None:
-            return "En attente"
-        return "Approuvé" if self.approved else "Refusé"
+    def requires_training_plan(self):
+        return self.requested_level in (
+            TrainingLevel.SUPERVISED, TrainingLevel.TRAINER,
+        )
 
     @property
-    def status_color(self):
-        """Retourne la couleur Bootstrap/Tailwind selon le statut"""
-        if self.approved is None:
-            return "warning"
-        return "success" if self.approved else "danger"
+    def has_training_plan(self):
+        if not self.training_plan_image:
+            return False
+        try:
+            return self.training_plan_image.storage.exists(self.training_plan_image.name)
+        except OSError:
+            return False
+
+    def validate_training_plan_for_approval(self):
+        if self.requires_training_plan and not self.has_training_plan:
+            raise ValidationError(
+                "Approbation impossible : le plan de formation n’a pas encore été "
+                "ajouté par le Chef d’équipe ou le fichier est indisponible."
+            )
+
+    def reject_request(self, user, reason):
+        """
+        Refuse la demande et la formation associée.
+        """
+
+        reason = str(reason or "").strip()
+
+        if not reason:
+            raise ValidationError(
+                "Le motif du refus est obligatoire."
+            )
+
+        self.approved = False
+        self.reviewed_by = user
+        self.reviewed_at = timezone.now()
+        self.rejection_reason = reason
+
+        self.save(
+            update_fields=[
+                "approved",
+                "reviewed_by",
+                "reviewed_at",
+                "rejection_reason",
+            ]
+        )
+
+        if self.training_record:
+            self.training_record.reject(
+                user=user,
+                reason=reason,
+            )
 
 
 
@@ -360,6 +923,31 @@ class LineTransfer(models.Model):
     
 class RequalificationRecord(models.Model):
     """Enregistrement des requalifications après 188 jours"""
+
+    objects = RequalificationQuerySet.as_manager()
+    approval_request = models.OneToOneField(
+        "RequalificationApprovalRequest", on_delete=models.PROTECT,
+        null=True, blank=True, related_name="requalification_record",
+    )
+    training_record = models.OneToOneField(
+        "TrainingRecord", on_delete=models.SET_NULL,
+        null=True, blank=True, related_name="requalification_record",
+    )
+
+    def save(self, *args, **kwargs):
+        if self._state.adding:
+            request = RequalificationApprovalRequest.objects.filter(
+                pk=self.approval_request_id, approved=True,
+            ).first()
+            if not request:
+                raise ValidationError("Une nouvelle requalification doit provenir d’une demande approuvée.")
+            request.validate_training_plan_for_approval()
+        else:
+            previous = type(self).objects.only("approval_request_id", "training_record_id").get(pk=self.pk)
+            if (previous.approval_request_id != self.approval_request_id
+                    or previous.training_record_id != self.training_record_id):
+                raise ValidationError("Les liens d’origine de la requalification sont en lecture seule.")
+        return super().save(*args, **kwargs)
     
     RESULT_CHOICES = [
         ('PASS', 'Réussi - Maintien du niveau'),
@@ -482,6 +1070,87 @@ class RequalificationRecord(models.Model):
 
 class RequalificationApprovalRequest(models.Model):
     """Demande d'approbation de requalification par RH"""
+
+    objects = RequalificationQuerySet.as_manager()
+    training_plan_image = models.ImageField(
+        upload_to=requalification_plan_upload_to, blank=True, null=True,
+        verbose_name="Plan de formation",
+    )
+
+    @property
+    def has_training_plan(self):
+        plan = self.training_plan_image
+        if not plan:
+            return False
+        try:
+            if not plan.storage.exists(plan.name):
+                return False
+            with plan.storage.open(plan.name, "rb") as stream:
+                stream.read(1)
+            return True
+        except (OSError, ValueError):
+            return False
+
+    @property
+    def requires_training_plan(self):
+        from .services_requalification import is_requalification_management
+        # Keep checking an existing initial document, even if the author changes role.
+        return bool(self.training_plan_image) or not is_requalification_management(self.requested_by)
+
+    def validate_training_plan_for_approval(self):
+        if self.requires_training_plan and not self.has_training_plan:
+            raise ValidationError("Approbation impossible : le plan de formation est indisponible.")
+
+    def save(self, *args, **kwargs):
+        new_upload = self._state.adding and not self.training_plan_image._committed
+        if self._state.adding:
+            if self.approved is not None:
+                raise ValidationError("Une nouvelle demande doit passer par le workflow de décision RH.")
+            # Also protect ordinary ORM creation outside the public form.
+            from .forms import TrainingPlanImageForm
+            from .services_requalification import can_add_requalification_plan
+            if self.training_plan_image and not can_add_requalification_plan(self.requested_by):
+                raise ValidationError({"training_plan_image": "Seul un chef d’équipe peut joindre un plan de requalification."})
+            if self.requires_training_plan and not self.training_plan_image:
+                raise ValidationError({"training_plan_image": "Le plan de formation est obligatoire pour créer une requalification."})
+            try:
+                if self.training_plan_image:
+                    plan_form = TrainingPlanImageForm(files={"training_plan_image": self.training_plan_image.file})
+                    if not plan_form.is_valid():
+                        raise ValidationError(dict(plan_form.errors))
+                    if new_upload:
+                        self.training_plan_image = plan_form.cleaned_data["training_plan_image"]
+                    self.training_plan_image.file.seek(0)
+            except OSError as exc:
+                raise ValidationError("Le plan de formation est indisponible.") from exc
+        else:
+            previous = type(self).objects.only("approved", "training_plan_image", "requested_by_id").get(pk=self.pk)
+            if previous.approved != self.approved:
+                raise ValidationError("Utilisez le workflow de décision RH.")
+            if (not self.training_plan_image._committed
+                    or (previous.training_plan_image.name or "") != (self.training_plan_image.name or "")):
+                raise ValidationError("Le plan initial de la requalification est en lecture seule.")
+            if previous.requested_by_id != self.requested_by_id:
+                raise ValidationError("Le demandeur d’origine est en lecture seule.")
+            # A concurrent metadata/notification edit must never overwrite a
+            # decision or the original document with an older in-memory value.
+            immutable = {"approved", "training_plan_image", "requested_by", "requested_by_id",
+                         "decision_by", "decision_by_id", "decision_date"}
+            fields = kwargs.get("update_fields")
+            if fields is None:
+                fields = [field.name for field in self._meta.concrete_fields if not field.primary_key]
+            kwargs["update_fields"] = [field for field in fields if field not in immutable]
+        if new_upload:
+            try:
+                with transaction.atomic():
+                    return super().save(*args, **kwargs)
+            except Exception:
+                plan = self.training_plan_image
+                plan.close()
+                if plan._committed:
+                    delete_unused_requalification_plan(plan.storage, plan.name)
+                raise
+        return super().save(*args, **kwargs)
     
     RESULT_CHOICES = [
         ('PASS', 'Réussi - Maintien du niveau'),
@@ -750,4 +1419,261 @@ class QualityProfile(models.Model):
         return (
             f"{self.user.get_full_name() or self.user.username}"
             f" — Qualité"
+        )
+
+from django.conf import settings
+from django.core.exceptions import ValidationError
+from django.db import models
+from django.utils import timezone
+
+
+class TrainingQuestion(models.Model):
+    """
+    Question configurable par RH.
+
+    Une question peut être :
+    - globale ;
+    - spécifique à une ligne ;
+    - spécifique à une tâche ;
+    - spécifique à une tâche et une ligne.
+    """
+
+    class AnswerType(models.TextChoices):
+        YES_NO = "YES_NO", "Oui / Non"
+        TEXT = "TEXT", "Réponse texte"
+
+    text = models.TextField(
+        verbose_name="Question"
+    )
+
+    help_text = models.CharField(
+        max_length=255,
+        blank=True,
+        verbose_name="Texte d'aide"
+    )
+
+    level = models.IntegerField(
+        choices=TrainingLevel.choices,
+        default=TrainingLevel.IN_TRAINING,
+        verbose_name="Niveau concerné"
+    )
+
+    line = models.ForeignKey(
+        ProductionLine,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="training_questions",
+        verbose_name="Ligne concernée",
+        help_text="Laissez vide pour utiliser la question sur toutes les lignes."
+    )
+
+    task = models.ForeignKey(
+        Task,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="training_questions",
+        verbose_name="Tâche concernée",
+        help_text="Laissez vide pour utiliser la question sur toutes les tâches."
+    )
+
+    answer_type = models.CharField(
+        max_length=20,
+        choices=AnswerType.choices,
+        default=AnswerType.YES_NO,
+        verbose_name="Type de réponse"
+    )
+
+    expected_boolean = models.BooleanField(
+        null=True,
+        blank=True,
+        default=True,
+        verbose_name="Réponse attendue",
+        help_text="Utilisé uniquement pour les questions Oui / Non."
+    )
+
+    is_required = models.BooleanField(
+        default=True,
+        verbose_name="Réponse obligatoire"
+    )
+
+    is_blocking = models.BooleanField(
+        default=True,
+        verbose_name="Question bloquante",
+        help_text=(
+            "Si la réponse ne correspond pas à la réponse attendue, "
+            "le niveau I ne pourra pas être enregistré."
+        )
+    )
+
+    requires_comment_if_no = models.BooleanField(
+        default=True,
+        verbose_name="Commentaire obligatoire si Non"
+    )
+
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name="Question active"
+    )
+
+    order = models.PositiveIntegerField(
+        default=0,
+        verbose_name="Ordre d'affichage"
+    )
+
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="training_questions_created"
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True
+    )
+
+    updated_at = models.DateTimeField(
+        auto_now=True
+    )
+
+    class Meta:
+        ordering = [
+            "order",
+            "id",
+        ]
+        verbose_name = "Question de formation"
+        verbose_name_plural = "Questions de formation"
+
+    def clean(self):
+        if (
+            self.answer_type != self.AnswerType.YES_NO
+            and self.expected_boolean is not None
+        ):
+            raise ValidationError({
+                "expected_boolean": (
+                    "La réponse attendue est disponible uniquement "
+                    "pour les questions Oui / Non."
+                )
+            })
+
+    def __str__(self):
+        scope = []
+
+        if self.line:
+            scope.append(self.line.code)
+
+        if self.task:
+            scope.append(self.task.code)
+
+        scope_text = " / ".join(scope) if scope else "Question globale"
+
+        return f"{self.text[:60]} — {scope_text}"
+
+
+class TrainingQuestionnaire(models.Model):
+    """
+    Questionnaire rempli lors de l'enregistrement du niveau I.
+    """
+
+    training_record = models.OneToOneField(
+        TrainingRecord,
+        on_delete=models.CASCADE,
+        related_name="questionnaire"
+    )
+
+    line = models.ForeignKey(
+        ProductionLine,
+        on_delete=models.PROTECT,
+        related_name="completed_training_questionnaires"
+    )
+
+    answered_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="completed_training_questionnaires"
+    )
+
+    is_compliant = models.BooleanField(
+        default=True,
+        verbose_name="Questionnaire conforme"
+    )
+
+    general_comment = models.TextField(
+        blank=True,
+        verbose_name="Commentaire général"
+    )
+
+    completed_at = models.DateTimeField(
+        default=timezone.now
+    )
+
+    class Meta:
+        verbose_name = "Questionnaire de formation"
+        verbose_name_plural = "Questionnaires de formation"
+
+    def __str__(self):
+        return (
+            f"Questionnaire #{self.pk} — "
+            f"{self.training_record.employee} — "
+            f"{self.training_record.task}"
+        )
+
+
+class TrainingQuestionAnswer(models.Model):
+    questionnaire = models.ForeignKey(
+        TrainingQuestionnaire,
+        on_delete=models.CASCADE,
+        related_name="answers"
+    )
+
+    question = models.ForeignKey(
+        TrainingQuestion,
+        on_delete=models.PROTECT,
+        related_name="answers"
+    )
+
+    # Copie historique du texte.
+    # Une modification RH ne change pas les anciens questionnaires.
+    question_text_snapshot = models.TextField()
+
+    answer_type_snapshot = models.CharField(
+        max_length=20
+    )
+
+    boolean_answer = models.BooleanField(
+        null=True,
+        blank=True
+    )
+
+    text_answer = models.TextField(
+        blank=True
+    )
+
+    comment = models.TextField(
+        blank=True
+    )
+
+    is_compliant = models.BooleanField(
+        default=True
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=[
+                    "questionnaire",
+                    "question",
+                ],
+                name="unique_question_per_training_questionnaire"
+            )
+        ]
+        verbose_name = "Réponse au questionnaire"
+        verbose_name_plural = "Réponses aux questionnaires"
+
+    def __str__(self):
+        return (
+            f"{self.questionnaire} — "
+            f"{self.question_text_snapshot[:40]}"
         )

@@ -1,170 +1,709 @@
+
 <!-- matrix/templates/matrix/quality_team_leaders.html -->
 {% extends 'matrix/quality_base.html' %}
 {% block title %}Chefs d'équipe{% endblock %}
+{% block page_title %}Chefs d'équipe{% endblock %}
 
 {% block extra_css %}
 <style>
-    .leader-card {
-        border: none;
-        border-radius: 12px;
-        transition: transform .15s, box-shadow .15s;
+    /* Styles isolés : n'affectent pas les autres pages du projet. */
+    .ql-page {
+        --ql-ink: #17243b;
+        --ql-muted: #6e7b90;
+        --ql-blue: #2859d6;
+        --ql-border: #e6ebf3;
+        --ql-surface: #ffffff;
+        --ql-soft: #f5f7fb;
+        color: var(--ql-ink);
+        padding-bottom: 2rem;
     }
-    .leader-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 8px 25px rgba(0,0,0,.1) !important;
-    }
-    .leader-avatar {
-        width: 56px;
-        height: 56px;
-        border-radius: 50%;
+
+    .ql-page * { box-sizing: border-box; }
+
+    .ql-hero {
+        position: relative;
+        overflow: hidden;
         display: flex;
         align-items: center;
-        justify-content: center;
-        font-weight: 700;
-        font-size: 1.2rem;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+        padding: clamp(1.35rem, 3vw, 2rem);
+        margin-bottom: 1.6rem;
         color: #fff;
+        background: linear-gradient(
+            115deg,
+            #122442 0%,
+            #1c3b6e 63%,
+            #2659a8 100%
+        );
+        border: 1px solid #244372;
+        border-radius: 20px;
+        box-shadow: 0 14px 34px rgba(21, 48, 91, .12);
     }
-    .line-tag {
+
+    .ql-hero::after {
+        content: "";
+        position: absolute;
+        right: -75px;
+        top: -105px;
+        width: 290px;
+        height: 290px;
+        border: 1px solid rgba(255, 255, 255, .12);
+        border-radius: 50%;
+        box-shadow:
+            0 0 0 58px rgba(255,255,255,.035),
+            0 0 0 116px rgba(255,255,255,.025);
+        pointer-events: none;
+    }
+
+    .ql-hero-main,
+    .ql-hero-summary {
+        position: relative;
+        z-index: 1;
+    }
+
+    .ql-eyebrow {
         display: inline-flex;
         align-items: center;
-        gap: 4px;
-        padding: 3px 10px;
-        border-radius: 15px;
-        font-size: .75rem;
-        font-weight: 600;
-        background: #e8eaf6;
-        color: #283593;
-        text-decoration: none;
-        transition: background .15s;
+        gap: .5rem;
+        margin-bottom: .65rem;
+        color: #bed1f2;
+        font-size: .7rem;
+        font-weight: 800;
+        letter-spacing: .13em;
+        text-transform: uppercase;
     }
-    .line-tag:hover {
-        background: #c5cae9;
-        color: #1a237e;
+
+    .ql-hero h1 {
+        margin: 0 0 .45rem;
+        color: #fff;
+        font-size: clamp(1.5rem, 2.4vw, 2rem);
+        font-weight: 800;
+        letter-spacing: -.035em;
     }
-    .gauge {
-        width: 60px;
-        height: 60px;
-        border-radius: 50%;
+
+    .ql-hero p {
+        margin: 0;
+        color: #c8d6ef;
+        font-size: .91rem;
+    }
+
+    .ql-hero-summary {
         display: flex;
         align-items: center;
-        justify-content: center;
+        gap: 1rem;
+        min-width: 195px;
+        padding: .85rem 1.1rem;
+        background: rgba(255, 255, 255, .09);
+        border: 1px solid rgba(255, 255, 255, .16);
+        border-radius: 15px;
+        backdrop-filter: blur(5px);
+    }
+
+    .ql-hero-summary-icon {
+        display: grid;
+        place-items: center;
+        flex: 0 0 42px;
+        width: 42px;
+        height: 42px;
+        color: #fff;
+        background: rgba(255, 255, 255, .13);
+        border-radius: 12px;
+    }
+
+    .ql-hero-number {
+        display: block;
+        font-size: 1.65rem;
+        font-weight: 800;
+        line-height: 1.1;
+    }
+
+    .ql-hero-caption {
+        display: block;
+        margin-top: .18rem;
+        color: #d0ddf5;
+        font-size: .76rem;
+    }
+
+    .ql-section-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: .8rem;
+        margin-bottom: 1rem;
+    }
+
+    .ql-section-title {
+        margin: 0;
+        font-size: 1.06rem;
+        font-weight: 800;
+        letter-spacing: -.02em;
+    }
+
+    .ql-section-subtitle {
+        margin: .28rem 0 0;
+        color: var(--ql-muted);
+        font-size: .82rem;
+    }
+
+    .ql-readonly {
+        display: inline-flex;
+        align-items: center;
+        gap: .45rem;
+        padding: .45rem .75rem;
+        border: 1px solid #d9e5f8;
+        border-radius: 999px;
+        color: #2856a0;
+        background: #edf4ff;
+        font-size: .75rem;
         font-weight: 700;
+    }
+
+    .ql-card {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        padding: 1.35rem;
+        background: var(--ql-surface);
+        border: 1px solid var(--ql-border);
+        border-radius: 18px;
+        box-shadow: 0 3px 12px rgba(23, 43, 78, .035);
+        transition:
+            transform .2s ease,
+            box-shadow .2s ease,
+            border-color .2s ease;
+    }
+
+    .ql-card:hover {
+        transform: translateY(-3px);
+        border-color: #cad9f2;
+        box-shadow: 0 15px 34px rgba(23, 43, 78, .09);
+    }
+
+    .ql-profile {
+        display: flex;
+        align-items: center;
+        gap: .85rem;
+        min-width: 0;
+    }
+
+    .ql-avatar {
+        display: grid;
+        place-items: center;
+        flex: 0 0 54px;
+        width: 54px;
+        height: 54px;
+        border: 2px solid #dce8ff;
+        border-radius: 16px;
+        color: #2859ba;
+        background: linear-gradient(135deg, #eaf1ff, #dbe8ff);
+        font-size: 1rem;
+        font-weight: 800;
+        letter-spacing: .03em;
+    }
+
+    .ql-profile-text { min-width: 0; }
+
+    .ql-name {
+        margin: 0 0 .22rem;
+        font-size: .96rem;
+        font-weight: 800;
+        overflow-wrap: anywhere;
+    }
+
+    .ql-username {
+        color: var(--ql-muted);
+        font-size: .77rem;
+        overflow-wrap: anywhere;
+    }
+
+    .ql-username i {
+        margin-right: .2rem;
+        color: #96a3b6;
+    }
+
+    .ql-role {
+        display: inline-flex;
+        align-items: center;
+        gap: .35rem;
+        margin-top: 1rem;
+        padding: .36rem .6rem;
+        border-radius: 7px;
+        color: #446185;
+        background: #f2f6fb;
+        font-size: .69rem;
+        font-weight: 800;
+        letter-spacing: .035em;
+        text-transform: uppercase;
+    }
+
+    .ql-rule {
+        height: 1px;
+        margin: 1.2rem 0;
+        background: var(--ql-border);
+    }
+
+    .ql-label-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: .5rem;
+        margin-bottom: .7rem;
+    }
+
+    .ql-label {
+        margin: 0;
+        color: #44546a;
+        font-size: .79rem;
+        font-weight: 750;
+    }
+
+    .ql-label i {
+        margin-right: .4rem;
+        color: #7990b2;
+    }
+
+    .ql-count {
+        padding: .22rem .5rem;
+        border-radius: 7px;
+        color: #53637b;
+        background: #eef2f7;
+        font-size: .73rem;
+        font-weight: 800;
+    }
+
+    .ql-lines {
+        display: flex;
+        flex-wrap: wrap;
+        align-content: flex-start;
+        gap: .45rem;
+        min-height: 34px;
+    }
+
+    .ql-line-link {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+        max-width: 100%;
+        padding: .48rem .7rem;
+        border: 1px solid #dbe6f8;
+        border-radius: 9px;
+        color: #2857a6;
+        background: #f3f7ff;
+        font-size: .75rem;
+        font-weight: 700;
+        text-decoration: none;
+        overflow-wrap: anywhere;
+        transition:
+            background .15s ease,
+            border-color .15s ease;
+    }
+
+    .ql-line-link:hover,
+    .ql-line-link:focus-visible {
+        color: #153f87;
+        background: #e6efff;
+        border-color: #b8cff6;
+        text-decoration: none;
+    }
+
+    .ql-line-link i {
+        font-size: .69rem;
+        flex-shrink: 0;
+    }
+
+    .ql-no-lines {
+        font-size: .8rem;
+        color: var(--ql-muted);
+    }
+
+    .ql-stats {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: .55rem;
+        margin-top: 1.25rem;
+    }
+
+    .ql-stat {
+        min-width: 0;
+        padding: .85rem .35rem;
+        text-align: center;
+        border: 1px solid #edf0f5;
+        border-radius: 11px;
+        background: #f8fafd;
+    }
+
+    .ql-stat-value {
+        display: block;
+        margin-bottom: .25rem;
+        font-size: clamp(1.03rem, 2vw, 1.3rem);
+        font-weight: 800;
+        line-height: 1.2;
+    }
+
+    .ql-stat-name {
+        display: block;
+        color: var(--ql-muted);
+        font-size: .68rem;
+        line-height: 1.3;
+        overflow-wrap: anywhere;
+    }
+
+    .ql-stat-value--blue { color: #2859d6; }
+    .ql-stat-value--amber { color: #bc7b12; }
+    .ql-stat-value--green { color: #13835b; }
+
+    .ql-progress-block {
+        margin-top: auto;
+        padding-top: 1.35rem;
+    }
+
+    .ql-progress-head {
+        display: flex;
+        justify-content: space-between;
+        gap: .5rem;
+        align-items: center;
+        margin-bottom: .6rem;
+    }
+
+    .ql-progress-label {
+        color: #65738a;
+        font-size: .76rem;
+        font-weight: 600;
+    }
+
+    .ql-progress-value {
+        font-size: .79rem;
+        font-weight: 800;
+    }
+
+    .ql-progress {
+        height: 8px;
+        overflow: hidden;
+        border-radius: 999px;
+        background: #eaf0f7;
+    }
+
+    .ql-progress-fill {
+        height: 100%;
+        border-radius: inherit;
+        background: #e15b67;
+    }
+
+    .ql-progress-fill--medium { background: #e6a63d; }
+    .ql-progress-fill--high { background: #22a77b; }
+
+    .ql-empty {
+        max-width: 100%;
+        padding: 3.5rem 1.25rem;
+        border: 1px dashed #cbd7e8;
+        border-radius: 18px;
+        background: #fff;
+        text-align: center;
+    }
+
+    .ql-empty-icon {
+        display: grid;
+        place-items: center;
+        width: 64px;
+        height: 64px;
+        margin: 0 auto 1rem;
+        border-radius: 18px;
+        color: #5474a7;
+        background: #eef4ff;
+        font-size: 1.55rem;
+    }
+
+    .ql-empty h3 {
+        margin: 0 0 .4rem;
+        font-size: 1rem;
+        font-weight: 800;
+    }
+
+    .ql-empty p {
+        margin: 0;
+        color: var(--ql-muted);
         font-size: .85rem;
+    }
+
+    @media (max-width: 575.98px) {
+        .ql-hero {
+            padding: 1.35rem;
+            border-radius: 16px;
+        }
+
+        .ql-hero-summary { width: 100%; }
+        .ql-card { padding: 1.1rem; }
+        .ql-stat { padding: .75rem .2rem; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .ql-card,
+        .ql-line-link {
+            transition: none;
+        }
+
+        .ql-card:hover { transform: none; }
     }
 </style>
 {% endblock %}
 
 {% block content %}
+<div class="ql-page">
 
-<!-- ══ EN-TÊTE ═════════════════════════════════════════ -->
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h4 class="fw-bold mb-1">
-            <i class="fas fa-user-tie me-2 text-primary"></i>Chefs d'Équipe
-        </h4>
-        <span class="text-muted small">
-            {{ total }} chef{{ total|pluralize }} d'équipe
+    <!-- EN-TÊTE -->
+    <header class="ql-hero">
+        <div class="ql-hero-main">
+            <span class="ql-eyebrow">
+                <i class="fas fa-layer-group" aria-hidden="true"></i>
+                Pilotage des équipes
+            </span>
+
+            <h1>Chefs d'équipe</h1>
+
+            <p>
+                Vue d'ensemble des responsables,
+                de leurs lignes et des compétences.
+            </p>
+        </div>
+
+        <div class="ql-hero-summary"
+             aria-label="Nombre de chefs d'équipe : {{ total }}">
+
+            <span class="ql-hero-summary-icon">
+                <i class="fas fa-users" aria-hidden="true"></i>
+            </span>
+
+            <div>
+                <span class="ql-hero-number">{{ total }}</span>
+
+                <span class="ql-hero-caption">
+                    Chef{{ total|pluralize }} d'équipe
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <!-- TITRE DE SECTION -->
+    <div class="ql-section-head">
+        <div>
+            <h2 class="ql-section-title">
+                Répertoire des responsables
+            </h2>
+
+            <p class="ql-section-subtitle">
+                Consultez les lignes et les indicateurs
+                de chaque chef d'équipe.
+            </p>
+        </div>
+
+        <span class="ql-readonly">
+            <i class="fas fa-eye" aria-hidden="true"></i>
+            Lecture seule
         </span>
     </div>
-    <span class="badge bg-info-subtle text-info fs-6 py-2 px-3">
-        <i class="fas fa-eye me-1"></i>Lecture seule
-    </span>
-</div>
 
-<!-- ══ CARTES DES CHEFS ════════════════════════════════ -->
-<div class="row g-4">
-{% for item in leaders_data %}
-    <div class="col-md-6 col-lg-4">
-        <div class="card leader-card shadow-sm h-100">
-            <div class="card-body">
+    <!-- CARTES DES CHEFS D'ÉQUIPE -->
+    <div class="row g-4">
 
-                <!-- En-tête : avatar + nom -->
-                <div class="d-flex align-items-center gap-3 mb-3">
-                    <div class="leader-avatar bg-primary">
-                        {{ item.user.first_name|first|upper }}{{ item.user.last_name|first|upper }}
+        {% for item in leaders_data %}
+
+        <div class="col-12 col-md-6 col-xl-4">
+            <article class="ql-card">
+
+                <!-- PROFIL -->
+                <div class="ql-profile">
+
+                    <div class="ql-avatar" aria-hidden="true">
+                        {% if item.user.first_name or item.user.last_name %}
+                            {{ item.user.first_name|first|upper }}{{ item.user.last_name|first|upper }}
+                        {% else %}
+                            <i class="fas fa-user-tie"></i>
+                        {% endif %}
                     </div>
-                    <div>
-                        <h6 class="fw-bold mb-0">
+
+                    <div class="ql-profile-text">
+                        <h3 class="ql-name">
                             {{ item.user.get_full_name|default:item.user.username }}
-                        </h6>
-                        <small class="text-muted">
-                            <i class="fas fa-at me-1"></i>{{ item.user.username }}
-                        </small>
+                        </h3>
+
+                        <div class="ql-username">
+                            <i class="fas fa-at" aria-hidden="true"></i>
+                            {{ item.user.username }}
+                        </div>
                     </div>
+
                 </div>
 
-                <!-- Lignes gérées -->
-                <div class="mb-3">
-                    <small class="text-muted fw-semibold d-block mb-1">
-                        <i class="fas fa-sitemap me-1"></i>
-                        Ligne{{ item.nb_lines|pluralize:"s" }} gérée{{ item.nb_lines|pluralize:"s" }}
-                    </small>
-                    <div class="d-flex flex-wrap gap-1">
+                <!-- RÔLE -->
+                <div>
+                    <span class="ql-role">
+                        <i class="fas fa-user-shield"
+                           aria-hidden="true"></i>
+                        Chef d'équipe
+                    </span>
+                </div>
+
+                <div class="ql-rule" aria-hidden="true"></div>
+
+                <!-- LIGNES GÉRÉES -->
+                <section aria-label="Lignes gérées par {{ item.user.get_full_name|default:item.user.username }}">
+
+                    <div class="ql-label-row">
+                        <h4 class="ql-label">
+                            <i class="fas fa-industry"
+                               aria-hidden="true"></i>
+                            Lignes gérées
+                        </h4>
+
+                        <span class="ql-count">
+                            {{ item.nb_lines }}
+                        </span>
+                    </div>
+
+                    <div class="ql-lines">
+
                         {% for line in item.lines %}
-                            <a href="{% url 'quality_line_detail' line.pk %}"
-                               class="line-tag">
-                                <i class="fas fa-industry" style="font-size:.65rem;"></i>
-                                {{ line.name }}
-                            </a>
+
+                        <a class="ql-line-link"
+                           href="{% url 'quality_line_detail' line.pk %}">
+
+                            <i class="fas fa-sitemap"
+                               aria-hidden="true"></i>
+
+                            {{ line.name }}
+
+                            <i class="fas fa-external-link-alt"
+                               aria-hidden="true"></i>
+
+                        </a>
+
+                        {% empty %}
+
+                        <span class="ql-no-lines">
+                            Aucune ligne affectée
+                        </span>
+
                         {% endfor %}
-                    </div>
-                </div>
 
-                <!-- Stats -->
-                <div class="row g-2 text-center mb-3">
-                    <div class="col-4">
-                        <div class="rounded p-2" style="background:#f8f9fa;">
-                            <div class="fw-bold fs-5">{{ item.nb_employees }}</div>
-                            <div class="text-muted" style="font-size:.7rem;">Opérateurs</div>
-                        </div>
                     </div>
-                    <div class="col-4">
-                        <div class="rounded p-2" style="background:#f8f9fa;">
-                            <div class="fw-bold fs-5 text-primary">{{ item.taux_trainer }}%</div>
-                            <div class="text-muted" style="font-size:.7rem;">Formateurs</div>
-                        </div>
-                    </div>
-                    <div class="col-4">
-                        <div class="rounded p-2" style="background:#f8f9fa;">
+
+                </section>
+
+                <!-- INDICATEURS -->
+                <div class="ql-stats">
+
+                    <!-- OPÉRATEURS -->
+                    <!-- <div class="ql-stat">
+                        <span class="ql-stat-value">
+                            {{ item.nb_employees }}
+                        </span>
+
+                        <span class="ql-stat-name">
+                            Opérateurs
+                        </span>
+                    </div> -->
+
+                    <!-- FORMATEURS -->
+                    <!-- <div class="ql-stat">
+                        <span class="ql-stat-value ql-stat-value--blue">
+                            {{ item.taux_trainer }}%
+                        </span>
+
+                        <span class="ql-stat-name">
+                            Formateurs
+                        </span>
+                    </div> -->
+
+                    <!-- DEMANDES EN ATTENTE -->
+                    <!-- <div class="ql-stat">
+
+                        <span class="ql-stat-value
                             {% if item.pending > 0 %}
-                                <div class="fw-bold fs-5 text-warning">{{ item.pending }}</div>
+                                ql-stat-value--amber
                             {% else %}
-                                <div class="fw-bold fs-5 text-success">0</div>
-                            {% endif %}
-                            <div class="text-muted" style="font-size:.7rem;">En attente</div>
-                        </div>
-                    </div>
+                                ql-stat-value--green
+                            {% endif %}">
+
+                            {{ item.pending }}
+
+                        </span>
+
+                        <span class="ql-stat-name">
+                            En attente
+                        </span>
+
+                    </div> -->
+
                 </div>
 
-                <!-- Barre de progression formateurs -->
-                <div class="mb-2">
-                    <div class="d-flex justify-content-between small text-muted mb-1">
-                        <span>Taux de formateurs (U)</span>
-                        <span class="fw-semibold">{{ item.taux_trainer }}%</span>
+                <!-- TAUX DE FORMATEURS -->
+                <!-- <div class="ql-progress-block">
+
+                    <div class="ql-progress-head">
+
+                        <span class="ql-progress-label">
+                            Taux de formateurs (U)
+                        </span>
+
+                        <span class="ql-progress-value">
+                            {{ item.taux_trainer }}%
+                        </span>
+
                     </div>
-                    <div class="progress" style="height:8px;">
-                        <div class="progress-bar
-                            {% if item.taux_trainer >= 70 %}bg-success
-                            {% elif item.taux_trainer >= 40 %}bg-warning
-                            {% else %}bg-danger{% endif %}"
-                             style="width:{{ item.taux_trainer }}%">
+
+                    <div class="ql-progress"
+                         role="progressbar"
+                         aria-label="Taux de formateurs"
+                         aria-valuemin="0"
+                         aria-valuemax="100"
+                         aria-valuenow="{{ item.taux_trainer|default:0 }}">
+
+                        <div class="ql-progress-fill
+                            {% if item.taux_trainer >= 70 %}
+                                ql-progress-fill--high
+                            {% elif item.taux_trainer >= 40 %}
+                                ql-progress-fill--medium
+                            {% endif %}"
+
+                             style="width: {{ item.taux_trainer|default:0 }}%;">
                         </div>
+
                     </div>
+
+                </div> -->
+
+            </article>
+        </div>
+
+        {% empty %}
+
+        <!-- ÉTAT VIDE -->
+        <div class="col-12">
+            <div class="ql-empty">
+
+                <div class="ql-empty-icon">
+                    <i class="fas fa-user-tie"
+                       aria-hidden="true"></i>
                 </div>
+
+                <h3>
+                    Aucun chef d'équipe trouvé
+                </h3>
+
+                <p>
+                    Les responsables apparaîtront ici dès
+                    qu'ils seront disponibles.
+                </p>
 
             </div>
         </div>
+
+        {% endfor %}
+
     </div>
 
-{% empty %}
-    <div class="col-12">
-        <div class="card border-0 shadow-sm">
-            <div class="card-body text-center text-muted py-5">
-                <i class="fas fa-user-tie fa-3x d-block mb-2 opacity-50"></i>
-                <p class="fw-semibold mb-0">Aucun chef d'équipe trouvé</p>
-            </div>
-        </div>
-    </div>
-{% endfor %}
 </div>
 {% endblock %}

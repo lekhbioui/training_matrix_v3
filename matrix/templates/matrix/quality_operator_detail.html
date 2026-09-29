@@ -1,7 +1,9 @@
+
 <!-- matrix/templates/matrix/quality_operator_detail.html -->
 {% extends 'matrix/quality_base.html' %}
+
 {% block title %}{{ employee.last_name }} {{ employee.first_name }}{% endblock %}
-{% block page_title %}Fiche Opérateur{% endblock %}
+{% block page_title %}Fiche opérateur{% endblock %}
 
 {% block breadcrumb %}
 <li><a href="{% url 'quality_dashboard' %}">Dashboard</a></li>
@@ -13,1180 +15,2571 @@
 
 {% block extra_css %}
 <style>
+/* =====================================================
+   FICHE OPÉRATEUR — DESIGN PROFESSIONNEL
+   Styles isolés pour éviter les conflits avec les
+   autres pages du projet.
+   ===================================================== */
 
-    /* ══ HERO CARD ═══════════════════════════════════════ */
-    .hero-card {
-        background: linear-gradient(135deg, #0F172A 0%, #1E293B 60%, #1E3A5F 100%);
-        border-radius: 16px;
-        padding: 32px;
-        color: white;
-        position: relative;
-        overflow: hidden;
-        margin-bottom: 24px;
+.qod {
+    --ink: #192b45;
+    --muted: #718198;
+    --border: #e3eaf3;
+    --blue: #285bd4;
+    --soft: #f6f9fd;
+    color: var(--ink);
+    padding-bottom: 2rem;
+}
+
+.qod * {
+    box-sizing: border-box;
+}
+
+.qod a:focus-visible,
+.qod button:focus-visible {
+    outline: 3px solid #84a9ff;
+    outline-offset: 3px;
+}
+
+/* =====================================================
+   BOUTON RETOUR
+   ===================================================== */
+
+.qod-back {
+    display: inline-flex;
+    align-items: center;
+    gap: .55rem;
+    margin-bottom: 1rem;
+    padding: .55rem .8rem;
+    border: 1px solid #dce7f7;
+    border-radius: 9px;
+    color: #2854a5;
+    background: #eff5ff;
+    font-size: .78rem;
+    font-weight: 750;
+    text-decoration: none;
+}
+
+.qod-back:hover {
+    background: #e3edff;
+    color: #1b448a;
+}
+
+/* =====================================================
+   HERO / PROFIL
+   ===================================================== */
+
+.qod-hero {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1.25rem;
+    overflow: hidden;
+    padding: clamp(1.3rem, 3vw, 2rem);
+    margin-bottom: 1.3rem;
+    border-radius: 20px;
+    color: #fff;
+    background: linear-gradient(
+        115deg,
+        #132747,
+        #1b3c6e 65%,
+        #285caa
+    );
+    box-shadow: 0 15px 32px rgba(20,45,85,.12);
+}
+
+.qod-hero::after {
+    content: "";
+    position: absolute;
+    right: -75px;
+    top: -120px;
+    width: 290px;
+    height: 290px;
+    border: 1px solid rgba(255,255,255,.15);
+    border-radius: 50%;
+    box-shadow:
+        0 0 0 55px rgba(255,255,255,.03),
+        0 0 0 110px rgba(255,255,255,.02);
+    pointer-events: none;
+}
+
+.qod-profile,
+.qod-readonly {
+    position: relative;
+    z-index: 1;
+}
+
+.qod-profile {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    min-width: 0;
+    flex: 1;
+}
+
+.qod-avatar {
+    display: grid;
+    place-items: center;
+    width: 65px;
+    height: 65px;
+    flex: 0 0 65px;
+    border: 1px solid rgba(255,255,255,.25);
+    border-radius: 17px;
+    background: rgba(255,255,255,.15);
+    font-size: 1.3rem;
+    font-weight: 850;
+}
+
+.qod-profile-body {
+    min-width: 0;
+}
+
+.qod-eyebrow {
+    display: block;
+    margin-bottom: .3rem;
+    color: #b9cef0;
+    font-size: .67rem;
+    font-weight: 850;
+    letter-spacing: .13em;
+    text-transform: uppercase;
+}
+
+.qod-hero h1 {
+    margin: 0;
+    color: #fff;
+    font-size: clamp(1.35rem,2.5vw,1.95rem);
+    font-weight: 850;
+    letter-spacing: -.03em;
+    overflow-wrap: anywhere;
+}
+
+.qod-matricule {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    margin-top: .55rem;
+    padding: .28rem .6rem;
+    border: 1px solid rgba(255,255,255,.18);
+    border-radius: 7px;
+    color: #dceaff;
+    background: rgba(255,255,255,.08);
+    font-size: .72rem;
+    font-weight: 750;
+}
+
+.qod-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .65rem 1.3rem;
+    margin-top: 1rem;
+    color: #d3e0f4;
+    font-size: .77rem;
+}
+
+.qod-meta span,
+.qod-meta a {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+}
+
+.qod-meta i {
+    color: #96c0ff;
+}
+
+.qod-meta a {
+    color: #fff;
+    text-decoration: underline;
+    text-decoration-color: rgba(255,255,255,.45);
+    text-underline-offset: 3px;
+}
+
+.qod-readonly {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    align-self: flex-start;
+    padding: .5rem .8rem;
+    border: 1px solid rgba(255,255,255,.22);
+    border-radius: 999px;
+    background: rgba(255,255,255,.09);
+    color: #fff;
+    font-size: .72rem;
+    font-weight: 750;
+    white-space: nowrap;
+}
+
+/* =====================================================
+   INDICATEURS KPI
+   ===================================================== */
+
+.qod-kpis {
+    display: grid;
+    grid-template-columns: repeat(4,minmax(0,1fr));
+    gap: .85rem;
+    margin-bottom: 1.5rem;
+}
+
+.qod-kpi {
+    display: flex;
+    align-items: center;
+    gap: .7rem;
+    min-width: 0;
+    padding: 1rem;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    box-shadow: 0 3px 14px rgba(20,45,85,.035);
+}
+
+.qod-kpi-icon {
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    flex: 0 0 38px;
+    border-radius: 10px;
+    color: #315fba;
+    background: #edf3ff;
+}
+
+.qod-kpi--I .qod-kpi-icon {
+    color: #b06720;
+    background: #fff1e1;
+}
+
+.qod-kpi--L .qod-kpi-icon {
+    color: #227b4d;
+    background: #e9f7ee;
+}
+
+.qod-kpi--U .qod-kpi-icon {
+    color: #285eb3;
+    background: #eaf2ff;
+}
+
+.qod-kpi--purple .qod-kpi-icon {
+    color: #704ab0;
+    background: #f3edff;
+}
+
+.qod-kpi--cyan .qod-kpi-icon {
+    color: #187b97;
+    background: #e6f7fb;
+}
+
+.qod-kpi--green .qod-kpi-icon {
+    color: #157c72;
+    background: #e6f6f3;
+}
+
+.qod-kpi--pending {
+    border-color: #f1d59f;
+    background: #fffbf1;
+}
+
+.qod-kpi--pending .qod-kpi-icon {
+    color: #a66a13;
+    background: #fff0ce;
+}
+
+.qod-kpi strong {
+    display: block;
+    font-size: 1.35rem;
+    line-height: 1.1;
+    font-weight: 850;
+    font-variant-numeric: tabular-nums;
+}
+
+.qod-kpi small {
+    display: block;
+    margin-top: .32rem;
+    color: var(--muted);
+    font-size: .68rem;
+    font-weight: 650;
+    line-height: 1.3;
+}
+
+/* =====================================================
+   TITRE DE SECTION
+   ===================================================== */
+
+.qod-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: end;
+    flex-wrap: wrap;
+    gap: .6rem;
+    margin-bottom: 1rem;
+}
+
+.qod-section h2 {
+    margin: 0;
+    font-size: 1.08rem;
+    font-weight: 850;
+    letter-spacing: -.02em;
+}
+
+.qod-section p {
+    margin: .3rem 0 0;
+    color: var(--muted);
+    font-size: .78rem;
+}
+
+.qod-section-note {
+    color: var(--muted);
+    font-size: .72rem;
+}
+
+/* =====================================================
+   CONTAINER DES ONGLETS
+   ===================================================== */
+
+.qod-shell {
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: #fff;
+    box-shadow: 0 5px 22px rgba(20,45,85,.04);
+}
+
+.qod-tabs {
+    display: flex;
+    gap: .3rem;
+    overflow-x: auto;
+    padding: .65rem .7rem 0;
+    border-bottom: 1px solid var(--border);
+    scrollbar-width: thin;
+}
+
+.qod-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    flex: 0 0 auto;
+    padding: .8rem .9rem;
+    border: 1px solid transparent;
+    border-bottom: 3px solid transparent;
+    border-radius: 9px 9px 0 0;
+    color: #63738b;
+    background: transparent;
+    font-family: inherit;
+    font-size: .77rem;
+    font-weight: 750;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.qod-tab:hover {
+    color: #2854a5;
+    background: #f5f8fe;
+}
+
+.qod-tab[aria-selected="true"] {
+    color: #2456bd;
+    background: #f1f6ff;
+    border-color: #e1eaf9 #e1eaf9 #285bd4;
+}
+
+.qod-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    padding: .16rem .38rem;
+    border-radius: 6px;
+    background: #e8eef7;
+    color: #4d6689;
+    font-size: .65rem;
+    font-weight: 850;
+}
+
+.qod-tab[aria-selected="true"] .qod-count {
+    background: #dbe8ff;
+    color: #2456bd;
+}
+
+.qod-panel[hidden] {
+    display: none !important;
+}
+
+.qod-panel-intro {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: .5rem;
+    padding: .9rem 1.1rem;
+    border-bottom: 1px solid var(--border);
+    background: #fbfcff;
+    color: #6d7e95;
+    font-size: .75rem;
+}
+
+/* =====================================================
+   TABLEAUX
+   ===================================================== */
+
+.qod-scroll {
+    width: 100%;
+    overflow-x: auto;
+    scrollbar-color: #becde2 #f4f7fb;
+}
+
+.qod-table {
+    width: 100%;
+    min-width: 850px;
+    margin: 0;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: .77rem;
+}
+
+.qod-table thead th {
+    padding: .85rem .8rem;
+    border-bottom: 1px solid #dce5f1;
+    background: #f4f7fc;
+    color: #64758e;
+    font-size: .67rem;
+    font-weight: 850;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.qod-table tbody td,
+.qod-table tbody th {
+    padding: .85rem .8rem;
+    border-bottom: 1px solid #edf1f7;
+    color: #43546e;
+    vertical-align: middle;
+    font-size: .76rem;
+}
+
+.qod-table tbody tr:last-child td,
+.qod-table tbody tr:last-child th {
+    border-bottom: 0;
+}
+
+.qod-table tbody tr:not(.qod-group):hover > td,
+.qod-table tbody tr:not(.qod-group):hover > th {
+    filter: brightness(.985);
+}
+
+.qod-table .qod-left {
+    text-align: left;
+}
+
+.qod-table .qod-center {
+    text-align: center;
+}
+
+/* En-têtes I/L/U */
+
+.qod-table .qod-level-head-I {
+    background: #a9631d;
+    color: #fff;
+}
+
+.qod-table .qod-level-head-L {
+    background: #237c51;
+    color: #fff;
+}
+
+.qod-table .qod-level-head-U {
+    background: #285eaf;
+    color: #fff;
+}
+
+/* Cellules compétences */
+
+.qod-table .qod-cell-I {
+    background: #fff5e9;
+}
+
+.qod-table .qod-cell-L {
+    background: #eef8f0;
+}
+
+.qod-table .qod-cell-U {
+    background: #edf4ff;
+}
+
+/* Groupe de tâches */
+
+.qod-group td {
+    padding: .7rem 1rem !important;
+    background: #34547e !important;
+    color: #fff !important;
+    font-size: .68rem !important;
+    font-weight: 850;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+/* Informations des tâches */
+
+.qod-task {
+    font-weight: 750 !important;
+    color: #263b56 !important;
+}
+
+.qod-task-number {
+    display: inline-block;
+    margin-right: .4rem;
+    padding: .16rem .35rem;
+    border-radius: 5px;
+    background: #edf2f9;
+    color: #6080a7;
+    font-size: .66rem;
+    font-weight: 850;
+}
+
+/* Badges des niveaux */
+
+.qod-level,
+.qod-highest {
+    display: inline-grid;
+    place-items: center;
+    min-width: 27px;
+    height: 27px;
+    padding: 0 .35rem;
+    border-radius: 7px;
+    font-size: .72rem;
+    font-weight: 850;
+}
+
+.qod-level-I {
+    background: #b76a24;
+    color: #fff;
+}
+
+.qod-level-L {
+    background: #258252;
+    color: #fff;
+}
+
+.qod-level-U {
+    background: #2d67bf;
+    color: #fff;
+}
+
+.qod-highest-I {
+    color: #aa641c;
+    background: #fff0de;
+}
+
+.qod-highest-L {
+    color: #237b4b;
+    background: #e8f6ed;
+}
+
+.qod-highest-U {
+    color: #285caf;
+    background: #e8f1ff;
+}
+
+.qod-date {
+    display: block;
+    margin-top: .32rem;
+    color: #8190a4;
+    font-size: .65rem;
+    white-space: nowrap;
+}
+
+.qod-trainer {
+    display: block;
+    margin-top: .25rem;
+    color: #8794a7;
+    font-size: .65rem;
+    overflow-wrap: anywhere;
+}
+
+.qod-empty-mark {
+    color: #b8c3d1;
+}
+
+.qod-line {
+    display: inline-block;
+    margin: .15rem;
+    padding: .28rem .45rem;
+    border: 1px solid #d9e6fa;
+    border-radius: 6px;
+    color: #345f9e;
+    background: #eff5ff;
+    font-size: .66rem;
+    font-weight: 750;
+}
+
+/* =====================================================
+   HISTORIQUE / TIMELINE
+   ===================================================== */
+
+.qod-timeline {
+    padding: 1.3rem clamp(1rem,3vw,2rem);
+}
+
+.qod-event {
+    display: flex;
+    gap: 1rem;
+    position: relative;
+    padding-bottom: 1.4rem;
+}
+
+.qod-event:not(:last-child)::before {
+    content: "";
+    position: absolute;
+    top: 39px;
+    bottom: 0;
+    left: 18px;
+    width: 2px;
+    background: #e3eaf4;
+}
+
+.qod-event-icon {
+    display: grid;
+    place-items: center;
+    z-index: 1;
+    width: 38px;
+    height: 38px;
+    flex: 0 0 38px;
+    border-radius: 11px;
+    font-weight: 850;
+}
+
+.qod-event-icon--I {
+    color: #a45b15;
+    background: #fff0df;
+}
+
+.qod-event-icon--L {
+    color: #237b4b;
+    background: #e8f6ed;
+}
+
+.qod-event-icon--U {
+    color: #285caf;
+    background: #e8f1ff;
+}
+
+.qod-event-content {
+    min-width: 0;
+    flex: 1;
+}
+
+.qod-event-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    flex-wrap: wrap;
+    gap: .45rem;
+    margin-bottom: .55rem;
+}
+
+.qod-event-title {
+    font-size: .85rem;
+    font-weight: 800;
+    overflow-wrap: anywhere;
+}
+
+.qod-event-date {
+    color: #8291a5;
+    font-size: .7rem;
+    white-space: nowrap;
+}
+
+.qod-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .4rem;
+}
+
+.qod-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    padding: .35rem .55rem;
+    border-radius: 7px;
+    color: #3a638a;
+    background: #edf4fb;
+    font-size: .69rem;
+    font-weight: 650;
+    overflow-wrap: anywhere;
+}
+
+.qod-tag--line {
+    background: #e9f7ef;
+    color: #237b4b;
+}
+
+.qod-tag--trainer {
+    background: #fff3e1;
+    color: #a66b22;
+}
+
+/* =====================================================
+   TRANSFERTS
+   ===================================================== */
+
+.qod-flow {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: .4rem;
+}
+
+.qod-flow-from,
+.qod-flow-to {
+    padding: .32rem .55rem;
+    border-radius: 7px;
+    font-size: .7rem;
+    font-weight: 750;
+}
+
+.qod-flow-from {
+    color: #a04747;
+    background: #fff0f0;
+}
+
+.qod-flow-to {
+    color: #20784c;
+    background: #e9f7ef;
+}
+
+/* =====================================================
+   RÉSULTATS DE REQUALIFICATION
+   ===================================================== */
+
+.qod-result {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .4rem .6rem;
+    border-radius: 7px;
+    font-size: .7rem;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.qod-result--pass {
+    background: #e8f6ed;
+    color: #207b49;
+}
+
+.qod-result--up {
+    background: #e8f2ff;
+    color: #245baa;
+}
+
+.qod-result--down {
+    background: #fff1df;
+    color: #a36a1e;
+}
+
+.qod-result--other {
+    background: #fff0f0;
+    color: #b34949;
+}
+
+/* =====================================================
+   DEMANDES EN ATTENTE
+   ===================================================== */
+
+.qod-pending {
+    padding: 1.1rem;
+}
+
+.qod-subtitle {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: .55rem;
+    margin: 0 0 .8rem;
+    color: #243b58;
+    font-size: .86rem;
+    font-weight: 850;
+}
+
+.qod-subtitle:not(:first-child) {
+    margin-top: 1.5rem;
+}
+
+/* =====================================================
+   ÉTATS VIDES
+   ===================================================== */
+
+.qod-empty {
+    display: grid;
+    justify-items: center;
+    gap: .55rem;
+    padding: 3.5rem 1rem;
+    text-align: center;
+    color: #8795a7;
+    font-size: .79rem;
+}
+
+.qod-empty i {
+    display: grid;
+    place-items: center;
+    width: 60px;
+    height: 60px;
+    border-radius: 16px;
+    color: #718db8;
+    background: #edf3ff;
+    font-size: 1.4rem;
+}
+
+.qod-empty strong {
+    color: #354963;
+    font-size: .9rem;
+}
+
+/* =====================================================
+   RESPONSIVE
+   ===================================================== */
+
+@media (max-width: 1050px) {
+    .qod-kpis {
+        grid-template-columns: repeat(2,minmax(0,1fr));
+    }
+}
+
+@media (max-width: 575px) {
+    .qod-hero {
+        border-radius: 15px;
     }
 
-    .hero-card::before {
-        content: '';
-        position: absolute;
-        top: -60px; right: -60px;
-        width: 200px; height: 200px;
-        background: rgba(59, 130, 246, 0.15);
-        border-radius: 50%;
-    }
-
-    .hero-card::after {
-        content: '';
-        position: absolute;
-        bottom: -40px; right: 80px;
-        width: 140px; height: 140px;
-        background: rgba(99, 102, 241, 0.1);
-        border-radius: 50%;
-    }
-
-    .hero-avatar {
-        width: 72px; height: 72px;
-        border-radius: 16px;
-        background: linear-gradient(135deg, var(--accent-color) 0%, #6366F1 100%);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.6rem;
-        font-weight: 800;
-        color: white;
-        flex-shrink: 0;
-        box-shadow: 0 8px 24px rgba(59, 130, 246, 0.35);
-    }
-
-    .hero-name {
-        font-size: 1.5rem;
-        font-weight: 700;
-        margin-bottom: 4px;
-    }
-
-    .hero-matricule {
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-        padding: 3px 12px;
-        background: rgba(255, 255, 255, 0.1);
-        border-radius: 20px;
-        font-size: 13px;
-        font-family: 'JetBrains Mono', monospace;
-        color: #93C5FD;
-        margin-bottom: 12px;
-    }
-
-    .hero-info-item {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        font-size: 13px;
-        color: rgba(255, 255, 255, 0.7);
-    }
-
-    .hero-info-item i { color: #60A5FA; font-size: 12px; }
-
-    .hero-info-item a {
-        color: #93C5FD;
-        text-decoration: none;
-        font-weight: 500;
-    }
-
-    .hero-info-item a:hover { color: white; }
-
-    /* ══ KPI STRIP ═══════════════════════════════════════ */
-    .kpi-strip {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-        gap: 12px;
-        margin-bottom: 28px;
-    }
-
-    .kpi-mini {
-        background: white;
-        border-radius: 12px;
-        border: 1px solid var(--gray-200);
-        padding: 16px 12px;
-        text-align: center;
-        transition: all .2s;
-    }
-
-    .kpi-mini:hover {
-        box-shadow: 0 4px 12px rgba(0,0,0,.06);
-        transform: translateY(-2px);
-    }
-
-    .kpi-mini .kpi-num {
-        font-size: 1.6rem;
-        font-weight: 800;
-        line-height: 1;
-        margin-bottom: 4px;
-    }
-
-    .kpi-mini .kpi-lbl {
-        font-size: 11px;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: .04em;
-        color: var(--gray-400);
-    }
-
-    /* ══ TABS ════════════════════════════════════════════ */
-    .tabs-wrapper {
-        background: white;
-        border-radius: 12px 12px 0 0;
-        border: 1px solid var(--gray-200);
-        border-bottom: none;
-        overflow: hidden;
-    }
-
-    .tab-nav {
-        display: flex;
-        border-bottom: 1px solid var(--gray-200);
-        overflow-x: auto;
-        scrollbar-width: none;
-    }
-    .tab-nav::-webkit-scrollbar { display: none; }
-
-    .tab-btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 7px;
-        padding: 14px 20px;
-        border: none;
-        background: none;
-        font-size: 13px;
-        font-weight: 600;
-        color: var(--gray-500);
-        cursor: pointer;
-        border-bottom: 3px solid transparent;
-        transition: all .2s;
-        white-space: nowrap;
-        font-family: inherit;
-    }
-
-    .tab-btn:hover { color: var(--gray-700); background: var(--gray-50); }
-
-    .tab-btn.active {
-        color: var(--accent-color);
-        border-bottom-color: var(--accent-color);
-        background: rgba(59, 130, 246, 0.04);
-    }
-
-    .tab-count {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        min-width: 20px;
-        height: 20px;
-        padding: 0 6px;
-        border-radius: 10px;
-        font-size: 11px;
-        font-weight: 700;
-        background: var(--gray-200);
-        color: var(--gray-600);
-    }
-
-    .tab-btn.active .tab-count {
-        background: var(--accent-color);
-        color: white;
-    }
-
-    /* ══ TAB CONTENT ═════════════════════════════════════ */
-    .tab-panel {
-        display: none;
-        background: white;
-        border: 1px solid var(--gray-200);
-        border-top: none;
-        border-radius: 0 0 12px 12px;
-    }
-
-    .tab-panel.active { display: block; }
-
-    /* ══ LEVELS TABLE ════════════════════════════════════ */
-    .levels-table {
-        font-size: .82rem;
-        border-collapse: separate;
-        border-spacing: 0;
-        width: 100%;
-    }
-
-    .levels-table thead th {
-        font-weight: 600;
-        font-size: .72rem;
-        padding: 12px 10px;
-        text-align: center;
-        white-space: nowrap;
-        text-transform: uppercase;
-        letter-spacing: .04em;
-    }
-
-    .levels-table thead th.th-num {
-        width: 50px;
-        background: var(--gray-800);
-        color: var(--gray-400);
-        text-align: center;
-    }
-
-    .levels-table thead th.th-task {
-        text-align: left;
-        background: var(--gray-800);
-        color: var(--gray-300);
-        min-width: 200px;
-        padding-left: 16px;
-    }
-
-    .levels-table thead th.th-I {
-        background: #7c2d12;
-        color: #fed7aa;
-        min-width: 110px;
-    }
-
-    .levels-table thead th.th-L {
-        background: #14532d;
-        color: #bbf7d0;
-        min-width: 110px;
-    }
-
-    .levels-table thead th.th-U {
-        background: #1e3a8a;
-        color: #bfdbfe;
-        min-width: 110px;
-    }
-
-    .levels-table thead th.th-highest {
-        background: var(--gray-800);
-        color: var(--gray-300);
-        width: 70px;
-    }
-
-    .levels-table thead th.th-lines {
-        background: var(--gray-800);
-        color: var(--gray-300);
-        width: 90px;
-    }
-
-    /* Group row */
-    .group-row td {
-        background: var(--secondary-color) !important;
-        color: white !important;
-        font-weight: 700;
-        font-size: 11px;
-        text-transform: uppercase;
-        letter-spacing: .08em;
-        padding: 8px 16px !important;
-    }
-
-    /* Data rows */
-    .levels-table tbody tr:hover { background: rgba(59,130,246,.03); }
-
-    .levels-table tbody td {
-        padding: 8px 10px;
-        border-bottom: 1px solid var(--gray-100);
-        vertical-align: middle;
-        text-align: center;
-    }
-
-    .levels-table tbody td.td-num {
-        font-size: .72rem;
-        color: var(--gray-400);
-        font-weight: 600;
-        background: var(--gray-50);
-    }
-
-    .levels-table tbody td.td-task {
-        text-align: left;
-        font-weight: 500;
-        color: var(--gray-700);
-        padding-left: 16px;
-        background: var(--gray-50);
-        font-size: .82rem;
-    }
-
-    /* Level cells */
-    .cell-I {
-        background: rgba(194, 65, 12, 0.08);
-    }
-
-    .cell-L {
-        background: rgba(21, 128, 61, 0.08);
-    }
-
-    .cell-U {
-        background: rgba(29, 78, 216, 0.08);
-    }
-
-    .cell-empty { background: white; }
-
-    .level-val {
-        display: inline-block;
-        width: 26px; height: 26px;
-        line-height: 26px;
-        border-radius: 8px;
-        font-weight: 800;
-        font-size: 13px;
-    }
-
-    .level-val-I { background: #c2410c; color: white; }
-    .level-val-L { background: #15803d; color: white; }
-    .level-val-U { background: #1d4ed8; color: white; }
-
-    .level-date {
-        font-size: 11px;
-        color: var(--gray-400);
-        display: block;
-        margin-top: 2px;
-        line-height: 1;
-    }
-
-    .level-trainer {
-        font-size: 10px;
-        color: var(--gray-400);
-        display: block;
-        margin-top: 2px;
-        font-style: italic;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        max-width: 100px;
-    }
-
-    .empty-dash { color: var(--gray-200); font-size: 18px; }
-
-    /* Highest badge */
-    .highest {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 28px; height: 28px;
-        border-radius: 50%;
-        font-weight: 800;
-        font-size: 12px;
-    }
-
-    .highest-I { background: #fff7ed; color: #c2410c; border: 2px solid #fed7aa; }
-    .highest-L { background: #f0fdf4; color: #15803d; border: 2px solid #bbf7d0; }
-    .highest-U { background: #eff6ff; color: #1d4ed8; border: 2px solid #bfdbfe; }
-
-    /* Line tags */
-    .line-tag-mini {
-        display: inline-block;
-        padding: 2px 7px;
-        border-radius: 6px;
-        font-size: 11px;
-        font-weight: 600;
-        background: rgba(59,130,246,.1);
-        color: var(--accent-color);
-    }
-
-    /* ══ TIMELINE ════════════════════════════════════════ */
-    .timeline { padding: 24px; }
-
-    .timeline-entry {
-        display: flex;
-        gap: 16px;
-        padding-bottom: 20px;
-        position: relative;
-    }
-
-    .timeline-entry:not(:last-child)::before {
-        content: '';
-        position: absolute;
-        left: 19px;
-        top: 38px;
-        bottom: 0;
-        width: 2px;
-        background: var(--gray-100);
-    }
-
-    .timeline-icon {
-        width: 38px;
-        height: 38px;
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 700;
-        font-size: 13px;
-        flex-shrink: 0;
-        z-index: 1;
-    }
-
-    .timeline-icon-I { background: rgba(194,65,12,.12); color: #c2410c; border: 2px solid #fed7aa; }
-    .timeline-icon-L { background: rgba(21,128,61,.12); color: #15803d; border: 2px solid #bbf7d0; }
-    .timeline-icon-U { background: rgba(29,78,216,.12); color: #1d4ed8; border: 2px solid #bfdbfe; }
-
-    .timeline-body { flex: 1; min-width: 0; }
-
-    .timeline-header {
-        display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        gap: 12px;
-        margin-bottom: 6px;
-    }
-
-    .timeline-task {
-        font-weight: 600;
-        color: var(--gray-800);
-        font-size: 14px;
-    }
-
-    .timeline-date {
-        font-size: 12px;
-        color: var(--gray-400);
-        white-space: nowrap;
-        flex-shrink: 0;
-    }
-
-    .timeline-meta {
-        display: flex;
+    .qod-profile {
         flex-wrap: wrap;
-        gap: 6px;
-        align-items: center;
     }
 
-    .timeline-tag {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        padding: 2px 8px;
-        border-radius: 6px;
-        font-size: 12px;
-        font-weight: 500;
+    .qod-readonly {
+        margin-left: 0;
     }
 
-    .tag-line { background: rgba(5,150,105,.1); color: var(--success-color); }
-    .tag-trainer { background: rgba(217,119,6,.1); color: var(--warning-color); }
-    .tag-note { background: rgba(8,145,178,.1); color: var(--info-color); }
-
-    /* ══ DATA TABLE ══════════════════════════════════════ */
-    .data-table {
-        font-size: .84rem;
-        width: 100%;
-        border-collapse: collapse;
+    .qod-kpi {
+        padding: .75rem;
+        gap: .5rem;
     }
 
-    .data-table thead th {
-        padding: 12px 16px;
-        font-size: 11px;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: .06em;
-        color: var(--gray-500);
-        background: var(--gray-50);
-        border-bottom: 2px solid var(--gray-200);
-        white-space: nowrap;
+    .qod-kpi-icon {
+        width: 32px;
+        height: 32px;
+        flex-basis: 32px;
     }
 
-    .data-table tbody td {
-        padding: 12px 16px;
-        border-bottom: 1px solid var(--gray-100);
-        vertical-align: middle;
-        color: var(--gray-700);
+    .qod-kpi strong {
+        font-size: 1.17rem;
     }
 
-    .data-table tbody tr:hover { background: rgba(59,130,246,.025); }
-    .data-table tbody tr:last-child td { border-bottom: none; }
-
-    /* Transfer arrow */
-    .transfer-flow {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 13px;
+    .qod-kpi small {
+        font-size: .63rem;
     }
+}
 
-    .transfer-from {
-        padding: 3px 10px;
-        border-radius: 6px;
-        background: rgba(220,38,38,.08);
-        color: var(--danger-color);
-        font-weight: 500;
-        font-size: 12px;
+@media (prefers-reduced-motion: reduce) {
+    .qod * {
+        scroll-behavior: auto !important;
+        transition: none !important;
     }
+}
 
-    .transfer-to {
-        padding: 3px 10px;
-        border-radius: 6px;
-        background: rgba(5,150,105,.08);
-        color: var(--success-color);
-        font-weight: 500;
-        font-size: 12px;
-    }
-
-    .transfer-arrow { color: var(--gray-300); font-size: 14px; }
-
-    /* Result badge */
-    .result-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        padding: 4px 10px;
-        border-radius: 8px;
-        font-size: 12px;
-        font-weight: 600;
-    }
-
-    /* ══ PENDING ═════════════════════════════════════════ */
-    .pending-section { padding: 24px; }
-
-    .pending-title {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 14px;
-        font-weight: 700;
-        margin-bottom: 16px;
-        padding-bottom: 12px;
-        border-bottom: 2px solid var(--gray-100);
-    }
-
-    .pending-title i { font-size: 16px; }
-
-    /* ══ EMPTY ═══════════════════════════════════════════ */
-    .empty-tab {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        padding: 60px 20px;
-        text-align: center;
-    }
-
-    .empty-tab-icon {
-        width: 70px; height: 70px;
-        border-radius: 50%;
-        background: var(--gray-100);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-bottom: 16px;
-    }
-
-    .empty-tab-icon i { font-size: 28px; color: var(--gray-300); }
-
-    .empty-tab-title {
-        font-size: 15px;
-        font-weight: 600;
-        color: var(--gray-500);
-        margin-bottom: 4px;
-    }
-
-    .empty-tab-desc { font-size: 13px; color: var(--gray-400); }
 </style>
 {% endblock %}
 
 
 {% block content %}
 
-<!-- ══ RETOUR ════════════════════════════════════════════════════ -->
-<div class="mb-4">
-    <a href="{% url 'quality_operators' %}"
-       style="display:inline-flex; align-items:center; gap:6px;
-              font-size:13px; font-weight:600; color:var(--accent-color);
-              text-decoration:none; padding:6px 14px;
-              background:rgba(59,130,246,.08); border-radius:8px;
-              transition:all .2s;"
-       onmouseover="this.style.background='rgba(59,130,246,.14)'"
-       onmouseout="this.style.background='rgba(59,130,246,.08)'">
-        <i class="fas fa-arrow-left"></i>
+<div class="qod">
+
+    <!-- =====================================================
+         RETOUR
+         ===================================================== -->
+
+    <a class="qod-back"
+       href="{% url 'quality_operators' %}">
+
+        <i class="fas fa-arrow-left" aria-hidden="true"></i>
         Retour à la liste
+
     </a>
-</div>
 
-<!-- ══ HERO CARD ══════════════════════════════════════════════════ -->
-<div class="hero-card">
-    <div class="d-flex align-items-start gap-4">
 
-        <!-- Avatar -->
-        <div class="hero-avatar">
-            {{ employee.first_name|first|upper }}{{ employee.last_name|first|upper }}
+    <!-- =====================================================
+         PROFIL OPÉRATEUR
+         ===================================================== -->
+
+    <header class="qod-hero">
+
+        <div class="qod-profile">
+
+            <!-- Avatar -->
+            <div class="qod-avatar" aria-hidden="true">
+
+                {{ employee.first_name|first|upper }}{{ employee.last_name|first|upper }}
+
+            </div>
+
+            <!-- Informations -->
+            <div class="qod-profile-body">
+
+                <span class="qod-eyebrow">
+                    Fiche individuelle · Matrice de compétences
+                </span>
+
+                <h1>
+                    {{ employee.last_name }} {{ employee.first_name }}
+                </h1>
+
+                <span class="qod-matricule">
+
+                    <i class="fas fa-id-card" aria-hidden="true"></i>
+
+                    {{ employee.matricule }}
+
+                </span>
+
+                <div class="qod-meta">
+
+                    <!-- Ligne -->
+                    <span>
+
+                        <i class="fas fa-industry" aria-hidden="true"></i>
+
+                        {% if employee.line %}
+
+                            <a href="{% url 'quality_line_detail' employee.line.pk %}">
+                                {{ employee.line.name }}
+                            </a>
+
+                        {% else %}
+
+                            Non assigné
+
+                        {% endif %}
+
+                    </span>
+
+                    <!-- Manager -->
+                    <span>
+
+                        <i class="fas fa-user-tie" aria-hidden="true"></i>
+
+                        {% if employee.manager %}
+
+                            {{ employee.manager.get_full_name|default:employee.manager.username }}
+
+                        {% else %}
+
+                            Aucun chef affecté
+
+                        {% endif %}
+
+                    </span>
+
+                    <!-- Embauche -->
+                    <span>
+
+                        <i class="fas fa-calendar-alt" aria-hidden="true"></i>
+
+                        {% if employee.hire_date %}
+
+                            Embauché le {{ employee.hire_date|date:"d/m/Y" }}
+
+                        {% else %}
+
+                            Date d'embauche inconnue
+
+                        {% endif %}
+
+                    </span>
+
+                </div>
+
+            </div>
+
         </div>
 
-        <!-- Infos -->
-        <div style="flex:1; z-index:1; position:relative;">
-            <div class="hero-name">
-                {{ employee.last_name }} {{ employee.first_name }}
-            </div>
+        <span class="qod-readonly">
 
-            <div class="hero-matricule">
-                <i class="fas fa-id-card"></i>
-                {{ employee.matricule }}
-            </div>
+            <i class="fas fa-eye" aria-hidden="true"></i>
 
-            <div class="d-flex flex-wrap gap-4 mt-2">
-                <div class="hero-info-item">
-                    <i class="fas fa-industry"></i>
-                    {% if employee.line %}
-                        <a href="{% url 'quality_line_detail' employee.line.pk %}">
-                            {{ employee.line.name }}
-                        </a>
-                    {% else %}
-                        <span style="color:rgba(255,255,255,.4);">Non assigné</span>
-                    {% endif %}
-                </div>
+            Lecture seule
 
-                <div class="hero-info-item">
-                    <i class="fas fa-user-tie"></i>
-                    {% if employee.manager %}
-                        {{ employee.manager.get_full_name|default:employee.manager.username }}
-                    {% else %}
-                        <span style="color:rgba(255,255,255,.4);">—</span>
-                    {% endif %}
-                </div>
+        </span>
 
-                <div class="hero-info-item">
-                    <i class="fas fa-calendar-alt"></i>
-                    {% if employee.hire_date %}
-                        Embauché le {{ employee.hire_date|date:"d/m/Y" }}
-                    {% else %}
-                        <span style="color:rgba(255,255,255,.4);">Date inconnue</span>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
+    </header>
 
-        <!-- Badge readonly -->
-        <div style="z-index:1; position:relative;">
-            <span style="display:inline-flex; align-items:center; gap:5px;
-                         padding:6px 14px; border-radius:20px;
-                         background:rgba(8,145,178,.2);
-                         border:1px solid rgba(8,145,178,.3);
-                         font-size:12px; font-weight:600; color:#67E8F9;">
-                <i class="fas fa-eye"></i>Lecture seule
+
+    <!-- =====================================================
+         INDICATEURS KPI
+         ===================================================== -->
+
+    <section class="qod-kpis"
+             aria-label="Indicateurs de l'opérateur">
+
+        <!-- Tâches -->
+        <div class="qod-kpi">
+
+            <span class="qod-kpi-icon">
+                <i class="fas fa-tasks" aria-hidden="true"></i>
             </span>
+
+            <div>
+                <strong>{{ stats.total_tasks }}</strong>
+                <small>Tâches</small>
+            </div>
+
         </div>
-    </div>
-</div>
 
-<!-- ══ KPI STRIP ══════════════════════════════════════════════════ -->
-<div class="kpi-strip">
+        <!-- Niveau I -->
+        <div class="qod-kpi qod-kpi--I">
 
-    <div class="kpi-mini">
-        <div class="kpi-num" style="color:var(--gray-700);">{{ stats.total_tasks }}</div>
-        <div class="kpi-lbl">Tâches</div>
-    </div>
+            <span class="qod-kpi-icon">
+                <i class="fas fa-seedling" aria-hidden="true"></i>
+            </span>
 
-    <div class="kpi-mini">
-        <div class="kpi-num" style="color:#c2410c;">{{ stats.nb_I }}</div>
-        <div class="kpi-lbl">Niveau I</div>
-    </div>
+            <div>
+                <strong>{{ stats.nb_I }}</strong>
+                <small>Niveau I</small>
+            </div>
 
-    <div class="kpi-mini">
-        <div class="kpi-num" style="color:#15803d;">{{ stats.nb_L }}</div>
-        <div class="kpi-lbl">Niveau L</div>
-    </div>
+        </div>
 
-    <div class="kpi-mini">
-        <div class="kpi-num" style="color:#1d4ed8;">{{ stats.nb_U }}</div>
-        <div class="kpi-lbl">Niveau U</div>
-    </div>
+        <!-- Niveau L -->
+        <div class="qod-kpi qod-kpi--L">
 
-    <div class="kpi-mini">
-        <div class="kpi-num" style="color:#6d28d9;">{{ stats.total_trainings }}</div>
-        <div class="kpi-lbl">Formations</div>
-    </div>
+            <span class="qod-kpi-icon">
+                <i class="fas fa-check" aria-hidden="true"></i>
+            </span>
 
-    <div class="kpi-mini">
-        <div class="kpi-num" style="color:#0e7490;">{{ stats.nb_requalifs }}</div>
-        <div class="kpi-lbl">Requalif.</div>
-    </div>
+            <div>
+                <strong>{{ stats.nb_L }}</strong>
+                <small>Niveau L</small>
+            </div>
 
-    <div class="kpi-mini">
-        <div class="kpi-num" style="color:#0f766e;">{{ stats.nb_transfers }}</div>
-        <div class="kpi-lbl">Transferts</div>
-    </div>
+        </div>
 
-    {% if stats.nb_pending > 0 %}
-    <div class="kpi-mini" style="border-color:#fbbf24; background:#fffbeb;">
-        <div class="kpi-num" style="color:#b45309;">{{ stats.nb_pending }}</div>
-        <div class="kpi-lbl" style="color:#b45309;">En attente</div>
-    </div>
-    {% endif %}
+        <!-- Niveau U -->
+        <div class="qod-kpi qod-kpi--U">
 
-</div>
+            <span class="qod-kpi-icon">
+                <i class="fas fa-star" aria-hidden="true"></i>
+            </span>
 
-<!-- ══ TABS ════════════════════════════════════════════════════════ -->
-<div class="tabs-wrapper">
-    <div class="tab-nav">
+            <div>
+                <strong>{{ stats.nb_U }}</strong>
+                <small>Niveau U</small>
+            </div>
 
-        <button class="tab-btn active" onclick="switchTab(this, 'tab-levels')">
-            <i class="fas fa-table"></i>
-            Niveaux par Tâche
-        </button>
+        </div>
 
-        <button class="tab-btn" onclick="switchTab(this, 'tab-timeline')">
-            <i class="fas fa-history"></i>
-            Historique Chrono
-            <span class="tab-count">{{ training_timeline|length }}</span>
-        </button>
+        <!-- Formations -->
+        <div class="qod-kpi qod-kpi--purple">
 
-        <button class="tab-btn" onclick="switchTab(this, 'tab-requalif')">
-            <i class="fas fa-redo"></i>
-            Requalifications
-            <span class="tab-count">{{ requalif_history|length }}</span>
-        </button>
+            <span class="qod-kpi-icon">
+                <i class="fas fa-graduation-cap" aria-hidden="true"></i>
+            </span>
 
-        <button class="tab-btn" onclick="switchTab(this, 'tab-transfers')">
-            <i class="fas fa-exchange-alt"></i>
-            Transferts
-            <span class="tab-count">{{ transfer_history|length }}</span>
-        </button>
+            <div>
+                <strong>{{ stats.total_trainings }}</strong>
+                <small>Formations</small>
+            </div>
 
+        </div>
+
+        <!-- Requalifications -->
+        <div class="qod-kpi qod-kpi--cyan">
+
+            <span class="qod-kpi-icon">
+                <i class="fas fa-redo" aria-hidden="true"></i>
+            </span>
+
+            <div>
+                <strong>{{ stats.nb_requalifs }}</strong>
+                <small>Requalifications</small>
+            </div>
+
+        </div>
+
+        <!-- Transferts -->
+        <div class="qod-kpi qod-kpi--green">
+
+            <span class="qod-kpi-icon">
+                <i class="fas fa-exchange-alt" aria-hidden="true"></i>
+            </span>
+
+            <div>
+                <strong>{{ stats.nb_transfers }}</strong>
+                <small>Transferts</small>
+            </div>
+
+        </div>
+
+        <!-- Demandes en attente -->
         {% if stats.nb_pending > 0 %}
-        <button class="tab-btn" onclick="switchTab(this, 'tab-pending')"
-                style="color:#b45309;">
-            <i class="fas fa-clock"></i>
-            En Attente
-            <span class="tab-count" style="background:#f59e0b; color:white;">
-                {{ stats.nb_pending }}
+
+        <div class="qod-kpi qod-kpi--pending">
+
+            <span class="qod-kpi-icon">
+                <i class="fas fa-clock" aria-hidden="true"></i>
             </span>
-        </button>
+
+            <div>
+                <strong>{{ stats.nb_pending }}</strong>
+                <small>En attente</small>
+            </div>
+
+        </div>
+
         {% endif %}
 
-    </div>
-</div>
+    </section>
 
-<!-- ══ TAB : NIVEAUX PAR TÂCHE ══════════════════════════════════ -->
-<div class="tab-panel active" id="tab-levels">
-    {% if training_groups %}
-    <div class="table-responsive">
-        <table class="levels-table">
-            <thead>
-                <tr>
-                    <th class="th-num">N°</th>
-                    <th class="th-task">
-                        <i class="fas fa-tasks me-1"></i>Tâche
-                    </th>
-                    <th class="th-I">
-                        <i class="fas fa-seedling me-1"></i>I — Formation
-                    </th>
-                    <th class="th-L">
-                        <i class="fas fa-check-circle me-1"></i>L — Approuvé
-                    </th>
-                    <th class="th-U">
-                        <i class="fas fa-star me-1"></i>U — Formateur
-                    </th>
-                    <th class="th-highest">Niveau</th>
-                    <th class="th-lines">Lignes</th>
-                </tr>
-            </thead>
-            <tbody>
-            {% for group_name, tasks_data in training_groups.items %}
 
-                <tr class="group-row">
-                    <td colspan="7">
-                        <i class="fas fa-layer-group me-1"></i>
-                        {{ group_name }}
-                    </td>
-                </tr>
+    <!-- =====================================================
+         TITRE DE SECTION
+         ===================================================== -->
 
-                {% for item in tasks_data %}
-                <tr>
-                    <td class="td-num">{{ item.task.task_number }}</td>
-                    <td class="td-task">{{ item.task.title }}</td>
+    <div class="qod-section">
 
-                    <!-- I -->
-                    <td class="{% if item.record_I %}cell-I{% else %}cell-empty{% endif %}">
-                        {% if item.record_I %}
-                            <span class="level-val level-val-I">I</span>
-                            <span class="level-date">{{ item.record_I.date|date:"d/m/Y" }}</span>
-                            {% if item.record_I.trainer %}
-                            <span class="level-trainer">
-                                <i class="fas fa-user-graduate"></i>
-                                {{ item.record_I.trainer.first_name|first }}.
-                                {{ item.record_I.trainer.last_name }}
-                            </span>
-                            {% endif %}
-                        {% else %}
-                            <span class="empty-dash">—</span>
-                        {% endif %}
-                    </td>
+        <div>
 
-                    <!-- L -->
-                    <td class="{% if item.record_L %}cell-L{% else %}cell-empty{% endif %}">
-                        {% if item.record_L %}
-                            <span class="level-val level-val-L">L</span>
-                            <span class="level-date">{{ item.record_L.date|date:"d/m/Y" }}</span>
-                            {% if item.record_L.trainer %}
-                            <span class="level-trainer">
-                                <i class="fas fa-user-graduate"></i>
-                                {{ item.record_L.trainer.first_name|first }}.
-                                {{ item.record_L.trainer.last_name }}
-                            </span>
-                            {% endif %}
-                        {% else %}
-                            <span class="empty-dash">—</span>
-                        {% endif %}
-                    </td>
+            <h2>Suivi des compétences</h2>
 
-                    <!-- U -->
-                    <td class="{% if item.record_U %}cell-U{% else %}cell-empty{% endif %}">
-                        {% if item.record_U %}
-                            <span class="level-val level-val-U">U</span>
-                            <span class="level-date">{{ item.record_U.date|date:"d/m/Y" }}</span>
-                            {% if item.record_U.trainer %}
-                            <span class="level-trainer">
-                                <i class="fas fa-user-graduate"></i>
-                                {{ item.record_U.trainer.first_name|first }}.
-                                {{ item.record_U.trainer.last_name }}
-                            </span>
-                            {% endif %}
-                        {% else %}
-                            <span class="empty-dash">—</span>
-                        {% endif %}
-                    </td>
+            <p>
+                Consultez les niveaux, les événements et
+                les demandes de cet opérateur.
+            </p>
 
-                    <!-- Highest -->
-                    <td>
-                        {% if item.highest == 'U' %}
-                            <span class="highest highest-U">U</span>
-                        {% elif item.highest == 'L' %}
-                            <span class="highest highest-L">L</span>
-                        {% elif item.highest == 'I' %}
-                            <span class="highest highest-I">I</span>
-                        {% else %}
-                            <span class="empty-dash">—</span>
-                        {% endif %}
-                    </td>
-
-                    <!-- Lines -->
-                    <td>
-                        {% for line in item.lines %}
-                            <span class="line-tag-mini">{{ line.code }}</span>
-                        {% empty %}
-                            <span class="empty-dash">—</span>
-                        {% endfor %}
-                    </td>
-                </tr>
-                {% endfor %}
-
-            {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    {% else %}
-    <div class="empty-tab">
-        <div class="empty-tab-icon">
-            <i class="fas fa-table"></i>
         </div>
-        <div class="empty-tab-title">Aucune formation enregistrée</div>
-        <div class="empty-tab-desc">Les formations apparaîtront ici</div>
+
+        <span class="qod-section-note">
+
+            <i class="fas fa-eye me-1" aria-hidden="true"></i>
+
+            Consultation uniquement
+
+        </span>
+
     </div>
-    {% endif %}
-</div>
 
-<!-- ══ TAB : HISTORIQUE CHRONO ══════════════════════════════════ -->
-<div class="tab-panel" id="tab-timeline">
-    {% if training_timeline %}
-    <div class="timeline">
-        {% for item in training_timeline %}
-        <div class="timeline-entry">
 
-            <div class="timeline-icon
-                {% if item.level_label == 'I' %}timeline-icon-I
-                {% elif item.level_label == 'L' %}timeline-icon-L
-                {% elif item.level_label == 'U' %}timeline-icon-U
-                {% endif %}">
-                {{ item.level_label }}
+    <!-- =====================================================
+         CONTAINER PRINCIPAL
+         ===================================================== -->
+
+    <div class="qod-shell">
+
+
+        <!-- =================================================
+             NAVIGATION
+             ================================================= -->
+
+        <div class="qod-tabs"
+             role="tablist"
+             aria-label="Informations de l'opérateur">
+
+
+            <!-- Niveaux -->
+            <button
+                type="button"
+                class="qod-tab"
+                id="qod-tab-levels"
+                data-qod-tab="qod-panel-levels"
+                role="tab"
+                aria-controls="qod-panel-levels"
+                aria-selected="true"
+                tabindex="0">
+
+                <i class="fas fa-table" aria-hidden="true"></i>
+
+                Niveaux par tâche
+
+            </button>
+
+
+            <!-- Historique -->
+            <button
+                type="button"
+                class="qod-tab"
+                id="qod-tab-timeline"
+                data-qod-tab="qod-panel-timeline"
+                role="tab"
+                aria-controls="qod-panel-timeline"
+                aria-selected="false"
+                tabindex="-1">
+
+                <i class="fas fa-history" aria-hidden="true"></i>
+
+                Historique
+
+                <span class="qod-count">
+                    {{ training_timeline|length }}
+                </span>
+
+            </button>
+
+
+            <!-- Requalifications -->
+            <button
+                type="button"
+                class="qod-tab"
+                id="qod-tab-requalif"
+                data-qod-tab="qod-panel-requalif"
+                role="tab"
+                aria-controls="qod-panel-requalif"
+                aria-selected="false"
+                tabindex="-1">
+
+                <i class="fas fa-redo" aria-hidden="true"></i>
+
+                Requalifications
+
+                <span class="qod-count">
+                    {{ requalif_history|length }}
+                </span>
+
+            </button>
+
+
+            <!-- Transferts -->
+            <button
+                type="button"
+                class="qod-tab"
+                id="qod-tab-transfers"
+                data-qod-tab="qod-panel-transfers"
+                role="tab"
+                aria-controls="qod-panel-transfers"
+                aria-selected="false"
+                tabindex="-1">
+
+                <i class="fas fa-exchange-alt" aria-hidden="true"></i>
+
+                Transferts
+
+                <span class="qod-count">
+                    {{ transfer_history|length }}
+                </span>
+
+            </button>
+
+
+            <!-- En attente -->
+            {% if stats.nb_pending > 0 %}
+
+            <button
+                type="button"
+                class="qod-tab"
+                id="qod-tab-pending"
+                data-qod-tab="qod-panel-pending"
+                role="tab"
+                aria-controls="qod-panel-pending"
+                aria-selected="false"
+                tabindex="-1">
+
+                <i class="fas fa-clock" aria-hidden="true"></i>
+
+                En attente
+
+                <span class="qod-count">
+                    {{ stats.nb_pending }}
+                </span>
+
+            </button>
+
+            {% endif %}
+
+        </div>
+
+
+        <!-- =================================================
+             ONGLET 1 — NIVEAUX PAR TÂCHE
+             ================================================= -->
+
+        <section
+            class="qod-panel"
+            id="qod-panel-levels"
+            role="tabpanel"
+            aria-labelledby="qod-tab-levels">
+
+
+            {% if training_groups %}
+
+
+            <div class="qod-panel-intro">
+
+                <span>
+
+                    <i class="fas fa-table me-1" aria-hidden="true"></i>
+
+                    Matrice individuelle des compétences
+
+                </span>
+
+                <span>
+
+                    I : En formation · L : Approuvé · U : Formateur
+
+                </span>
+
             </div>
 
-            <div class="timeline-body">
-                <div class="timeline-header">
-                    <div class="timeline-task">{{ item.record.task.title }}</div>
-                    <div class="timeline-date">
-                        <i class="fas fa-calendar-alt me-1"></i>
-                        {{ item.date_str }}
-                    </div>
-                </div>
 
-                <div class="timeline-meta">
-                    {% for line in item.lines %}
-                    <span class="timeline-tag tag-line">
-                        <i class="fas fa-industry" style="font-size:10px;"></i>
-                        {{ line.name }}
-                    </span>
+            <div class="qod-scroll">
+
+                <table class="qod-table">
+
+                    <thead>
+
+                        <tr>
+
+                            <th scope="col">N°</th>
+
+                            <th scope="col" class="qod-left">
+                                Tâche
+                            </th>
+
+                            <th scope="col"
+                                class="qod-center qod-level-head-I">
+
+                                I — Formation
+
+                            </th>
+
+                            <th scope="col"
+                                class="qod-center qod-level-head-L">
+
+                                L — Approuvé
+
+                            </th>
+
+                            <th scope="col"
+                                class="qod-center qod-level-head-U">
+
+                                U — Formateur
+
+                            </th>
+
+                            <th scope="col" class="qod-center">
+                                Niveau
+                            </th>
+
+                            <th scope="col" class="qod-center">
+                                Lignes
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+                    {% for group_name, tasks_data in training_groups.items %}
+
+
+                        <!-- Groupe -->
+
+                        <tr class="qod-group">
+
+                            <td colspan="7">
+
+                                <i class="fas fa-layer-group me-1"
+                                   aria-hidden="true"></i>
+
+                                {{ group_name }}
+
+                            </td>
+
+                        </tr>
+
+
+                        {% for item in tasks_data %}
+
+
+                        <tr>
+
+                            <!-- Numéro -->
+                            <td class="qod-center">
+
+                                <span class="qod-task-number">
+
+                                    {{ item.task.task_number }}
+
+                                </span>
+
+                            </td>
+
+
+                            <!-- Tâche -->
+                            <th scope="row" class="qod-task">
+
+                                {{ item.task.title }}
+
+                            </th>
+
+
+                            <!-- Niveau I -->
+                            <td class="qod-center
+                                {% if item.record_I %}qod-cell-I{% endif %}">
+
+                                {% if item.record_I %}
+
+                                    <span class="qod-level qod-level-I">
+                                        I
+                                    </span>
+
+                                    <span class="qod-date">
+                                        {{ item.record_I.date|date:"d/m/Y" }}
+                                    </span>
+
+                                    {% if item.record_I.trainer %}
+
+                                    <span class="qod-trainer">
+
+                                        <i class="fas fa-user-graduate"
+                                           aria-hidden="true"></i>
+
+                                        {{ item.record_I.trainer.first_name|first }}.
+                                        {{ item.record_I.trainer.last_name }}
+
+                                    </span>
+
+                                    {% endif %}
+
+                                {% else %}
+
+                                    <span class="qod-empty-mark">—</span>
+
+                                {% endif %}
+
+                            </td>
+
+
+                            <!-- Niveau L -->
+                            <td class="qod-center
+                                {% if item.record_L %}qod-cell-L{% endif %}">
+
+                                {% if item.record_L %}
+
+                                    <span class="qod-level qod-level-L">
+                                        L
+                                    </span>
+
+                                    <span class="qod-date">
+                                        {{ item.record_L.date|date:"d/m/Y" }}
+                                    </span>
+
+                                    {% if item.record_L.trainer %}
+
+                                    <span class="qod-trainer">
+
+                                        <i class="fas fa-user-graduate"
+                                           aria-hidden="true"></i>
+
+                                        {{ item.record_L.trainer.first_name|first }}.
+                                        {{ item.record_L.trainer.last_name }}
+
+                                    </span>
+
+                                    {% endif %}
+
+                                {% else %}
+
+                                    <span class="qod-empty-mark">—</span>
+
+                                {% endif %}
+
+                            </td>
+
+
+                            <!-- Niveau U -->
+                            <td class="qod-center
+                                {% if item.record_U %}qod-cell-U{% endif %}">
+
+                                {% if item.record_U %}
+
+                                    <span class="qod-level qod-level-U">
+                                        U
+                                    </span>
+
+                                    <span class="qod-date">
+                                        {{ item.record_U.date|date:"d/m/Y" }}
+                                    </span>
+
+                                    {% if item.record_U.trainer %}
+
+                                    <span class="qod-trainer">
+
+                                        <i class="fas fa-user-graduate"
+                                           aria-hidden="true"></i>
+
+                                        {{ item.record_U.trainer.first_name|first }}.
+                                        {{ item.record_U.trainer.last_name }}
+
+                                    </span>
+
+                                    {% endif %}
+
+                                {% else %}
+
+                                    <span class="qod-empty-mark">—</span>
+
+                                {% endif %}
+
+                            </td>
+
+
+                            <!-- Niveau le plus élevé -->
+                            <td class="qod-center">
+
+                                {% if item.highest == 'U' %}
+
+                                    <span class="qod-highest qod-highest-U">
+                                        U
+                                    </span>
+
+                                {% elif item.highest == 'L' %}
+
+                                    <span class="qod-highest qod-highest-L">
+                                        L
+                                    </span>
+
+                                {% elif item.highest == 'I' %}
+
+                                    <span class="qod-highest qod-highest-I">
+                                        I
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="qod-empty-mark">—</span>
+
+                                {% endif %}
+
+                            </td>
+
+
+                            <!-- Lignes -->
+                            <td class="qod-center">
+
+                                {% for line in item.lines %}
+
+                                    <span class="qod-line">
+                                        {{ line.code }}
+                                    </span>
+
+                                {% empty %}
+
+                                    <span class="qod-empty-mark">—</span>
+
+                                {% endfor %}
+
+                            </td>
+
+                        </tr>
+
+
+                        {% endfor %}
+
                     {% endfor %}
 
-                    {% if item.record.trainer %}
-                    <span class="timeline-tag tag-trainer">
-                        <i class="fas fa-chalkboard-teacher" style="font-size:10px;"></i>
-                        {{ item.record.trainer.first_name }} {{ item.record.trainer.last_name }}
-                    </span>
-                    {% endif %}
+                    </tbody>
 
-                    {% if item.record.note %}
-                    <span class="timeline-tag tag-note">
-                        <i class="fas fa-sticky-note" style="font-size:10px;"></i>
-                        {{ item.record.note|truncatewords:8 }}
-                    </span>
-                    {% endif %}
-                </div>
+                </table>
+
             </div>
-        </div>
-        {% endfor %}
-    </div>
-    {% else %}
-    <div class="empty-tab">
-        <div class="empty-tab-icon"><i class="fas fa-history"></i></div>
-        <div class="empty-tab-title">Aucun historique</div>
-        <div class="empty-tab-desc">L'historique des formations apparaîtra ici</div>
-    </div>
-    {% endif %}
-</div>
 
-<!-- ══ TAB : REQUALIFICATIONS ════════════════════════════════════ -->
-<div class="tab-panel" id="tab-requalif">
-    {% if requalif_history %}
-    <div class="table-responsive">
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Tâche</th>
-                    <th class="text-center">Avant</th>
-                    <th class="text-center">Après</th>
-                    <th>Résultat</th>
-                    <th>Requalificateur</th>
-                    <th class="text-center">Jours</th>
-                </tr>
-            </thead>
-            <tbody>
-            {% for r in requalif_history %}
-            <tr>
-                <td>
-                    <span style="font-weight:500; font-size:13px;">
-                        {{ r.requalification_date|date:"d/m/Y" }}
-                    </span>
-                </td>
-                <td style="font-weight:500;">
-                    {{ r.task.title|default:"Général" }}
-                </td>
-                <td class="text-center">
-                    {% with prev=r.get_previous_level_display %}
-                    {% if prev == 'I' %}
-                        <span class="highest highest-I">I</span>
-                    {% elif prev == 'L' %}
-                        <span class="highest highest-L">L</span>
-                    {% elif prev == 'U' %}
-                        <span class="highest highest-U">U</span>
-                    {% else %}
-                        <span class="empty-dash">—</span>
-                    {% endif %}
-                    {% endwith %}
-                </td>
-                <td class="text-center">
-                    {% with nxt=r.get_new_level_display %}
-                    {% if nxt == 'I' %}
-                        <span class="highest highest-I">I</span>
-                    {% elif nxt == 'L' %}
-                        <span class="highest highest-L">L</span>
-                    {% elif nxt == 'U' %}
-                        <span class="highest highest-U">U</span>
-                    {% else %}
-                        <span class="empty-dash">—</span>
-                    {% endif %}
-                    {% endwith %}
-                </td>
-                <td>
-                    <span class="result-badge
-                        {% if r.result == 'PASS' %}
-                            " style="background:rgba(5,150,105,.1);color:var(--success-color);">
-                            <i class="fas fa-check-circle"></i>
-                        {% elif r.result == 'UPGRADE' %}
-                            " style="background:rgba(8,145,178,.1);color:var(--info-color);">
-                            <i class="fas fa-arrow-up"></i>
-                        {% elif r.result == 'DOWNGRADE' %}
-                            " style="background:rgba(217,119,6,.1);color:var(--warning-color);">
-                            <i class="fas fa-arrow-down"></i>
-                        {% else %}
-                            " style="background:rgba(220,38,38,.1);color:var(--danger-color);">
-                            <i class="fas fa-redo"></i>
-                        {% endif %}
-                        {{ r.get_result_display }}
-                    </span>
-                </td>
-                <td style="color:var(--gray-500); font-size:13px;">
-                    {{ r.get_requalifier_display }}
-                </td>
-                <td class="text-center">
-                    <span style="font-size:12px; font-weight:600;
-                                 color:var(--gray-500);">
-                        {{ r.days_since_training }}j
-                    </span>
-                </td>
-            </tr>
-            {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    {% else %}
-    <div class="empty-tab">
-        <div class="empty-tab-icon"><i class="fas fa-redo"></i></div>
-        <div class="empty-tab-title">Aucune requalification</div>
-        <div class="empty-tab-desc">Les requalifications apparaîtront ici</div>
-    </div>
-    {% endif %}
-</div>
 
-<!-- ══ TAB : TRANSFERTS ══════════════════════════════════════════ -->
-<div class="tab-panel" id="tab-transfers">
-    {% if transfer_history %}
-    <div class="table-responsive">
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Mouvement</th>
-                    <th>Raison</th>
-                    <th>Effectué par</th>
-                </tr>
-            </thead>
-            <tbody>
-            {% for t in transfer_history %}
-            <tr>
-                <td>
-                    <span style="font-weight:500; font-size:13px;">
-                        {{ t.transfer_date|date:"d/m/Y" }}
+            {% else %}
+
+
+            <div class="qod-empty">
+
+                <i class="fas fa-table" aria-hidden="true"></i>
+
+                <strong>Aucune formation enregistrée</strong>
+
+                <span>Les compétences apparaîtront ici.</span>
+
+            </div>
+
+
+            {% endif %}
+
+        </section>
+
+
+        <!-- =================================================
+             ONGLET 2 — HISTORIQUE CHRONOLOGIQUE
+             ================================================= -->
+
+        <section
+            class="qod-panel"
+            id="qod-panel-timeline"
+            role="tabpanel"
+            aria-labelledby="qod-tab-timeline"
+            hidden>
+
+
+            {% if training_timeline %}
+
+
+            <div class="qod-panel-intro">
+
+                <span>
+
+                    <i class="fas fa-history me-1"
+                       aria-hidden="true"></i>
+
+                    Historique des formations
+
+                </span>
+
+                <span>
+
+                    {{ training_timeline|length }}
+                    événement{{ training_timeline|length|pluralize:"s" }}
+
+                </span>
+
+            </div>
+
+
+            <div class="qod-timeline">
+
+
+                {% for item in training_timeline %}
+
+
+                <article class="qod-event">
+
+
+                    <!-- Niveau -->
+                    <span
+                        class="qod-event-icon
+
+                        {% if item.level_label == 'I' %}
+                            qod-event-icon--I
+                        {% elif item.level_label == 'L' %}
+                            qod-event-icon--L
+                        {% elif item.level_label == 'U' %}
+                            qod-event-icon--U
+                        {% endif %}"
+
+                        aria-label="Niveau {{ item.level_label }}">
+
+                        {{ item.level_label }}
+
                     </span>
-                </td>
-                <td>
-                    <div class="transfer-flow">
-                        {% if t.from_line %}
-                            <span class="transfer-from">{{ t.from_line.name }}</span>
-                        {% else %}
-                            <span class="transfer-from" style="background:rgba(100,116,139,.1);
-                                  color:var(--gray-500);">Embauche</span>
-                        {% endif %}
-                        <i class="fas fa-arrow-right transfer-arrow"></i>
-                        <span class="transfer-to">{{ t.to_line.name }}</span>
+
+
+                    <!-- Informations -->
+                    <div class="qod-event-content">
+
+
+                        <div class="qod-event-head">
+
+                            <strong class="qod-event-title">
+
+                                {{ item.record.task.title }}
+
+                            </strong>
+
+                            <time class="qod-event-date">
+
+                                <i class="fas fa-calendar-alt me-1"
+                                   aria-hidden="true"></i>
+
+                                {{ item.date_str }}
+
+                            </time>
+
+                        </div>
+
+
+                        <div class="qod-tags">
+
+
+                            <!-- Lignes -->
+                            {% for line in item.lines %}
+
+                                <span class="qod-tag qod-tag--line">
+
+                                    <i class="fas fa-industry"
+                                       aria-hidden="true"></i>
+
+                                    {{ line.name }}
+
+                                </span>
+
+                            {% endfor %}
+
+
+                            <!-- Formateur -->
+                            {% if item.record.trainer %}
+
+                                <span class="qod-tag qod-tag--trainer">
+
+                                    <i class="fas fa-chalkboard-teacher"
+                                       aria-hidden="true"></i>
+
+                                    {{ item.record.trainer.first_name }}
+                                    {{ item.record.trainer.last_name }}
+
+                                </span>
+
+                            {% endif %}
+
+
+                            <!-- Note -->
+                            {% if item.record.note %}
+
+                                <span class="qod-tag">
+
+                                    <i class="fas fa-sticky-note"
+                                       aria-hidden="true"></i>
+
+                                    {{ item.record.note|truncatewords:8 }}
+
+                                </span>
+
+                            {% endif %}
+
+
+                        </div>
+
                     </div>
-                </td>
-                <td style="color:var(--gray-500); font-size:13px;">
-                    {{ t.reason|default:"—"|truncatewords:12 }}
-                </td>
-                <td style="color:var(--gray-500); font-size:13px;">
-                    {% if t.transferred_by %}
-                        <i class="fas fa-user me-1" style="color:var(--gray-300);"></i>
-                        {{ t.transferred_by.get_full_name|default:t.transferred_by.username }}
-                    {% else %}—{% endif %}
-                </td>
-            </tr>
-            {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    {% else %}
-    <div class="empty-tab">
-        <div class="empty-tab-icon"><i class="fas fa-exchange-alt"></i></div>
-        <div class="empty-tab-title">Aucun transfert</div>
-        <div class="empty-tab-desc">L'historique des transferts apparaîtra ici</div>
-    </div>
-    {% endif %}
-</div>
 
-<!-- ══ TAB : EN ATTENTE ══════════════════════════════════════════ -->
-{% if stats.nb_pending > 0 %}
-<div class="tab-panel" id="tab-pending">
-    <div class="pending-section">
+                </article>
 
-        {% if pending_training_req %}
-        <div class="pending-title" style="color:var(--warning-color);">
-            <i class="fas fa-graduation-cap"></i>
-            Demandes de Formation en Attente
-            <span class="tab-count" style="background:#fef3c7; color:#92400e;">
-                {{ pending_training_req|length }}
-            </span>
-        </div>
-        <table class="data-table mb-4">
-            <thead>
-                <tr>
-                    <th>Tâche</th>
-                    <th class="text-center">Niveau demandé</th>
-                    <th>Date demande</th>
-                    <th>Demandé par</th>
-                </tr>
-            </thead>
-            <tbody>
-            {% for req in pending_training_req %}
-            <tr>
-                <td style="font-weight:500;">{{ req.task.title }}</td>
-                <td class="text-center">
-                    <span style="display:inline-block; padding:3px 12px;
-                                 border-radius:8px; font-weight:700; font-size:12px;
-                                 background:#fef3c7; color:#92400e;">
-                        {{ req.get_requested_level_display }}
+
+                {% endfor %}
+
+
+            </div>
+
+
+            {% else %}
+
+
+            <div class="qod-empty">
+
+                <i class="fas fa-history" aria-hidden="true"></i>
+
+                <strong>Aucun historique</strong>
+
+                <span>
+                    L'historique des formations apparaîtra ici.
+                </span>
+
+            </div>
+
+
+            {% endif %}
+
+        </section>
+
+
+        <!-- =================================================
+             ONGLET 3 — REQUALIFICATIONS
+             ================================================= -->
+
+        <section
+            class="qod-panel"
+            id="qod-panel-requalif"
+            role="tabpanel"
+            aria-labelledby="qod-tab-requalif"
+            hidden>
+
+
+            {% if requalif_history %}
+
+
+            <div class="qod-panel-intro">
+
+                <span>
+
+                    <i class="fas fa-redo me-1"
+                       aria-hidden="true"></i>
+
+                    Historique des requalifications
+
+                </span>
+
+                <span>
+
+                    {{ requalif_history|length }}
+                    résultat{{ requalif_history|length|pluralize:"s" }}
+
+                </span>
+
+            </div>
+
+
+            <div class="qod-scroll">
+
+                <table class="qod-table">
+
+                    <thead>
+
+                        <tr>
+
+                            <th scope="col">Date</th>
+
+                            <th scope="col" class="qod-left">
+                                Tâche
+                            </th>
+
+                            <th scope="col" class="qod-center">
+                                Avant
+                            </th>
+
+                            <th scope="col" class="qod-center">
+                                Après
+                            </th>
+
+                            <th scope="col">Résultat</th>
+
+                            <th scope="col">Requalificateur</th>
+
+                            <th scope="col" class="qod-center">
+                                Jours
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+                    {% for r in requalif_history %}
+
+                        <tr>
+
+
+                            <!-- Date -->
+                            <td>
+
+                                {{ r.requalification_date|date:"d/m/Y" }}
+
+                            </td>
+
+
+                            <!-- Tâche -->
+                            <td class="qod-task">
+
+                                {{ r.task.title|default:"Général" }}
+
+                            </td>
+
+
+                            <!-- Niveau précédent -->
+                            <td class="qod-center">
+
+                                {% with prev=r.get_previous_level_display %}
+
+                                    {% if prev == 'I' %}
+
+                                        <span class="qod-highest qod-highest-I">
+                                            I
+                                        </span>
+
+                                    {% elif prev == 'L' %}
+
+                                        <span class="qod-highest qod-highest-L">
+                                            L
+                                        </span>
+
+                                    {% elif prev == 'U' %}
+
+                                        <span class="qod-highest qod-highest-U">
+                                            U
+                                        </span>
+
+                                    {% else %}
+
+                                        —
+
+                                    {% endif %}
+
+                                {% endwith %}
+
+                            </td>
+
+
+                            <!-- Nouveau niveau -->
+                            <td class="qod-center">
+
+                                {% with nxt=r.get_new_level_display %}
+
+                                    {% if nxt == 'I' %}
+
+                                        <span class="qod-highest qod-highest-I">
+                                            I
+                                        </span>
+
+                                    {% elif nxt == 'L' %}
+
+                                        <span class="qod-highest qod-highest-L">
+                                            L
+                                        </span>
+
+                                    {% elif nxt == 'U' %}
+
+                                        <span class="qod-highest qod-highest-U">
+                                            U
+                                        </span>
+
+                                    {% else %}
+
+                                        —
+
+                                    {% endif %}
+
+                                {% endwith %}
+
+                            </td>
+
+
+                            <!-- Résultat -->
+                            <td>
+
+                                <span class="qod-result
+
+                                    {% if r.result == 'PASS' %}
+                                        qod-result--pass
+                                    {% elif r.result == 'UPGRADE' %}
+                                        qod-result--up
+                                    {% elif r.result == 'DOWNGRADE' %}
+                                        qod-result--down
+                                    {% else %}
+                                        qod-result--other
+                                    {% endif %}">
+
+
+                                    {% if r.result == 'PASS' %}
+
+                                        <i class="fas fa-check-circle"
+                                           aria-hidden="true"></i>
+
+                                    {% elif r.result == 'UPGRADE' %}
+
+                                        <i class="fas fa-arrow-up"
+                                           aria-hidden="true"></i>
+
+                                    {% elif r.result == 'DOWNGRADE' %}
+
+                                        <i class="fas fa-arrow-down"
+                                           aria-hidden="true"></i>
+
+                                    {% else %}
+
+                                        <i class="fas fa-redo"
+                                           aria-hidden="true"></i>
+
+                                    {% endif %}
+
+
+                                    {{ r.get_result_display }}
+
+                                </span>
+
+                            </td>
+
+
+                            <!-- Requalificateur -->
+                            <td>
+
+                                {{ r.get_requalifier_display }}
+
+                            </td>
+
+
+                            <!-- Jours -->
+                            <td class="qod-center">
+
+                                {{ r.days_since_training }}j
+
+                            </td>
+
+
+                        </tr>
+
+                    {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+
+            {% else %}
+
+
+            <div class="qod-empty">
+
+                <i class="fas fa-redo" aria-hidden="true"></i>
+
+                <strong>Aucune requalification</strong>
+
+                <span>
+                    Les requalifications apparaîtront ici.
+                </span>
+
+            </div>
+
+
+            {% endif %}
+
+        </section>
+
+
+        <!-- =================================================
+             ONGLET 4 — TRANSFERTS
+             ================================================= -->
+
+        <section
+            class="qod-panel"
+            id="qod-panel-transfers"
+            role="tabpanel"
+            aria-labelledby="qod-tab-transfers"
+            hidden>
+
+
+            {% if transfer_history %}
+
+
+            <div class="qod-panel-intro">
+
+                <span>
+
+                    <i class="fas fa-exchange-alt me-1"
+                       aria-hidden="true"></i>
+
+                    Historique des transferts
+
+                </span>
+
+                <span>
+
+                    {{ transfer_history|length }}
+                    mouvement{{ transfer_history|length|pluralize:"s" }}
+
+                </span>
+
+            </div>
+
+
+            <div class="qod-scroll">
+
+                <table class="qod-table">
+
+                    <thead>
+
+                        <tr>
+
+                            <th scope="col">Date</th>
+
+                            <th scope="col" class="qod-left">
+                                Mouvement
+                            </th>
+
+                            <th scope="col">Raison</th>
+
+                            <th scope="col">Effectué par</th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+                    {% for t in transfer_history %}
+
+                        <tr>
+
+
+                            <!-- Date -->
+                            <td>
+
+                                {{ t.transfer_date|date:"d/m/Y" }}
+
+                            </td>
+
+
+                            <!-- Mouvement -->
+                            <td>
+
+                                <div class="qod-flow">
+
+
+                                    <span class="qod-flow-from">
+
+                                        {% if t.from_line %}
+
+                                            {{ t.from_line.name }}
+
+                                        {% else %}
+
+                                            Embauche
+
+                                        {% endif %}
+
+                                    </span>
+
+
+                                    <i class="fas fa-arrow-right qod-empty-mark"
+                                       aria-hidden="true"></i>
+
+
+                                    <span class="qod-flow-to">
+
+                                        {{ t.to_line.name }}
+
+                                    </span>
+
+
+                                </div>
+
+                            </td>
+
+
+                            <!-- Raison -->
+                            <td>
+
+                                {{ t.reason|default:"—"|truncatewords:12 }}
+
+                            </td>
+
+
+                            <!-- Effectué par -->
+                            <td>
+
+                                {% if t.transferred_by %}
+
+                                    {{ t.transferred_by.get_full_name|default:t.transferred_by.username }}
+
+                                {% else %}
+
+                                    —
+
+                                {% endif %}
+
+                            </td>
+
+
+                        </tr>
+
+                    {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+
+            {% else %}
+
+
+            <div class="qod-empty">
+
+                <i class="fas fa-exchange-alt"
+                   aria-hidden="true"></i>
+
+                <strong>Aucun transfert</strong>
+
+                <span>
+                    L'historique des transferts apparaîtra ici.
+                </span>
+
+            </div>
+
+
+            {% endif %}
+
+        </section>
+
+
+        <!-- =================================================
+             ONGLET 5 — DEMANDES EN ATTENTE
+             ================================================= -->
+
+        {% if stats.nb_pending > 0 %}
+
+        <section
+            class="qod-panel"
+            id="qod-panel-pending"
+            role="tabpanel"
+            aria-labelledby="qod-tab-pending"
+            hidden>
+
+
+            <div class="qod-pending">
+
+
+                <!-- =========================================
+                     FORMATIONS EN ATTENTE
+                     ========================================= -->
+
+                {% if pending_training_req %}
+
+
+                <h3 class="qod-subtitle">
+
+                    <i class="fas fa-graduation-cap"
+                       aria-hidden="true"></i>
+
+                    Formations en attente
+
+                    <span class="qod-count">
+
+                        {{ pending_training_req|length }}
+
                     </span>
-                </td>
-                <td style="font-size:13px; color:var(--gray-500);">
-                    {{ req.date_requested|date:"d/m/Y H:i" }}
-                </td>
-                <td style="font-size:13px; color:var(--gray-500);">
-                    {{ req.requested_by.get_full_name|default:req.requested_by.username }}
-                </td>
-            </tr>
-            {% endfor %}
-            </tbody>
-        </table>
+
+                </h3>
+
+
+                <div class="qod-scroll">
+
+                    <table class="qod-table">
+
+                        <thead>
+
+                            <tr>
+
+                                <th scope="col" class="qod-left">
+                                    Tâche
+                                </th>
+
+                                <th scope="col" class="qod-center">
+                                    Niveau demandé
+                                </th>
+
+                                <th scope="col">
+                                    Date de demande
+                                </th>
+
+                                <th scope="col">
+                                    Demandé par
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+                        {% for req in pending_training_req %}
+
+
+                            <tr>
+
+                                <!-- Tâche -->
+                                <td class="qod-task">
+
+                                    {{ req.task.title }}
+
+                                </td>
+
+
+                                <!-- Niveau demandé -->
+                                <td class="qod-center">
+
+                                    <span class="qod-result qod-result--down">
+
+                                        {{ req.get_requested_level_display }}
+
+                                    </span>
+
+                                </td>
+
+
+                                <!-- Date -->
+                                <td>
+
+                                    {{ req.date_requested|date:"d/m/Y H:i" }}
+
+                                </td>
+
+
+                                <!-- Demandeur -->
+                                <td>
+
+                                    {{ req.requested_by.get_full_name|default:req.requested_by.username }}
+
+                                </td>
+
+                            </tr>
+
+
+                        {% endfor %}
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+
+                {% endif %}
+
+
+                <!-- =========================================
+                     REQUALIFICATIONS EN ATTENTE
+                     ========================================= -->
+
+                {% if pending_requalif_req %}
+
+
+                <h3 class="qod-subtitle">
+
+                    <i class="fas fa-redo"
+                       aria-hidden="true"></i>
+
+                    Requalifications en attente
+
+                    <span class="qod-count">
+
+                        {{ pending_requalif_req|length }}
+
+                    </span>
+
+                </h3>
+
+
+                <div class="qod-scroll">
+
+                    <table class="qod-table">
+
+                        <thead>
+
+                            <tr>
+
+                                <th scope="col" class="qod-left">
+                                    Tâche
+                                </th>
+
+                                <th scope="col" class="qod-center">
+                                    Résultat demandé
+                                </th>
+
+                                <th scope="col" class="qod-center">
+                                    Niveau demandé
+                                </th>
+
+                                <th scope="col">
+                                    Date de demande
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+                        {% for req in pending_requalif_req %}
+
+
+                            <tr>
+
+
+                                <!-- Tâche -->
+                                <td class="qod-task">
+
+                                    {{ req.task.title|default:"Général" }}
+
+                                </td>
+
+
+                                <!-- Résultat -->
+                                <td class="qod-center">
+
+                                    <span class="qod-result qod-result--up">
+
+                                        {{ req.get_result_display }}
+
+                                    </span>
+
+                                </td>
+
+
+                                <!-- Niveau demandé -->
+                                <td class="qod-center">
+
+                                    {{ req.get_requested_new_level_display }}
+
+                                </td>
+
+
+                                <!-- Date -->
+                                <td>
+
+                                    {{ req.date_requested|date:"d/m/Y H:i" }}
+
+                                </td>
+
+
+                            </tr>
+
+
+                        {% endfor %}
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+
+                {% endif %}
+
+
+            </div>
+
+        </section>
+
         {% endif %}
 
-        {% if pending_requalif_req %}
-        <div class="pending-title" style="color:var(--info-color);">
-            <i class="fas fa-redo"></i>
-            Demandes de Requalification en Attente
-            <span class="tab-count" style="background:#e0f2fe; color:#0369a1;">
-                {{ pending_requalif_req|length }}
-            </span>
-        </div>
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>Tâche</th>
-                    <th class="text-center">Résultat demandé</th>
-                    <th class="text-center">Niveau demandé</th>
-                    <th>Date demande</th>
-                </tr>
-            </thead>
-            <tbody>
-            {% for req in pending_requalif_req %}
-            <tr>
-                <td style="font-weight:500;">{{ req.task.title|default:"Général" }}</td>
-                <td class="text-center">
-                    <span class="result-badge"
-                          style="background:rgba(8,145,178,.1); color:var(--info-color);">
-                        {{ req.get_result_display }}
-                    </span>
-                </td>
-                <td class="text-center">
-                    {{ req.get_requested_new_level_display }}
-                </td>
-                <td style="font-size:13px; color:var(--gray-500);">
-                    {{ req.date_requested|date:"d/m/Y H:i" }}
-                </td>
-            </tr>
-            {% endfor %}
-            </tbody>
-        </table>
-        {% endif %}
 
     </div>
+    <!-- FIN CONTAINER PRINCIPAL -->
+
+
 </div>
-{% endif %}
+<!-- FIN .qod -->
 
 {% endblock %}
 
+
 {% block scripts %}
+
 <script>
-    function switchTab(btn, tabId) {
-        // Désactiver tous les boutons
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        // Cacher tous les panels
-        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-        // Activer le bouton cliqué
-        btn.classList.add('active');
-        // Afficher le panel correspondant
-        document.getElementById(tabId).classList.add('active');
+(function () {
+    "use strict";
+
+    function initOperatorTabs() {
+
+        const root = document.querySelector(".qod");
+
+        if (!root) {
+            return;
+        }
+
+        const tabs = Array.from(
+            root.querySelectorAll("[data-qod-tab]")
+        );
+
+        const panels = Array.from(
+            root.querySelectorAll(".qod-panel")
+        );
+
+        /*
+         * Active un onglet et masque les autres.
+         */
+        function activate(tab, focus) {
+
+            const target = tab.getAttribute("data-qod-tab");
+
+            tabs.forEach(function (button) {
+
+                const selected = button === tab;
+
+                button.setAttribute(
+                    "aria-selected",
+                    String(selected)
+                );
+
+                button.tabIndex = selected ? 0 : -1;
+
+            });
+
+            panels.forEach(function (panel) {
+
+                panel.hidden = panel.id !== target;
+
+            });
+
+            if (focus) {
+                tab.focus();
+            }
+
+        }
+
+        /*
+         * Navigation souris et clavier.
+         */
+        tabs.forEach(function (tab, index) {
+
+            tab.addEventListener("click", function () {
+
+                activate(tab, false);
+
+            });
+
+            tab.addEventListener("keydown", function (event) {
+
+                let next = index;
+
+                if (event.key === "ArrowRight") {
+
+                    next = (index + 1) % tabs.length;
+
+                } else if (event.key === "ArrowLeft") {
+
+                    next = (index - 1 + tabs.length) % tabs.length;
+
+                } else if (event.key === "Home") {
+
+                    next = 0;
+
+                } else if (event.key === "End") {
+
+                    next = tabs.length - 1;
+
+                } else {
+
+                    return;
+
+                }
+
+                event.preventDefault();
+
+                activate(tabs[next], true);
+
+            });
+
+        });
+
     }
+
+    /*
+     * Initialisation, que le script soit chargé avant
+     * ou après le contenu HTML.
+     */
+    if (document.readyState === "loading") {
+
+        document.addEventListener(
+            "DOMContentLoaded",
+            initOperatorTabs
+        );
+
+    } else {
+
+        initOperatorTabs();
+
+    }
+
+})();
 </script>
+
 {% endblock %}

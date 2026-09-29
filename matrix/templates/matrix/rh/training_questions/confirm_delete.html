@@ -1,0 +1,3 @@
+{% extends "matrix/rh/training_questions/base.html" %}
+{% block title %}Supprimer une question{% endblock %}
+{% block content %}<div class="card"><h1>Confirmer la suppression</h1><p>{{ question.text }}</p>{% if question.answers.exists %}<p class="error">Cette question possede un historique. Elle sera desactivee et ses reponses seront conservees.</p>{% else %}<p>Cette question n'a aucune reponse historique et sera supprimee definitivement.</p>{% endif %}<form method="post">{% csrf_token %}<div class="actions"><button class="btn btn-danger" type="submit">Confirmer</button><a class="btn btn-secondary" href="{% url 'training_question_list' %}">Annuler</a></div></form></div>{% endblock %}

@@ -1,0 +1,478 @@
+{% extends "matrix/training_requests_base.html" %}
+
+{% block content %}
+
+<div class="space-y-6">
+
+
+<!-- Header -->
+<div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+    <div>
+        <h1 class="text-3xl font-bold tracking-tight text-slate-900">
+            Mes demandes de formation
+        </h1>
+
+        <p class="mt-2 max-w-3xl text-sm text-slate-500">
+            Suivez vos demandes, ajoutez les plans de formation lorsqu’ils sont disponibles
+            et consultez l’état de validation RH.
+        </p>
+    </div>
+
+    <div class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+        <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-blue-700">
+            <span class="text-lg font-bold">#</span>
+        </div>
+
+        <div>
+            <p class="text-xs font-medium uppercase tracking-wide text-slate-400">
+                Total
+            </p>
+            <p class="text-lg font-bold text-slate-900">
+                {{ page_obj.paginator.count }}
+            </p>
+        </div>
+    </div>
+</div>
+
+
+<!-- Filtres -->
+<div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+
+    <div class="mb-4 flex items-center justify-between">
+        <div>
+            <h2 class="text-base font-semibold text-slate-900">
+                Filtres
+            </h2>
+
+            <p class="mt-1 text-sm text-slate-500">
+                Filtrez les demandes par opérateur et par statut.
+            </p>
+        </div>
+    </div>
+
+    <!-- Filtre opérateur -->
+    <form method="get" class="flex flex-col gap-4 lg:flex-row lg:items-end">
+
+        <input
+            type="hidden"
+            name="status"
+            value="{{ selected_status }}"
+        >
+
+        <div class="flex-1">
+            <label
+                for="operator"
+                class="mb-2 block text-sm font-semibold text-slate-700"
+            >
+                Opérateur
+            </label>
+
+            <select
+                id="operator"
+                name="operator"
+                class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+            >
+                <option value="">
+                    Tous les opérateurs
+                </option>
+
+                {% for operator in operators %}
+                    <option
+                        value="{{ operator.pk }}"
+                        {% if selected_operator_id == operator.pk %}
+                            selected
+                        {% endif %}
+                    >
+                        {{ operator }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+
+        <div class="flex flex-wrap gap-3">
+
+            <button
+                type="submit"
+                class="inline-flex items-center justify-center rounded-xl bg-blue-700 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-100"
+            >
+                Filtrer
+            </button>
+
+            {% if selected_operator_id %}
+                <a
+                    href="?status={{ selected_status }}"
+                    class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                >
+                    Réinitialiser
+                </a>
+            {% endif %}
+
+        </div>
+
+    </form>
+
+
+    <!-- Filtres statut -->
+    <div class="mt-5 border-t border-slate-100 pt-5">
+
+        <p class="mb-3 text-sm font-semibold text-slate-700">
+            Statut RH
+        </p>
+
+        <nav
+            class="flex flex-wrap gap-2"
+            aria-label="Filtrer les demandes par statut"
+        >
+            {% for value, label in status_filters %}
+
+                <a
+                    href="?status={{ value }}{% if selected_operator_id %}&amp;operator={{ selected_operator_id }}{% endif %}"
+                    {% if selected_status == value %}
+                        aria-current="page"
+                    {% endif %}
+                    class="
+                        inline-flex items-center rounded-full border px-4 py-2 text-sm font-semibold transition
+                        {% if selected_status == value %}
+                            border-blue-700 bg-blue-700 text-white shadow-sm
+                        {% else %}
+                            border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50
+                        {% endif %}
+                    "
+                >
+                    {{ label }}
+                </a>
+
+            {% endfor %}
+        </nav>
+
+    </div>
+
+</div>
+
+
+<!-- Tableau -->
+<div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+
+    <div class="overflow-x-auto">
+
+        <table class="w-full min-w-[1100px] text-left text-sm">
+
+            <thead class="border-b border-slate-200 bg-slate-50">
+
+                <tr class="text-xs font-semibold uppercase tracking-wide text-slate-500">
+
+                    <th scope="col" class="px-5 py-4">
+                        Employé
+                    </th>
+
+                    <th scope="col" class="px-5 py-4">
+                        Formation
+                    </th>
+
+                    <th scope="col" class="px-5 py-4">
+                        Niveau
+                    </th>
+
+                    <th scope="col" class="px-5 py-4">
+                        Date
+                    </th>
+
+                    <th scope="col" class="px-5 py-4">
+                        Statut RH
+                    </th>
+
+                    <th scope="col" class="px-5 py-4">
+                        Plan
+                    </th>
+
+                    <th scope="col" class="px-5 py-4 text-right">
+                        Actions
+                    </th>
+
+                </tr>
+
+            </thead>
+
+
+            <tbody class="divide-y divide-slate-100">
+
+                {% for req in page_obj %}
+
+                    <tr class="group transition hover:bg-slate-50/80">
+
+                        <!-- Employé -->
+                        <td class="px-5 py-5">
+
+                            <div class="flex items-center gap-3">
+
+                                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 text-sm font-bold text-slate-600">
+                                    {{ req.employee|stringformat:"s"|slice:":1"|upper }}
+                                </div>
+
+                                <div>
+                                    <p class="font-semibold text-slate-900">
+                                        {{ req.employee }}
+                                    </p>
+
+                                    <p class="mt-1 text-xs text-slate-400">
+                                        Demande #{{ req.pk }}
+                                    </p>
+                                </div>
+
+                            </div>
+
+                        </td>
+
+
+                        <!-- Formation -->
+                        <td class="px-5 py-5">
+
+                            <p class="font-medium text-slate-800">
+                                {{ req.task }}
+                            </p>
+
+                            <p class="mt-1 text-xs text-slate-500">
+                                {{ req.line|default:"Ligne non renseignée" }}
+                            </p>
+
+                        </td>
+
+
+                        <!-- Niveau -->
+                        <td class="px-5 py-5">
+
+                            <span class="inline-flex min-w-9 items-center justify-center rounded-lg bg-slate-100 px-3 py-2 text-sm font-bold text-slate-700">
+                                {{ req.get_requested_level_display }}
+                            </span>
+
+                        </td>
+
+
+                        <!-- Date -->
+                        <td class="px-5 py-5">
+
+                            <div class="whitespace-nowrap">
+                                <p class="font-medium text-slate-700">
+                                    {{ req.date_requested|date:"d/m/Y" }}
+                                </p>
+
+                                <p class="mt-1 text-xs text-slate-400">
+                                    {{ req.date_requested|date:"H:i" }}
+                                </p>
+                            </div>
+
+                        </td>
+
+
+                        <!-- Statut RH -->
+                        <td class="px-5 py-5">
+
+                            {% if req.is_pending %}
+
+                                <span class="inline-flex items-center gap-2 rounded-full bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700 ring-1 ring-inset ring-amber-200">
+                                    <span class="h-2 w-2 rounded-full bg-amber-500"></span>
+                                    {{ req.status_label }}
+                                </span>
+
+                            {% elif req.is_approved %}
+
+                                <span class="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-200">
+                                    <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
+                                    {{ req.status_label }}
+                                </span>
+
+                            {% else %}
+
+                                <span class="inline-flex items-center gap-2 rounded-full bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 ring-1 ring-inset ring-red-200">
+                                    <span class="h-2 w-2 rounded-full bg-red-500"></span>
+                                    {{ req.status_label }}
+                                </span>
+
+                            {% endif %}
+
+                        </td>
+
+
+                        {% with has_plan=req.has_training_plan %}
+
+                        <!-- Plan -->
+                        <td class="px-5 py-5">
+
+                            {% if has_plan %}
+
+                                <div>
+                                    <span class="inline-flex items-center gap-2 rounded-lg bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700">
+                                        <span class="text-base">✓</span>
+                                        Disponible
+                                    </span>
+                                </div>
+
+                            {% elif req.requires_training_plan %}
+
+                                <div>
+                                    <span class="inline-flex items-center gap-2 rounded-lg bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700">
+                                        <span class="text-base">!</span>
+                                        Plan manquant
+                                    </span>
+                                </div>
+
+                            {% else %}
+
+                                <span class="text-sm text-slate-400">
+                                    Non requis
+                                </span>
+
+                            {% endif %}
+
+                        </td>
+
+
+                        <!-- Actions -->
+                        <td class="px-5 py-5">
+
+                            <div class="flex justify-end gap-2">
+
+                                {% if has_plan %}
+
+                                    <a
+                                        href="{% url 'training_plan_view' req.pk %}"
+                                        target="_blank"
+                                        rel="noopener"
+                                        class="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+                                    >
+                                        Voir le plan
+                                    </a>
+
+                                {% endif %}
+
+
+                                {% if req.is_pending and req.requires_training_plan %}
+
+                                    <a
+                                        href="{% url 'training_plan_upload' req.pk %}"
+                                        class="
+                                            inline-flex items-center justify-center rounded-lg px-3 py-2 text-xs font-semibold shadow-sm transition
+                                            {% if has_plan %}
+                                                border border-slate-200 bg-white text-slate-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700
+                                            {% else %}
+                                                bg-blue-700 text-white hover:bg-blue-800
+                                            {% endif %}
+                                        "
+                                    >
+                                        {% if has_plan %}
+                                            Remplacer
+                                        {% else %}
+                                            Ajouter le plan
+                                        {% endif %}
+                                    </a>
+
+                                {% endif %}
+
+                            </div>
+
+
+                            {% if not req.is_pending %}
+
+                                <p class="mt-2 text-right text-xs text-slate-400">
+                                    Lecture seule
+                                </p>
+
+                            {% endif %}
+
+                        </td>
+
+                        {% endwith %}
+
+                    </tr>
+
+
+                {% empty %}
+
+                    <tr>
+
+                        <td colspan="7" class="px-6 py-20">
+
+                            <div class="mx-auto max-w-md text-center">
+
+                                <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-slate-100 text-xl text-slate-400">
+                                    !
+                                </div>
+
+                                <h3 class="mt-4 text-base font-semibold text-slate-900">
+                                    Aucune demande trouvée
+                                </h3>
+
+                                <p class="mt-2 text-sm text-slate-500">
+                                    Aucune demande de formation ne correspond aux filtres sélectionnés.
+                                </p>
+
+                            </div>
+
+                        </td>
+
+                    </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+
+<!-- Pagination -->
+{% if page_obj.has_other_pages %}
+
+    <div class="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+
+        <div class="text-sm text-slate-500">
+            Page
+            <span class="font-semibold text-slate-800">
+                {{ page_obj.number }}
+            </span>
+            sur
+            <span class="font-semibold text-slate-800">
+                {{ page_obj.paginator.num_pages }}
+            </span>
+        </div>
+
+
+        <nav class="flex items-center gap-2" aria-label="Pagination">
+
+            {% if page_obj.has_previous %}
+
+                <a
+                    href="?status={{ selected_status }}{% if selected_operator_id %}&amp;operator={{ selected_operator_id }}{% endif %}&amp;page={{ page_obj.previous_page_number }}"
+                    class="inline-flex items-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                >
+                    ← Précédente
+                </a>
+
+            {% endif %}
+
+
+            {% if page_obj.has_next %}
+
+                <a
+                    href="?status={{ selected_status }}{% if selected_operator_id %}&amp;operator={{ selected_operator_id }}{% endif %}&amp;page={{ page_obj.next_page_number }}"
+                    class="inline-flex items-center rounded-lg bg-blue-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-800"
+                >
+                    Suivante →
+                </a>
+
+            {% endif %}
+
+        </nav>
+
+    </div>
+
+{% endif %}
+
+
+</div>
+
+{% endblock %}

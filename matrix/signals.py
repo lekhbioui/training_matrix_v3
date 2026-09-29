@@ -1,9 +1,11 @@
-# matrix/signals.py
+import logging
 
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from .models import TrainingRecord, Employee, LineTransfer
 from django.utils import timezone
+
+logger = logging.getLogger(__name__)
 
 
 @receiver(post_save, sender=TrainingRecord)
@@ -27,7 +29,11 @@ def assign_employee_line_to_training(sender, instance, created, raw, **kwargs):
     if instance.employee and instance.employee.line:
         instance._skip_line_signal = True
         instance.lines.set([instance.employee.line])
-        print(f"✅ [SIGNAL] Ligne par défaut: {instance.employee.line.code}")
+        logger.info(
+            "TrainingRecord line signal: training_record_id=%s line_id=%s",
+            instance.pk,
+            instance.employee.line_id,
+        )
 
 
 @receiver(post_save, sender=Employee)

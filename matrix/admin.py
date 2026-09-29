@@ -6,6 +6,7 @@ from django.contrib import admin
 from django.contrib.auth.models import User
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.utils.html import format_html
+from django.urls import reverse
 from django.db.models import Q
 from import_export.admin import ImportExportModelAdmin
 
@@ -13,7 +14,7 @@ from .models import (
     Employee, LineTransfer, LineTransferApprovalRequest, PendingEmployee, ProductionLine, Task,
     MatrixEntry, TrainingApprovalRequest, TrainingRecord,
     RequalificationRecord, RequalificationApprovalRequest,
-    QualityProfile
+    QualityProfile, TrainingLevel
 )
 from .resources import TrainingRecordResource
 
@@ -665,6 +666,14 @@ class MatrixEntryAdmin(admin.ModelAdmin):
 class TrainingRecordAdmin(ImportExportModelAdmin):
     resource_class = TrainingRecordResource
 
+    def get_readonly_fields(self, request, obj=None):
+        fields = list(super().get_readonly_fields(request, obj))
+        if obj and TrainingApprovalRequest.objects.filter(
+            training_record=obj, requested_level__in=(TrainingLevel.SUPERVISED, TrainingLevel.TRAINER),
+        ).exists():
+            fields += ["approval_status", "approved_by", "approved_at", "rejection_reason"]
+        return fields
+
     list_display = ("date", "employee", "task", "level",
                     "trainer", "get_year", "get_month")
     list_filter  = (
@@ -795,9 +804,27 @@ class ProductionLineAdmin(admin.ModelAdmin):
 
 @admin.register(TrainingApprovalRequest)
 class TrainingApprovalRequestAdmin(admin.ModelAdmin):
+    # Files are managed only by the owning leader through the dedicated view.
+    exclude = ("training_plan_image",)
+    readonly_fields = ("training_plan_link",)
+
+    def get_readonly_fields(self, request, obj=None):
+        fields = list(super().get_readonly_fields(request, obj))
+        if obj and obj.requires_training_plan:
+            fields += ["approved", "reviewed_by", "reviewed_at", "rejection_reason",
+                       "requested_level", "training_record", "requested_by"]
+        return fields
+
+    @admin.display(description="Plan de formation")
+    def training_plan_link(self, obj):
+        if obj and obj.has_training_plan:
+            return format_html('<a href="{}" target="_blank" rel="noopener">Voir le plan</a>',
+                               reverse("training_plan_view", args=[obj.pk]))
+        return "Aucun plan disponible"
+
     list_display  = (
         'employee', 'task', 'requested_level',
-        'requested_by', 'status_display', 'date_requested',
+        'requested_by', 'status_display', 'date_requested', 'training_plan_link',
     )
     list_filter   = ('approved', 'requested_level', 'date_requested')
     search_fields = ('employee__last_name', 'employee__first_name', 'task__title')
@@ -983,6 +1010,12 @@ class LineTransferAdmin(admin.ModelAdmin):
 
 @admin.register(RequalificationRecord)
 class RequalificationRecordAdmin(admin.ModelAdmin):
+    readonly_fields = ('approval_request', 'training_record')
+
+    def has_add_permission(self, request):
+        # New records must be produced by the form/decision transaction.
+        return False
+
     list_display = [
         'requalification_date', 'employee_display', 'line_display',
         'task_display', 'previous_level_badge', 'result_badge',
@@ -1017,7 +1050,7 @@ class RequalificationRecordAdmin(admin.ModelAdmin):
         }),
     )
 
-    actions = ['mark_as_pass', 'mark_as_retrain', 'export_csv']
+    actions = ['export_csv']
 
     @admin.display(description='Employé', ordering='employee__last_name')
     def employee_display(self, obj):
@@ -1164,6 +1197,19 @@ class RequalificationRecordAdmin(admin.ModelAdmin):
 
 @admin.register(RequalificationApprovalRequest)
 class RequalificationApprovalRequestAdmin(admin.ModelAdmin):
+    exclude = ('training_plan_image',)
+    readonly_fields = ('approved', 'decision_date', 'decision_by', 'requested_by', 'training_plan_link')
+
+    def has_add_permission(self, request):
+        return False
+
+    @admin.display(description='Plan de formation')
+    def training_plan_link(self, obj):
+        if obj and obj.has_training_plan:
+            return format_html('<a href="{}" target="_blank" rel="noopener">Voir le plan</a>',
+                               reverse('requalification_plan_view', args=[obj.pk]))
+        return 'Plan indisponible'
+
     list_display = [
         'employee', 'task', 'requested_result',
         'requested_by', 'date_requested', 'status_display',
@@ -1331,3 +1377,100 @@ admin.site.site_header  = "🏭 Gestion des Matrices de Formation"
 admin.site.site_title   = "Admin Matrices"
 admin.site.index_title  = "Tableau de bord administrateur"
 
+
+# admin.py
+
+from django.contrib import admin
+
+from .models import (
+    TrainingQuestion,
+    TrainingQuestionnaire,
+    TrainingQuestionAnswer,
+)
+
+
+@admin.register(TrainingQuestion)
+class TrainingQuestionAdmin(admin.ModelAdmin):
+    list_display = (
+        "short_text",
+        "level",
+        "line",
+        "task",
+        "answer_type",
+        "is_required",
+        "is_blocking",
+        "is_active",
+        "order",
+    )
+
+    list_filter = (
+        "level",
+        "line",
+        "answer_type",
+        "is_required",
+        "is_blocking",
+        "is_active",
+    )
+
+    search_fields = (
+        "text",
+        "task__title",
+        "task__code",
+        "line__name",
+        "line__code",
+    )
+
+    ordering = (
+        "line",
+        "task",
+        "order",
+    )
+
+    def short_text(self, obj):
+        return obj.text[:80]
+
+    short_text.short_description = "Question"
+
+
+class TrainingQuestionAnswerInline(admin.TabularInline):
+    model = TrainingQuestionAnswer
+    extra = 0
+    can_delete = False
+    readonly_fields = (
+        "question",
+        "question_text_snapshot",
+        "boolean_answer",
+        "text_answer",
+        "comment",
+        "is_compliant",
+    )
+
+
+@admin.register(TrainingQuestionnaire)
+class TrainingQuestionnaireAdmin(admin.ModelAdmin):
+    list_display = (
+        "training_record",
+        "line",
+        "answered_by",
+        "is_compliant",
+        "completed_at",
+    )
+
+    list_filter = (
+        "is_compliant",
+        "line",
+        "completed_at",
+    )
+
+    readonly_fields = (
+        "training_record",
+        "line",
+        "answered_by",
+        "is_compliant",
+        "general_comment",
+        "completed_at",
+    )
+
+    inlines = [
+        TrainingQuestionAnswerInline,
+    ]

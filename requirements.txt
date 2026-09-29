@@ -1,0 +1,14 @@
+asgiref==3.12.1
+charset-normalizer==3.4.9
+diff-match-patch==20241021
+Django==6.0.7
+django-import-export==4.4.1
+django-widget-tweaks==1.5.1
+djangorestframework==3.17.1
+et_xmlfile==2.0.0
+openpyxl==3.1.5
+pillow==12.3.0
+reportlab==5.0.0
+sqlparse==0.5.5
+tablib==3.9.0
+tzdata==2026.3

@@ -81,9 +81,18 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
+        'OPTIONS': {
+            'timeout': 30,
+            'check_same_thread': False,
+            'init_command': (
+                "PRAGMA journal_mode=WAL;"
+                "PRAGMA synchronous=NORMAL;"
+                "PRAGMA cache_size=10000;"
+                "PRAGMA temp_store=MEMORY;"
+            ),
+        }
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
@@ -132,6 +141,11 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'  # Pour collectstatic en production
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# Training plans are served only through the authenticated application view.
+# Do not expose this directory with a public /media/ server alias.
+MEDIA_ROOT = BASE_DIR / "media"
+MEDIA_URL = "/media/"
+
 
 # =====================================================
 # AUTHENTICATION REDIRECTS
@@ -152,8 +166,8 @@ EMAIL_HOST_PASSWORD = ""
 DEFAULT_FROM_EMAIL = "HR_TRAINING_MATRIX@GRUPOPREMO.COM"
 
 # Liste des emails RH destinataires
-RH_EMAILS = ['it.tng.trainee@grupopremo.onmicrosoft.com']
-
+RH_EMAILS = []
+# 'it.tng.trainee@grupopremo.onmicrosoft.com'
 
 # =====================================================
 # 🏢 COMPANY CONFIGURATION (pour les emails professionnels)

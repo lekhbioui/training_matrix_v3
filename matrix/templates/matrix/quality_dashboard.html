@@ -1,247 +1,227 @@
-<!-- matrix/templates/matrix/quality_dashboard.html -->
 {% extends 'matrix/quality_base.html' %}
-{% block title %}Dashboard{% endblock %}
-{% block page_title %}Tableau de Bord{% endblock %}
+{% block title %}Tableau de bord | Qualité{% endblock %}
+{% block page_title %}Tableau de bord{% endblock %}
 
 {% block breadcrumb %}
-<li>Dashboard</li>
+<li>Tableau de bord</li>
 {% endblock %}
 
 {% block content %}
+<style>
+/* Styles locaux : aucune modification de quality_base.html nécessaire. */
+.qd-dashboard {
+    --qd-ink: #14243d;
+    --qd-muted: #748198;
+    --qd-blue: #315be8;
+    --qd-border: #e7ecf4;
+    --qd-panel: #ffffff;
+    --qd-shadow: 0 8px 28px rgba(28, 49, 85, .045);
+    color: var(--qd-ink);
+    padding-bottom: 2rem;
+}
+.qd-dashboard *, .qd-dashboard *::before, .qd-dashboard *::after { box-sizing: border-box; }
+.qd-dashboard .qd-intro { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; margin-bottom: 1.55rem; }
+.qd-dashboard .qd-eyebrow { display: inline-flex; align-items: center; gap: .5rem; color: var(--qd-blue); text-transform: uppercase; letter-spacing: .13em; font-size: .68rem; font-weight: 800; margin-bottom: .35rem; }
+.qd-dashboard .qd-eyebrow::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: #3e66ec; box-shadow: 0 0 0 4px #eaf0ff; }
+.qd-dashboard .qd-heading { font-size: clamp(1.55rem, 2.6vw, 2.15rem); line-height: 1.2; letter-spacing: -.055em; font-weight: 800; margin: 0; color: var(--qd-ink); }
+.qd-dashboard .qd-subtitle { font-size: .88rem; color: var(--qd-muted); margin: .55rem 0 0; }
+.qd-dashboard .qd-overview-tag { display: inline-flex; align-items: center; gap: .55rem; white-space: nowrap; border: 1px solid #dfe8f7; border-radius: 100px; background: #f7faff; color: #47628c; padding: .57rem .85rem; font-size: .75rem; font-weight: 700; }
+.qd-dashboard .qd-overview-tag i { color: #3b65e9; }
+.qd-dashboard .qd-kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; margin-bottom: 1.35rem; }
+.qd-dashboard .qd-kpi { display: flex; align-items: center; justify-content: space-between; gap: .7rem; padding: 1.35rem 1.45rem; background: var(--qd-panel); border: 1px solid var(--qd-border); border-radius: 18px; box-shadow: var(--qd-shadow); position: relative; overflow: hidden; min-width: 0; }
+.qd-dashboard .qd-kpi::before { content: ''; position: absolute; top: 0; left: 1.45rem; right: 1.45rem; height: 3px; border-radius: 0 0 7px 7px; background: var(--qd-tone); opacity: .85; }
+.qd-dashboard .qd-kpi-kicker { display: block; font-size: .73rem; letter-spacing: .015em; font-weight: 700; color: var(--qd-muted); margin-bottom: .4rem; }
+.qd-dashboard .qd-kpi-number { display: block; font-size: clamp(1.8rem, 3vw, 2.45rem); line-height: 1.1; letter-spacing: -.06em; font-weight: 800; color: var(--qd-ink); font-variant-numeric: tabular-nums; }
+.qd-dashboard .qd-kpi-caption { display: block; color: #8996aa; font-size: .72rem; margin-top: .47rem; }
+.qd-dashboard .qd-kpi-icon { width: 52px; height: 52px; flex: 0 0 52px; display: grid; place-items: center; border-radius: 16px; background: var(--qd-soft); color: var(--qd-tone); font-size: 1.15rem; }
+.qd-dashboard .qd-blue { --qd-tone: #3765e9; --qd-soft: #edf2ff; }
+.qd-dashboard .qd-green { --qd-tone: #0b9a75; --qd-soft: #e8faf3; }
+.qd-dashboard .qd-violet { --qd-tone: #8559dc; --qd-soft: #f2edff; }
+.qd-dashboard .qd-main-grid { display: grid; grid-template-columns: minmax(275px, .85fr) minmax(0, 1.65fr); gap: 1.15rem; margin-bottom: 1.15rem; align-items: stretch; }
+.qd-dashboard .qd-bottom-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.15rem; align-items: stretch; }
+.qd-dashboard .qd-card { min-width: 0; background: var(--qd-panel); border: 1px solid var(--qd-border); border-radius: 18px; box-shadow: var(--qd-shadow); overflow: hidden; }
+.qd-dashboard .qd-card-head { display: flex; align-items: center; justify-content: space-between; gap: .65rem; padding: 1.32rem 1.4rem 1.12rem; border-bottom: 1px solid #eff2f7; }
+.qd-dashboard .qd-card-title { margin: 0; color: var(--qd-ink); font-size: .97rem; font-weight: 800; letter-spacing: -.025em; display: flex; align-items: center; gap: .65rem; }
+.qd-dashboard .qd-title-icon { display: inline-grid; place-items: center; width: 32px; height: 32px; flex: 0 0 32px; border-radius: 10px; background: #edf2ff; color: #4267df; font-size: .82rem; }
+.qd-dashboard .qd-card-note { color: #94a0b0; font-size: .71rem; font-weight: 700; white-space: nowrap; }
+.qd-dashboard .qd-card-body { padding: 1.3rem 1.4rem; }
+.qd-dashboard .qd-level-list { display: grid; gap: .75rem; }
+.qd-dashboard .qd-level { display: flex; align-items: center; gap: .8rem; border: 1px solid var(--qd-level-border); border-radius: 13px; padding: .86rem .9rem; background: var(--qd-level-bg); }
+.qd-dashboard .qd-level--training { --qd-level-bg: #fffaf1; --qd-level-border: #f8e9cc; --qd-level-color: #bd781e; }
+.qd-dashboard .qd-level--approved { --qd-level-bg: #f2fbf7; --qd-level-border: #daf1e5; --qd-level-color: #159267; }
+.qd-dashboard .qd-level--trainer { --qd-level-bg: #f2f6ff; --qd-level-border: #e0e9ff; --qd-level-color: #3b64d9; }
+.qd-dashboard .qd-level-letter { width: 34px; height: 34px; flex: 0 0 34px; display: grid; place-items: center; background: #fff; border: 1px solid var(--qd-level-border); color: var(--qd-level-color); border-radius: 10px; font-weight: 900; font-size: .89rem; }
+.qd-dashboard .qd-level-name { font-size: .82rem; font-weight: 750; min-width: 0; }
+.qd-dashboard .qd-level-count { margin-left: auto; color: var(--qd-level-color); font-size: 1.12rem; font-weight: 850; font-variant-numeric: tabular-nums; }
+.qd-dashboard .qd-pending { border-top: 1px solid #eef1f6; margin-top: 1.35rem; padding-top: 1.12rem; }
+.qd-dashboard .qd-pending-title { display: flex; align-items: center; justify-content: space-between; gap: .5rem; margin-bottom: .85rem; font-size: .77rem; font-weight: 800; color: #55657e; }
+.qd-dashboard .qd-pending-title i { color: #9da9bd; }
+.qd-dashboard .qd-pending-list { display: grid; gap: .7rem; }
+.qd-dashboard .qd-pending-item { display: flex; align-items: center; gap: .6rem; font-size: .78rem; color: #63718a; }
+.qd-dashboard .qd-pending-item i { width: 20px; text-align: center; color: var(--qd-pending-color); }
+.qd-dashboard .qd-pending-count { margin-left: auto; min-width: 31px; text-align: center; font-weight: 800; color: var(--qd-pending-color); background: var(--qd-pending-bg); border-radius: 8px; padding: .2rem .4rem; font-variant-numeric: tabular-nums; }
+.qd-dashboard .qd-pending-item--orange { --qd-pending-color: #bc7b21; --qd-pending-bg: #fff4df; }
+.qd-dashboard .qd-pending-item--blue { --qd-pending-color: #4170d8; --qd-pending-bg: #ecf3ff; }
+.qd-dashboard .qd-pending-item--slate { --qd-pending-color: #657489; --qd-pending-bg: #eff2f6; }
+.qd-dashboard .qd-table-wrap { overflow-x: auto; }
+.qd-dashboard .qd-table { width: 100%; border-collapse: collapse; margin: 0; text-align: left; }
+.qd-dashboard .qd-table thead { background: #f8faff; }
+.qd-dashboard .qd-table th { border: 0; padding: .88rem 1.3rem; color: #8490a5; font-size: .66rem; letter-spacing: .075em; text-transform: uppercase; font-weight: 800; white-space: nowrap; }
+.qd-dashboard .qd-table td { padding: .97rem 1.3rem; border-top: 1px solid #f0f3f8; color: #44536d; font-size: .8rem; vertical-align: middle; }
+.qd-dashboard .qd-table tbody tr { transition: background .2s ease; }
+.qd-dashboard .qd-table tbody tr:hover { background: #fafcff; }
+.qd-dashboard .qd-line-name { display: flex; align-items: center; gap: .65rem; color: var(--qd-ink); font-weight: 750; white-space: nowrap; }
+.qd-dashboard .qd-line-mark { width: 30px; height: 30px; flex: 0 0 30px; display: grid; place-items: center; border-radius: 9px; background: #f0f4ff; color: #5173d2; font-size: .7rem; }
+.qd-dashboard .qd-number-pill { display: inline-flex; align-items: center; justify-content: center; min-width: 37px; padding: .3rem .55rem; border-radius: 8px; background: #edf2ff; color: #4165c8; font-size: .73rem; font-weight: 850; font-variant-numeric: tabular-nums; }
+.qd-dashboard .qd-number-pill--muted { background: #f1f4f8; color: #6d7b91; }
+.qd-dashboard .qd-view-link { display: inline-flex; align-items: center; gap: .48rem; text-decoration: none; white-space: nowrap; color: #315be8; font-size: .77rem; font-weight: 800; padding: .46rem .65rem; border-radius: 8px; background: #f0f4ff; transition: background .2s ease, transform .2s ease; }
+.qd-dashboard .qd-view-link:hover { background: #e2eaff; color: #244ac5; transform: translateX(2px); text-decoration: none; }
+.qd-dashboard .qd-view-link:focus-visible, .qd-dashboard .qd-person-link:focus-visible { outline: 3px solid #9fb6ff; outline-offset: 3px; }
+.qd-dashboard .qd-activity { padding: .25rem 1.4rem .55rem; }
+.qd-dashboard .qd-activity-row { display: flex; align-items: center; gap: .8rem; padding: 1rem 0; border-bottom: 1px solid #f0f3f8; min-width: 0; }
+.qd-dashboard .qd-activity-row:last-child { border-bottom: 0; }
+.qd-dashboard .qd-avatar { width: 38px; height: 38px; flex: 0 0 38px; display: grid; place-items: center; border-radius: 12px; color: #4565b9; background: #eef2ff; font-size: .88rem; }
+.qd-dashboard .qd-avatar--purple { color: #8656c8; background: #f4efff; }
+.qd-dashboard .qd-activity-content { min-width: 0; flex: 1; }
+.qd-dashboard .qd-person-link { color: #243550; font-size: .8rem; font-weight: 800; text-decoration: none; overflow-wrap: anywhere; }
+.qd-dashboard .qd-person-link:hover { color: var(--qd-blue); text-decoration: underline; }
+.qd-dashboard .qd-activity-description { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem; color: #8390a4; font-size: .72rem; margin-top: .25rem; overflow-wrap: anywhere; }
+.qd-dashboard .qd-activity-description i { color: #5272db; font-size: .62rem; }
+.qd-dashboard .qd-activity-meta { display: flex; flex-direction: column; align-items: flex-end; gap: .36rem; flex-shrink: 0; }
+.qd-dashboard .qd-date { white-space: nowrap; color: #99a4b5; font-size: .69rem; font-weight: 650; font-variant-numeric: tabular-nums; }
+.qd-dashboard .qd-result { max-width: 135px; overflow-wrap: anywhere; display: inline-flex; text-align: center; padding: .3rem .52rem; border-radius: 7px; font-size: .64rem; line-height: 1.2; font-weight: 800; background: #f2f4f7; color: #65758b; }
+.qd-dashboard .qd-result--pass { background: #e9f9f1; color: #0d9765; }
+.qd-dashboard .qd-result--upgrade { background: #eaf1ff; color: #3565d5; }
+.qd-dashboard .qd-result--downgrade { background: #fff4e4; color: #b87820; }
+.qd-dashboard .qd-result--other { background: #fff0f1; color: #ce5262; }
+.qd-dashboard .qd-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .55rem; min-height: 130px; color: #9ba6b7; font-size: .8rem; text-align: center; padding: 1.5rem; }
+.qd-dashboard .qd-empty i { font-size: 1.3rem; color: #bbc6d6; }
+@media (max-width: 1100px) { .qd-dashboard .qd-main-grid { grid-template-columns: minmax(250px, 1fr) minmax(0, 1.45fr); } .qd-dashboard .qd-table th, .qd-dashboard .qd-table td { padding-left: .8rem; padding-right: .8rem; } }
+@media (max-width: 900px) { .qd-dashboard .qd-main-grid, .qd-dashboard .qd-bottom-grid { grid-template-columns: 1fr; } }
+@media (max-width: 650px) { .qd-dashboard .qd-intro { align-items: flex-start; flex-direction: column; } .qd-dashboard .qd-kpis { grid-template-columns: 1fr; gap: .7rem; } .qd-dashboard .qd-kpi { padding: 1rem 1.1rem; } .qd-dashboard .qd-card-head { padding: 1rem; } .qd-dashboard .qd-card-body { padding: 1rem; } .qd-dashboard .qd-activity { padding-left: 1rem; padding-right: 1rem; } .qd-dashboard .qd-table { min-width: 520px; } .qd-dashboard .qd-activity-row { gap: .6rem; } .qd-dashboard .qd-activity-meta { align-items: flex-end; } }
+@media (prefers-reduced-motion: reduce) { .qd-dashboard *, .qd-dashboard *::before, .qd-dashboard *::after { transition: none !important; } }
+</style>
 
-<!-- KPIs -->
-<div class="row g-3 mb-4">
-    <div class="col-md-4">
-        <div class="kpi-card">
-            <div class="kpi-icon" style="background:rgba(59,130,246,.1); color:var(--accent-color);">
-                <i class="fas fa-users"></i>
-            </div>
-            <div>
-                <div class="kpi-value">{{ total_employees }}</div>
-                <div class="kpi-label">Opérateurs</div>
-            </div>
+<div class="qd-dashboard">
+    <header class="qd-intro">
+        <div>
+            <span class="qd-eyebrow">Vue d'ensemble</span>
+            <h1 class="qd-heading">Pilotage des compétences</h1>
+            <p class="qd-subtitle">Retrouvez les indicateurs, les lignes et les derniers mouvements de votre matrice.</p>
         </div>
-    </div>
-    <div class="col-md-4">
-        <div class="kpi-card">
-            <div class="kpi-icon" style="background:rgba(5,150,105,.1); color:var(--success-color);">
-                <i class="fas fa-sitemap"></i>
-            </div>
-            <div>
-                <div class="kpi-value">{{ total_lines }}</div>
-                <div class="kpi-label">Lignes</div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="kpi-card">
-            <div class="kpi-icon" style="background:rgba(217,119,6,.1); color:var(--warning-color);">
-                <i class="fas fa-tasks"></i>
-            </div>
-            <div>
-                <div class="kpi-value">{{ total_tasks }}</div>
-                <div class="kpi-label">Tâches</div>
-            </div>
-        </div>
-    </div>
-</div>
+        <span class="qd-overview-tag"><i class="fas fa-chart-pie" aria-hidden="true"></i> Synthèse opérationnelle</span>
+    </header>
 
-<!-- Niveaux + Lignes -->
-<div class="row g-4 mb-4">
+    <!-- Indicateurs généraux -->
+    <section class="qd-kpis" aria-label="Indicateurs généraux">
+        <article class="qd-kpi qd-blue">
+            <div><span class="qd-kpi-kicker">Opérateurs</span><strong class="qd-kpi-number">{{ total_employees }}</strong><span class="qd-kpi-caption">Effectif de la matrice</span></div>
+            <span class="qd-kpi-icon" aria-hidden="true"><i class="fas fa-users"></i></span>
+        </article>
+        <article class="qd-kpi qd-green">
+            <div><span class="qd-kpi-kicker">Lignes</span><strong class="qd-kpi-number">{{ total_lines }}</strong><span class="qd-kpi-caption">Lignes répertoriées</span></div>
+            <span class="qd-kpi-icon" aria-hidden="true"><i class="fas fa-industry"></i></span>
+        </article>
+        <article class="qd-kpi qd-violet">
+            <div><span class="qd-kpi-kicker">Tâches</span><strong class="qd-kpi-number">{{ total_tasks }}</strong><span class="qd-kpi-caption">Tâches enregistrées</span></div>
+            <span class="qd-kpi-icon" aria-hidden="true"><i class="fas fa-clipboard-list"></i></span>
+        </article>
+    </section>
 
-    <!-- Niveaux -->
-    <div class="col-md-4">
-        <div class="card-modern h-100">
-            <div class="card-header-modern">
-                <h3 class="card-title-modern">
-                    <i class="fas fa-layer-group"></i>Niveaux de Compétence
-                </h3>
-            </div>
-            <div class="card-body-modern">
-                <div class="d-flex justify-content-between align-items-center p-3 rounded mb-2"
-                     style="background:#fff7ed;">
-                    <span>
-                        <span class="lvl-I me-2">I</span>En formation
-                    </span>
-                    <strong style="color:#c2410c;">{{ level_stats.in_training }}</strong>
+    <div class="qd-main-grid">
+        <!-- Compétences et demandes -->
+        <section class="qd-card" aria-labelledby="qd-skills-title">
+            <header class="qd-card-head">
+                <h2 class="qd-card-title" id="qd-skills-title"><span class="qd-title-icon"><i class="fas fa-layer-group" aria-hidden="true"></i></span> Niveaux de compétence</h2>
+            </header>
+            <div class="qd-card-body">
+                <div class="qd-level-list">
+                    <div class="qd-level qd-level--training"><span class="qd-level-letter">I</span><span class="qd-level-name">En formation</span><strong class="qd-level-count">{{ level_stats.in_training }}</strong></div>
+                    <div class="qd-level qd-level--approved"><span class="qd-level-letter">L</span><span class="qd-level-name">Approuvé</span><strong class="qd-level-count">{{ level_stats.supervised }}</strong></div>
+                    <div class="qd-level qd-level--trainer"><span class="qd-level-letter">U</span><span class="qd-level-name">Formateur</span><strong class="qd-level-count">{{ level_stats.trainer }}</strong></div>
                 </div>
-                <div class="d-flex justify-content-between align-items-center p-3 rounded mb-2"
-                     style="background:#f0fdf4;">
-                    <span>
-                        <span class="lvl-L me-2">L</span>Approuvé
-                    </span>
-                    <strong style="color:#15803d;">{{ level_stats.supervised }}</strong>
-                </div>
-                <div class="d-flex justify-content-between align-items-center p-3 rounded"
-                     style="background:#eff6ff;">
-                    <span>
-                        <span class="lvl-U me-2">U</span>Formateur
-                    </span>
-                    <strong style="color:#1d4ed8;">{{ level_stats.trainer }}</strong>
-                </div>
-
-                <hr style="border-color:var(--gray-200);">
-
-                <div style="font-size:.78rem; color:var(--gray-500); font-weight:600; margin-bottom:10px;">
-                    Demandes en attente
-                </div>
-                <div class="d-flex flex-wrap gap-2">
-                    <span class="menu-badge" style="background:var(--warning-color);">
-                        <i class="fas fa-graduation-cap me-1"></i>{{ pending_training }}
-                    </span>
-                    <span class="menu-badge" style="background:var(--info-color);">
-                        <i class="fas fa-redo me-1"></i>{{ pending_requalif }}
-                    </span>
-                    <span class="menu-badge" style="background:var(--gray-500);">
-                        <i class="fas fa-exchange-alt me-1"></i>{{ pending_transfers }}
-                    </span>
+                <div class="qd-pending">
+                    <div class="qd-pending-title"><span>Demandes en attente</span><i class="far fa-clock" aria-hidden="true"></i></div>
+                    <div class="qd-pending-list">
+                        <div class="qd-pending-item qd-pending-item--orange"><i class="fas fa-graduation-cap" aria-hidden="true"></i><span>Formations</span><strong class="qd-pending-count">{{ pending_training }}</strong></div>
+                        <div class="qd-pending-item qd-pending-item--blue"><i class="fas fa-redo" aria-hidden="true"></i><span>Requalifications</span><strong class="qd-pending-count">{{ pending_requalif }}</strong></div>
+                        <div class="qd-pending-item qd-pending-item--slate"><i class="fas fa-exchange-alt" aria-hidden="true"></i><span>Transferts</span><strong class="qd-pending-count">{{ pending_transfers }}</strong></div>
+                    </div>
                 </div>
             </div>
-        </div>
-    </div>
+        </section>
 
-    <!-- Lignes -->
-    <div class="col-md-8">
-        <div class="card-modern h-100">
-            <div class="card-header-modern">
-                <h3 class="card-title-modern">
-                    <i class="fas fa-industry"></i>Opérateurs par Ligne
-                </h3>
-            </div>
-            <div class="card-body-modern p-0">
-                <table class="table table-modern mb-0">
-                    <thead>
+        <!-- Tableau des lignes -->
+        <section class="qd-card" aria-labelledby="qd-lines-title">
+            <header class="qd-card-head">
+                <h2 class="qd-card-title" id="qd-lines-title"><span class="qd-title-icon"><i class="fas fa-sitemap" aria-hidden="true"></i></span> Opérateurs par ligne</h2>
+                <span class="qd-card-note">Vue par ligne</span>
+            </header>
+            <div class="qd-table-wrap">
+                <table class="qd-table">
+                    <thead><tr><th scope="col">Ligne</th><th scope="col" class="text-center">Opérateurs</th><th scope="col" class="text-center">Tâches</th><th scope="col">Matrice</th></tr></thead>
+                    <tbody>
+                        {% for line in lines_stats %}
                         <tr>
-                            <th>Ligne</th>
-                            <th class="text-center">Opérateurs</th>
-                            <th class="text-center">Tâches</th>
-                            <th>Matrice</th>
+                            <td><span class="qd-line-name"><span class="qd-line-mark"><i class="fas fa-industry" aria-hidden="true"></i></span>{{ line.name }}</span></td>
+                            <td class="text-center"><span class="qd-number-pill">{{ line.nb_employees }}</span></td>
+                            <td class="text-center"><span class="qd-number-pill qd-number-pill--muted">{{ line.nb_tasks }}</span></td>
+                            <td><a class="qd-view-link" href="{% url 'quality_line_detail' line.pk %}" aria-label="Voir la matrice de la ligne {{ line.name }}">Consulter <i class="fas fa-arrow-right" aria-hidden="true"></i></a></td>
                         </tr>
-                    </thead>
-                    <tbody>
-                    {% for line in lines_stats %}
-                    <tr>
-                        <td class="fw-semibold">{{ line.name }}</td>
-                        <td class="text-center">
-                            <span class="menu-badge" style="background:var(--accent-color);">
-                                {{ line.nb_employees }}
-                            </span>
-                        </td>
-                        <td class="text-center">
-                            <span class="menu-badge" style="background:var(--gray-400);">
-                                {{ line.nb_tasks }}
-                            </span>
-                        </td>
-                        <td>
-                            <a href="{% url 'quality_line_detail' line.pk %}"
-                               style="color:var(--accent-color); text-decoration:none;
-                                      font-weight:600; font-size:.85rem;">
-                                <i class="fas fa-table me-1"></i>Voir
-                            </a>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="4" class="text-center py-4"
-                            style="color:var(--gray-400);">
-                            Aucune ligne
-                        </td>
-                    </tr>
-                    {% endfor %}
+                        {% empty %}
+                        <tr><td colspan="4"><div class="qd-empty"><i class="fas fa-inbox" aria-hidden="true"></i>Aucune ligne disponible pour le moment.</div></td></tr>
+                        {% endfor %}
                     </tbody>
                 </table>
             </div>
-        </div>
-    </div>
-</div>
-
-<!-- Activités récentes -->
-<div class="row g-4">
-    <div class="col-md-6">
-        <div class="card-modern">
-            <div class="card-header-modern">
-                <h3 class="card-title-modern">
-                    <i class="fas fa-exchange-alt" style="color:var(--gray-500);"></i>
-                    Derniers Transferts
-                </h3>
-            </div>
-            <div class="card-body-modern p-0">
-                <table class="table table-modern mb-0">
-                    <tbody>
-                    {% for t in recent_transfers %}
-                    <tr>
-                        <td>
-                            <a href="{% url 'quality_operator_detail' t.employee.pk %}"
-                               style="color:var(--gray-800); text-decoration:none; font-weight:600;">
-                                {{ t.employee.last_name }} {{ t.employee.first_name }}
-                            </a>
-                        </td>
-                        <td style="color:var(--gray-500); font-size:.82rem;">
-                            {{ t.from_line.name|default:"—" }}
-                            <i class="fas fa-arrow-right mx-1"></i>
-                            {{ t.to_line.name }}
-                        </td>
-                        <td style="color:var(--gray-400); font-size:.82rem;">
-                            {{ t.transfer_date|date:"d/m/y" }}
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td class="text-center py-3" style="color:var(--gray-400);" colspan="3">
-                            Aucun transfert récent
-                        </td>
-                    </tr>
-                    {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
+        </section>
     </div>
 
-    <div class="col-md-6">
-        <div class="card-modern">
-            <div class="card-header-modern">
-                <h3 class="card-title-modern">
-                    <i class="fas fa-redo" style="color:var(--info-color);"></i>
-                    Dernières Requalifications
-                </h3>
+    <!-- Historique récent -->
+    <div class="qd-bottom-grid">
+        <section class="qd-card" aria-labelledby="qd-transfers-title">
+            <header class="qd-card-head">
+                <h2 class="qd-card-title" id="qd-transfers-title"><span class="qd-title-icon"><i class="fas fa-exchange-alt" aria-hidden="true"></i></span> Derniers transferts</h2>
+                <span class="qd-card-note">Activité récente</span>
+            </header>
+            <div class="qd-activity">
+                {% for t in recent_transfers %}
+                <div class="qd-activity-row">
+                    <span class="qd-avatar" aria-hidden="true"><i class="fas fa-user"></i></span>
+                    <div class="qd-activity-content">
+                        <a class="qd-person-link" href="{% url 'quality_operator_detail' t.employee.pk %}">{{ t.employee.last_name }} {{ t.employee.first_name }}</a>
+                        <div class="qd-activity-description"><span>{{ t.from_line.name|default:"—" }}</span><i class="fas fa-arrow-right" aria-hidden="true"></i><span>{{ t.to_line.name }}</span></div>
+                    </div>
+                    <time class="qd-date">{{ t.transfer_date|date:"d/m/Y" }}</time>
+                </div>
+                {% empty %}
+                <div class="qd-empty"><i class="fas fa-exchange-alt" aria-hidden="true"></i>Aucun transfert récent.</div>
+                {% endfor %}
             </div>
-            <div class="card-body-modern p-0">
-                <table class="table table-modern mb-0">
-                    <tbody>
-                    {% for r in recent_requalifs %}
-                    <tr>
-                        <td>
-                            <a href="{% url 'quality_operator_detail' r.employee.pk %}"
-                               style="color:var(--gray-800); text-decoration:none; font-weight:600;">
-                                {{ r.employee.last_name }} {{ r.employee.first_name }}
-                            </a>
-                        </td>
-                        <td>
-                            <span class="menu-badge"
-                                  style="background:
-                                  {% if r.result == 'PASS' %}var(--success-color)
-                                  {% elif r.result == 'UPGRADE' %}var(--info-color)
-                                  {% elif r.result == 'DOWNGRADE' %}var(--warning-color)
-                                  {% else %}var(--danger-color){% endif %};">
-                                {{ r.get_result_display }}
-                            </span>
-                        </td>
-                        <td style="color:var(--gray-400); font-size:.82rem;">
-                            {{ r.requalification_date|date:"d/m/y" }}
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td class="text-center py-3" style="color:var(--gray-400);" colspan="3">
-                            Aucune requalification
-                        </td>
-                    </tr>
-                    {% endfor %}
-                    </tbody>
-                </table>
+        </section>
+        <section class="qd-card" aria-labelledby="qd-requalifs-title">
+            <header class="qd-card-head">
+                <h2 class="qd-card-title" id="qd-requalifs-title"><span class="qd-title-icon"><i class="fas fa-award" aria-hidden="true"></i></span> Dernières requalifications</h2>
+                <span class="qd-card-note">Activité récente</span>
+            </header>
+            <div class="qd-activity">
+                {% for r in recent_requalifs %}
+                <div class="qd-activity-row">
+                    <span class="qd-avatar qd-avatar--purple" aria-hidden="true"><i class="fas fa-user-check"></i></span>
+                    <div class="qd-activity-content">
+                        <a class="qd-person-link" href="{% url 'quality_operator_detail' r.employee.pk %}">{{ r.employee.last_name }} {{ r.employee.first_name }}</a>
+                        <div class="qd-activity-description">Requalification enregistrée</div>
+                    </div>
+                    <div class="qd-activity-meta">
+                        <span class="qd-result {% if r.result == 'PASS' %}qd-result--pass{% elif r.result == 'UPGRADE' %}qd-result--upgrade{% elif r.result == 'DOWNGRADE' %}qd-result--downgrade{% else %}qd-result--other{% endif %}">{{ r.get_result_display }}</span>
+                        <time class="qd-date">{{ r.requalification_date|date:"d/m/Y" }}</time>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="qd-empty"><i class="fas fa-award" aria-hidden="true"></i>Aucune requalification récente.</div>
+                {% endfor %}
             </div>
-        </div>
+        </section>
     </div>
 </div>
 {% endblock %}

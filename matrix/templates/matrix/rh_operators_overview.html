@@ -1184,16 +1184,7 @@
                     {% endif %}
                 </p>
             </div>
-            <!-- <div class="btn-group">
-                <button class="btn btn-secondary" onclick="window.print()">
-                    <i class="fas fa-print"></i>
-                    Imprimer
-                </button>
-                <button class="btn btn-primary" onclick="exportData()">
-                    <i class="fas fa-download"></i>
-                    Exporter
-                </button>
-            </div> -->
+       
         </div>
 
         <!-- STATISTICS CARDS -->
@@ -1206,8 +1197,8 @@
                 <div class="stat-label">Total Personnel</div>
             </div>
 
-            <div class="stat-card">
-                <div class="stat-icon blue">
+            <div class="stat-card green">
+                <div class="stat-icon green">
                     <i class="fas fa-hard-hat"></i>
                 </div>
                 <div class="stat-value">{{ stats.total_operators }}</div>
@@ -1222,7 +1213,7 @@
                 <div class="stat-label">Chefs d'Équipe</div>
             </div>
 
-            <div class="stat-card green">
+            <!-- <div class="stat-card green">
                 <div class="stat-icon green">
                     <i class="fas fa-graduation-cap"></i>
                 </div>
@@ -1244,7 +1235,7 @@
                 </div>
                 <div class="stat-value">{{ stats.level_distribution.in_training }}</div>
                 <div class="stat-label">En Formation (I)</div>
-            </div>
+            </div> -->
 
             {% if include_history and selected_line_id %}
             <div class="stat-card green">
@@ -1697,7 +1688,7 @@
         </div>
 
         <!-- DISTRIBUTION CHART -->
-        {% if employees %}
+        <!-- {% if employees %}
         <div class="section fade-in">
             <div class="section-header green-header">
                 <h3 class="section-title green">
@@ -1761,7 +1752,7 @@
                 </div>
             </div>
         </div>
-        {% endif %}
+        {% endif %} -->
 
         <!-- LEGEND (when history is enabled) -->
         {% if include_history and selected_line %}

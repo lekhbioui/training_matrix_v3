@@ -1,0 +1,18 @@
+<!-- {% extends "matrix/rh/training_questions/base.html" %}
+{% block title %}{% if question %}Modifier{% else %}Ajouter{% endif %} une question{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>{% if question %}Modifier la question{% else %}Ajouter une question{% endif %}</h1>
+  <form method="post" novalidate>{% csrf_token %}
+    {% if form.non_field_errors %}<div class="error">{{ form.non_field_errors }}</div>{% endif %}
+    {% for field in form %}<div class="field">
+      {% if field.field.widget.input_type == 'checkbox' %}<label>{{ field }} {{ field.label }}{% if field.field.required %} *{% endif %}</label>{% else %}<label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} *{% endif %}</label>{{ field }}{% endif %}
+      {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}{% for error in field.errors %}<div class="error">{{ error }}</div>{% endfor %}
+    </div>{% endfor %}
+    <div class="actions"><button class="btn btn-primary" type="submit">Enregistrer</button><a class="btn btn-secondary" href="{% url 'training_question_list' %}">Annuler</a></div>
+  </form>
+</div>
+{% endblock %}
+{% block scripts %}
+{% include "matrix/rh/training_questions/task_selector_script.html" %}
+{% endblock %} -->

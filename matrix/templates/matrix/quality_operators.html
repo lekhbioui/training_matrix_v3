@@ -1,641 +1,2222 @@
+
 <!-- matrix/templates/matrix/quality_operators.html -->
+
 {% extends 'matrix/quality_base.html' %}
+
 {% block title %}Opérateurs{% endblock %}
 {% block page_title %}Opérateurs{% endblock %}
 
 {% block breadcrumb %}
-<li><a href="{% url 'quality_dashboard' %}">Dashboard</a></li>
+<li>
+    <a href="{% url 'quality_dashboard' %}">
+        Dashboard
+    </a>
+</li>
 <li>›</li>
 <li>Opérateurs</li>
 {% endblock %}
 
+
 {% block extra_css %}
 <style>
-    /* ══ SEARCH ══════════════════════════════════════════ */
-    .search-container { position: relative; }
 
-    .search-input-wrapper {
-        position: relative;
-        display: flex;
-        align-items: center;
+/* =====================================================
+   OPÉRATEURS — DESIGN PROFESSIONNEL
+   ===================================================== */
+
+.qop {
+    --qop-primary: #285bd4;
+    --qop-navy: #142a4d;
+    --qop-text: #18273f;
+    --qop-muted: #718198;
+    --qop-border: #e3eaf3;
+    --qop-bg: #f5f8fc;
+
+    color: var(--qop-text);
+    padding-bottom: 2rem;
+}
+
+.qop *,
+.qop *::before,
+.qop *::after {
+    box-sizing: border-box;
+}
+
+/* =====================================================
+   EN-TÊTE PRINCIPAL
+   ===================================================== */
+
+.qop-hero {
+    position: relative;
+    overflow: hidden;
+
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+
+    padding: 1.8rem;
+    margin-bottom: 1.5rem;
+
+    color: white;
+
+    background: linear-gradient(
+        115deg,
+        #132747 0%,
+        #1b3c6e 68%,
+        #285caa 100%
+    );
+
+    border-radius: 20px;
+
+    box-shadow:
+        0 16px 34px rgba(20,45,85,.13);
+}
+
+.qop-hero::after {
+    content: "";
+
+    position: absolute;
+    top: -110px;
+    right: -65px;
+
+    width: 280px;
+    height: 280px;
+
+    border: 1px solid rgba(255,255,255,.14);
+    border-radius: 50%;
+
+    box-shadow:
+        0 0 0 55px rgba(255,255,255,.035),
+        0 0 0 110px rgba(255,255,255,.025);
+
+    pointer-events: none;
+}
+
+.qop-hero-content {
+    position: relative;
+    z-index: 1;
+}
+
+.qop-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+
+    margin-bottom: 10px;
+
+    color: #b4cef4;
+
+    font-size: 11px;
+    font-weight: 800;
+
+    text-transform: uppercase;
+    letter-spacing: 1.4px;
+}
+
+.qop-hero h1 {
+    margin: 0;
+
+    color: white;
+
+    font-size: clamp(24px, 3vw, 32px);
+    font-weight: 800;
+
+    letter-spacing: -.7px;
+}
+
+.qop-hero p {
+    margin: 10px 0 0;
+
+    color: #c8d8f0;
+
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+.qop-hero-summary {
+    position: relative;
+    z-index: 1;
+
+    display: flex;
+    align-items: center;
+    gap: 14px;
+
+    min-width: 190px;
+    padding: 14px 18px;
+
+    background: rgba(255,255,255,.1);
+
+    border: 1px solid rgba(255,255,255,.18);
+    border-radius: 14px;
+
+    backdrop-filter: blur(6px);
+}
+
+.qop-hero-icon {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    width: 45px;
+    height: 45px;
+
+    background: rgba(255,255,255,.14);
+
+    border-radius: 12px;
+
+    font-size: 19px;
+}
+
+.qop-hero-number {
+    display: block;
+
+    color: white;
+
+    font-size: 27px;
+    font-weight: 800;
+
+    line-height: 1.1;
+}
+
+.qop-hero-label {
+    display: block;
+
+    margin-top: 4px;
+
+    color: #cbdaf1;
+
+    font-size: 11px;
+    font-weight: 500;
+}
+
+/* =====================================================
+   SECTION TITLE
+   ===================================================== */
+
+.qop-section-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+
+    margin-bottom: 15px;
+}
+
+.qop-section-title {
+    margin: 0;
+
+    color: var(--qop-text);
+
+    font-size: 16px;
+    font-weight: 800;
+
+    letter-spacing: -.3px;
+}
+
+.qop-section-desc {
+    margin: 5px 0 0;
+
+    color: var(--qop-muted);
+
+    font-size: 12px;
+}
+
+/* =====================================================
+   FILTER CARD
+   ===================================================== */
+
+.qop-filter-card {
+    margin-bottom: 24px;
+
+    overflow: hidden;
+
+    background: white;
+
+    border: 1px solid var(--qop-border);
+    border-radius: 16px;
+
+    box-shadow:
+        0 4px 20px rgba(23,45,84,.035);
+}
+
+.qop-filter-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    padding: 19px 23px;
+
+    border-bottom: 1px solid var(--qop-border);
+}
+
+.qop-filter-header-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    flex-shrink: 0;
+
+    width: 38px;
+    height: 38px;
+
+    color: #285bd4;
+    background: #edf3ff;
+
+    border-radius: 10px;
+
+    font-size: 14px;
+}
+
+.qop-filter-header h2 {
+    margin: 0;
+
+    color: #203149;
+
+    font-size: 14px;
+    font-weight: 800;
+}
+
+.qop-filter-header p {
+    margin: 4px 0 0;
+
+    color: #8290a4;
+
+    font-size: 11px;
+}
+
+.qop-filter-body {
+    padding: 23px;
+}
+
+.qop-label {
+    display: block;
+
+    margin-bottom: 9px;
+
+    color: #465972;
+
+    font-size: 11px;
+    font-weight: 800;
+
+    letter-spacing: .6px;
+    text-transform: uppercase;
+}
+
+.qop-label i {
+    margin-right: 5px;
+
+    color: #4776c9;
+}
+
+/* Search input */
+
+.qop-input-wrap {
+    position: relative;
+}
+
+.qop-input-icon {
+    position: absolute;
+
+    left: 15px;
+    top: 50%;
+
+    transform: translateY(-50%);
+
+    color: #9ba9bb;
+
+    font-size: 13px;
+
+    pointer-events: none;
+}
+
+.qop-input {
+    display: block;
+
+    width: 100%;
+    height: 45px;
+
+    padding: 0 15px 0 42px;
+
+    color: #243850;
+
+    background: #fbfcff;
+
+    border: 1px solid #dce5f0;
+    border-radius: 10px;
+
+    outline: none;
+
+    font-family: inherit;
+    font-size: 13px;
+
+    transition:
+        border-color .2s,
+        box-shadow .2s,
+        background .2s;
+}
+
+.qop-input::placeholder {
+    color: #a1adbd;
+}
+
+.qop-input:hover {
+    border-color: #bdcde3;
+}
+
+.qop-input:focus {
+    background: white;
+
+    border-color: #5683df;
+
+    box-shadow:
+        0 0 0 4px rgba(40,91,212,.09);
+}
+
+/* Select */
+
+.qop-select {
+    display: block;
+
+    width: 100%;
+    height: 45px;
+
+    padding: 0 13px;
+
+    color: #243850;
+    background: #fbfcff;
+
+    border: 1px solid #dce5f0;
+    border-radius: 10px;
+
+    outline: none;
+
+    font-size: 13px;
+    font-family: inherit;
+
+    cursor: pointer;
+
+    transition:
+        border-color .2s,
+        box-shadow .2s;
+}
+
+.qop-select:focus {
+    border-color: #5683df;
+
+    box-shadow:
+        0 0 0 4px rgba(40,91,212,.09);
+}
+
+/* Buttons */
+
+.qop-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.qop-btn {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    gap: 9px;
+
+    min-height: 45px;
+
+    padding: 0 16px;
+
+    border-radius: 10px;
+
+    text-decoration: none;
+
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 800;
+
+    white-space: nowrap;
+    cursor: pointer;
+
+    transition:
+        background .2s,
+        border-color .2s,
+        box-shadow .2s,
+        transform .2s;
+}
+
+.qop-btn-primary {
+    flex: 1;
+
+    color: white;
+
+    background: #285bd4;
+
+    border: 1px solid #285bd4;
+
+    box-shadow:
+        0 4px 12px rgba(40,91,212,.18);
+}
+
+.qop-btn-primary:hover {
+    color: white;
+
+    background: #1e4cb9;
+    border-color: #1e4cb9;
+
+    box-shadow:
+        0 7px 17px rgba(40,91,212,.22);
+
+    transform: translateY(-1px);
+}
+
+.qop-btn-secondary {
+    flex-shrink: 0;
+
+    width: 45px;
+
+    padding: 0;
+
+    color: #718198;
+
+    background: white;
+
+    border: 1px solid #dce5f0;
+}
+
+.qop-btn-secondary:hover {
+    color: #285bd4;
+    background: #f1f5fd;
+
+    border-color: #c4d5ee;
+}
+
+/* =====================================================
+   RESULTS CARD
+   ===================================================== */
+
+.qop-results {
+    overflow: hidden;
+
+    background: white;
+
+    border: 1px solid var(--qop-border);
+    border-radius: 16px;
+
+    box-shadow:
+        0 5px 22px rgba(23,45,84,.04);
+}
+
+.qop-results-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 13px;
+
+    padding: 20px 23px;
+
+    border-bottom: 1px solid var(--qop-border);
+}
+
+.qop-results-heading {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.qop-results-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    flex-shrink: 0;
+
+    width: 39px;
+    height: 39px;
+
+    color: #285bd4;
+    background: #edf3ff;
+
+    border-radius: 11px;
+}
+
+.qop-results-title {
+    margin: 0;
+
+    color: #203149;
+
+    font-size: 14px;
+    font-weight: 800;
+}
+
+.qop-results-subtitle {
+    margin: 4px 0 0;
+
+    color: #8290a4;
+
+    font-size: 11px;
+}
+
+.qop-results-count {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+
+    padding: 8px 12px;
+
+    color: #2856b3;
+    background: #edf3ff;
+
+    border: 1px solid #dce8ff;
+    border-radius: 9px;
+
+    font-size: 11px;
+    font-weight: 800;
+}
+
+.qop-results-count strong {
+    font-size: 13px;
+}
+
+/* Active filters */
+
+.qop-active-filters {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+
+    padding: 12px 23px;
+
+    background: #fafcff;
+
+    border-bottom: 1px solid var(--qop-border);
+}
+
+.qop-filter-caption {
+    margin-right: 3px;
+
+    color: #7d8ca1;
+
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.qop-active-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+
+    max-width: 100%;
+
+    padding: 6px 10px;
+
+    color: #3e608f;
+    background: #edf3fc;
+
+    border: 1px solid #dde8f8;
+    border-radius: 7px;
+
+    font-size: 11px;
+    font-weight: 650;
+
+    overflow-wrap: anywhere;
+}
+
+/* =====================================================
+   TABLE
+   ===================================================== */
+
+.qop-table-wrap {
+    width: 100%;
+
+    overflow-x: auto;
+
+    scrollbar-color: #c6d3e5 #f5f7fb;
+}
+
+.qop-table {
+    width: 100%;
+    min-width: 1050px;
+
+    margin: 0;
+
+    border-collapse: separate;
+    border-spacing: 0;
+
+    font-size: 12px;
+}
+
+.qop-table thead th {
+    padding: 15px 13px;
+
+    color: #64758e;
+    background: #f6f9fd;
+
+    border-bottom: 1px solid var(--qop-border);
+
+    font-size: 10px;
+    font-weight: 800;
+
+    letter-spacing: .6px;
+    text-transform: uppercase;
+
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+.qop-table thead th:first-child {
+    padding-left: 23px;
+}
+
+.qop-table tbody td {
+    padding: 16px 13px;
+
+    color: #43536a;
+
+    background: white;
+
+    border-bottom: 1px solid #edf1f6;
+
+    vertical-align: middle;
+
+    transition: background .15s;
+}
+
+.qop-table tbody td:first-child {
+    padding-left: 23px;
+}
+
+.qop-table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.qop-table tbody tr.qop-row {
+    cursor: pointer;
+}
+
+.qop-table tbody tr.qop-row:hover td {
+    background: #f8faff;
+}
+
+.qop-table tbody tr.qop-row:focus {
+    outline: 2px solid #5683df;
+    outline-offset: -2px;
+}
+
+.qop-table tbody tr.qop-row:focus td {
+    background: #f5f8ff;
+}
+
+/* =====================================================
+   AVATAR
+   ===================================================== */
+
+.qop-avatar {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    width: 41px;
+    height: 41px;
+
+    color: #315db3;
+
+    background: linear-gradient(
+        135deg,
+        #eaf1ff,
+        #d9e7ff
+    );
+
+    border: 1px solid #d5e3fb;
+    border-radius: 12px;
+
+    font-size: 12px;
+    font-weight: 850;
+
+    letter-spacing: .3px;
+
+    flex-shrink: 0;
+}
+
+/* Employee */
+
+.qop-employee-name {
+    display: block;
+
+    color: #21324b;
+
+    font-size: 12px;
+    font-weight: 800;
+
+    line-height: 1.5;
+
+    text-decoration: none;
+}
+
+.qop-employee-name:hover {
+    color: #285bd4;
+}
+
+.qop-employee-sub {
+    display: block;
+
+    margin-top: 4px;
+
+    color: #98a4b5;
+
+    font-size: 10px;
+}
+
+/* Matricule */
+
+.qop-matricule {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+
+    padding: 6px 10px;
+
+    color: #3b639c;
+    background: #edf3fc;
+
+    border: 1px solid #e3ebf7;
+    border-radius: 7px;
+
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 11px;
+    font-weight: 750;
+
+    white-space: nowrap;
+}
+
+.qop-matricule i {
+    color: #7595c5;
+    font-size: 10px;
+}
+
+/* =====================================================
+   LINE BADGE
+   ===================================================== */
+
+.qop-line {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+
+    max-width: 190px;
+
+    padding: 7px 10px;
+
+    color: #227b59;
+    background: #eaf7f0;
+
+    border: 1px solid #d7efe2;
+    border-radius: 8px;
+
+    font-size: 11px;
+    font-weight: 750;
+
+    text-decoration: none;
+
+    transition: background .15s;
+
+    overflow-wrap: anywhere;
+}
+
+.qop-line i {
+    flex-shrink: 0;
+    font-size: 10px;
+}
+
+.qop-line:hover {
+    color: #176446;
+    background: #ddf1e6;
+    border-color: #b9e3ce;
+}
+
+.qop-unassigned {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+
+    color: #9ba6b6;
+
+    font-size: 11px;
+}
+
+/* Manager */
+
+.qop-manager {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+
+    color: #60718a;
+
+    font-size: 11px;
+    font-weight: 600;
+
+    line-height: 1.5;
+}
+
+.qop-manager i {
+    color: #b08a45;
+    font-size: 11px;
+}
+
+/* =====================================================
+   LEVEL PILLS
+   ===================================================== */
+
+.qop-levels {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+
+    gap: 5px;
+}
+
+.qop-level {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    gap: 5px;
+
+    min-width: 42px;
+
+    padding: 5px 7px;
+
+    border-radius: 6px;
+
+    font-size: 10px;
+    font-weight: 850;
+
+    white-space: nowrap;
+}
+
+.qop-level strong {
+    font-size: 11px;
+    font-weight: 900;
+}
+
+.qop-level-I {
+    color: #ae651d;
+    background: #fff1e1;
+}
+
+.qop-level-L {
+    color: #207b4c;
+    background: #e9f7ee;
+}
+
+.qop-level-U {
+    color: #285eb3;
+    background: #eaf2ff;
+}
+
+/* Progress */
+
+.qop-level-progress {
+    display: flex;
+
+    width: 135px;
+    max-width: 100%;
+    height: 6px;
+
+    margin: 9px auto 0;
+
+    overflow: hidden;
+
+    background: #edf1f6;
+
+    border-radius: 999px;
+}
+
+.qop-seg-I {
+    height: 100%;
+    background: #e6a13c;
+}
+
+.qop-seg-L {
+    height: 100%;
+    background: #32a86b;
+}
+
+.qop-seg-U {
+    height: 100%;
+    background: #4383df;
+}
+
+/* =====================================================
+   TASK COUNT
+   ===================================================== */
+
+.qop-task-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    min-width: 33px;
+    height: 29px;
+
+    padding: 0 8px;
+
+    color: #48607f;
+    background: #f0f4f9;
+
+    border: 1px solid #e5ebf3;
+    border-radius: 8px;
+
+    font-size: 11px;
+    font-weight: 850;
+}
+
+/* =====================================================
+   VIEW BUTTON
+   ===================================================== */
+
+.qop-view-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 34px;
+    height: 34px;
+
+    color: #7c91ae;
+    background: white;
+
+    border: 1px solid #dce5f0;
+    border-radius: 9px;
+
+    text-decoration: none;
+
+    transition:
+        color .2s,
+        background .2s,
+        border-color .2s,
+        transform .2s;
+}
+
+.qop-view-btn:hover {
+    color: white;
+    background: #285bd4;
+
+    border-color: #285bd4;
+
+    transform: translateX(2px);
+}
+
+.qop-view-btn i {
+    font-size: 11px;
+}
+
+/* =====================================================
+   EMPTY STATE
+   ===================================================== */
+
+.qop-empty {
+    padding: 65px 20px;
+
+    text-align: center;
+}
+
+.qop-empty-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 75px;
+    height: 75px;
+
+    margin: 0 auto 18px;
+
+    color: #8da6cd;
+    background: #edf3ff;
+
+    border-radius: 20px;
+
+    font-size: 28px;
+}
+
+.qop-empty h3 {
+    margin: 0 0 8px;
+
+    color: #33465f;
+
+    font-size: 15px;
+    font-weight: 800;
+}
+
+.qop-empty p {
+    margin: 0 0 20px;
+
+    color: #8a98ab;
+
+    font-size: 12px;
+}
+
+/* =====================================================
+   FOOTER
+   ===================================================== */
+
+.qop-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+
+    padding: 16px 23px;
+
+    background: #fbfcff;
+
+    border-top: 1px solid var(--qop-border);
+}
+
+.qop-footer-info {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+
+    color: #8390a4;
+
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.qop-footer-info i {
+    color: #6285bd;
+}
+
+/* =====================================================
+   RESPONSIVE
+   ===================================================== */
+
+@media (max-width: 991px) {
+
+    .qop-hero {
+        padding: 1.4rem;
     }
 
-    .search-input-wrapper .search-icon {
-        position: absolute;
-        left: 16px;
-        color: var(--gray-400);
-        pointer-events: none;
-        transition: color .2s;
+    .qop-filter-body {
+        padding: 18px;
     }
 
-    .search-input {
+    .qop-results-header {
+        padding: 17px;
+    }
+
+}
+
+@media (max-width: 575px) {
+
+    .qop-hero {
+        padding: 1.3rem;
+        border-radius: 15px;
+    }
+
+    .qop-hero-summary {
         width: 100%;
-        padding: 14px 44px 14px 44px;
-        border: 2px solid var(--gray-200);
-        border-radius: 10px;
-        font-size: 15px;
-        color: var(--gray-800);
-        background: white;
-        transition: all .2s;
-        font-family: inherit;
     }
 
-    .search-input:focus {
-        outline: none;
-        border-color: var(--accent-color);
-        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+    .qop-hero h1 {
+        font-size: 24px;
     }
 
-    .search-input:focus ~ .search-icon {
-        color: var(--accent-color);
+    .qop-filter-header {
+        padding: 15px;
     }
 
-    .search-input::placeholder { color: var(--gray-400); }
+    .qop-filter-body {
+        padding: 15px;
+    }
 
-    /* ══ FILTER SELECT ═══════════════════════════════════ */
-    .filter-select {
+    .qop-btn-primary {
         width: 100%;
-        padding: 14px 16px;
-        border: 2px solid var(--gray-200);
-        border-radius: 10px;
-        font-size: 15px;
-        color: var(--gray-800);
-        background: white;
-        transition: all .2s;
-        cursor: pointer;
-        font-family: inherit;
     }
 
-    .filter-select:focus {
-        outline: none;
-        border-color: var(--accent-color);
-        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+    .qop-results-header {
+        align-items: flex-start;
     }
 
-    /* ══ FILTER BUTTONS ══════════════════════════════════ */
-    .btn-filter {
-        padding: 14px 24px;
-        border-radius: 10px;
-        font-size: 14px;
-        font-weight: 600;
-        cursor: pointer;
-        border: none;
-        transition: all .2s;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        text-decoration: none;
+    .qop-active-filters {
+        padding: 12px 15px;
     }
 
-    .btn-filter-primary {
-        background: linear-gradient(135deg, #1E40AF 0%, #3B82F6 100%);
-        color: white;
-        box-shadow: 0 4px 12px rgba(30, 64, 175, 0.25);
+    .qop-footer {
+        padding: 15px;
     }
 
-    .btn-filter-primary:hover {
-        box-shadow: 0 6px 20px rgba(30, 64, 175, 0.35);
-        transform: translateY(-1px);
-        color: white;
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    .qop *,
+    .qop *::before,
+    .qop *::after {
+        transition: none !important;
     }
 
-    .btn-filter-secondary {
-        background: white;
-        color: var(--gray-600);
-        border: 2px solid var(--gray-200);
-    }
+}
 
-    .btn-filter-secondary:hover {
-        background: var(--gray-50);
-        border-color: var(--gray-300);
-        color: var(--gray-700);
-    }
-
-    /* ══ EMPLOYEE ROW ════════════════════════════════════ */
-    .emp-row {
-        transition: all .15s;
-        cursor: pointer;
-    }
-
-    .emp-row:hover {
-        background: rgba(59, 130, 246, 0.04) !important;
-    }
-
-    .emp-row:active {
-        background: rgba(59, 130, 246, 0.08) !important;
-    }
-
-    /* ══ EMPLOYEE AVATAR ═════════════════════════════════ */
-    .emp-avatar {
-        width: 38px;
-        height: 38px;
-        border-radius: 10px;
-        background: linear-gradient(135deg, var(--accent-color) 0%, #6366F1 100%);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-weight: 600;
-        font-size: 13px;
-        flex-shrink: 0;
-    }
-
-    /* ══ MATRICULE ═══════════════════════════════════════ */
-    .matricule-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        padding: 3px 10px;
-        background: rgba(59, 130, 246, 0.08);
-        border-radius: 6px;
-        font-family: 'JetBrains Mono', 'Fira Code', monospace;
-        font-size: 12px;
-        font-weight: 600;
-        color: var(--accent-color);
-        letter-spacing: .3px;
-    }
-
-    /* ══ LINE BADGE ══════════════════════════════════════ */
-    .line-tag {
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-        padding: 4px 10px;
-        background: rgba(5, 150, 105, 0.08);
-        border-radius: 8px;
-        font-size: 13px;
-        font-weight: 500;
-        color: var(--success-color);
-        text-decoration: none;
-        transition: all .15s;
-    }
-
-    .line-tag:hover {
-        background: rgba(5, 150, 105, 0.15);
-        color: var(--success-color);
-    }
-
-    /* ══ MANAGER TAG ═════════════════════════════════════ */
-    .manager-tag {
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-        font-size: 13px;
-        color: var(--gray-600);
-    }
-
-    .manager-tag i {
-        color: var(--warning-color);
-        font-size: 12px;
-    }
-
-    /* ══ LEVEL PILLS ═════════════════════════════════════ */
-    .level-pills {
-        display: flex;
-        justify-content: center;
-        gap: 4px;
-    }
-
-    .level-pill {
-        display: inline-flex;
-        align-items: center;
-        gap: 3px;
-        padding: 3px 10px;
-        border-radius: 20px;
-        font-size: 12px;
-        font-weight: 700;
-        letter-spacing: .3px;
-    }
-
-    .level-pill-I {
-        background: rgba(194, 65, 12, 0.1);
-        color: #c2410c;
-    }
-
-    .level-pill-L {
-        background: rgba(21, 128, 61, 0.1);
-        color: #15803d;
-    }
-
-    .level-pill-U {
-        background: rgba(29, 78, 216, 0.1);
-        color: #1d4ed8;
-    }
-
-    /* ══ PROGRESS BAR ════════════════════════════════════ */
-    .progress-bar-mini {
-        height: 5px;
-        border-radius: 3px;
-        background: var(--gray-100);
-        overflow: hidden;
-        display: flex;
-        max-width: 150px;
-        margin: 4px auto 0;
-    }
-
-    .progress-bar-mini .seg-I {
-        background: #f59e0b;
-        height: 100%;
-    }
-    .progress-bar-mini .seg-L {
-        background: #22c55e;
-        height: 100%;
-    }
-    .progress-bar-mini .seg-U {
-        background: #3b82f6;
-        height: 100%;
-    }
-
-    /* ══ TASK COUNT ═══════════════════════════════════════ */
-    .task-count {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        min-width: 28px;
-        height: 28px;
-        padding: 0 8px;
-        border-radius: 8px;
-        background: var(--gray-100);
-        color: var(--gray-600);
-        font-weight: 700;
-        font-size: 13px;
-    }
-
-    /* ══ VIEW BTN ════════════════════════════════════════ */
-    .view-btn {
-        width: 34px;
-        height: 34px;
-        border-radius: 8px;
-        border: 2px solid var(--gray-200);
-        background: white;
-        color: var(--gray-400);
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        transition: all .2s;
-        cursor: pointer;
-        text-decoration: none;
-    }
-
-    .view-btn:hover {
-        border-color: var(--accent-color);
-        color: var(--accent-color);
-        background: rgba(59, 130, 246, 0.05);
-        transform: scale(1.08);
-    }
-
-    /* ══ RESULTS HEADER ══════════════════════════════════ */
-    .results-header {
-        padding: 16px 24px;
-        background: var(--gray-50);
-        border-bottom: 1px solid var(--gray-200);
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-    }
-
-    .results-count-text {
-        font-size: 13px;
-        font-weight: 600;
-        color: var(--gray-500);
-        text-transform: uppercase;
-        letter-spacing: .04em;
-    }
-
-    .results-count-badge {
-        background: var(--accent-color);
-        color: white;
-        padding: 2px 10px;
-        border-radius: 12px;
-        font-size: 12px;
-        font-weight: 600;
-        margin-left: 8px;
-    }
-
-    /* ══ EMPTY STATE ═════════════════════════════════════ */
-    .empty-state {
-        padding: 60px 20px;
-        text-align: center;
-    }
-
-    .empty-state-icon {
-        width: 80px;
-        height: 80px;
-        background: var(--gray-100);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin: 0 auto 20px;
-    }
-
-    .empty-state-icon i {
-        font-size: 32px;
-        color: var(--gray-300);
-    }
-
-    .empty-state-title {
-        font-size: 16px;
-        font-weight: 600;
-        color: var(--gray-600);
-        margin-bottom: 6px;
-    }
-
-    .empty-state-desc {
-        font-size: 14px;
-        color: var(--gray-400);
-    }
-
-    /* ══ TABLE FOOTER ════════════════════════════════════ */
-    .table-footer {
-        padding: 14px 24px;
-        background: white;
-        border-top: 1px solid var(--gray-100);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .footer-info {
-        font-size: 13px;
-        color: var(--gray-400);
-        display: flex;
-        align-items: center;
-        gap: 6px;
-    }
-
-    .footer-info i { color: var(--info-color); }
 </style>
 {% endblock %}
 
+
+
 {% block content %}
 
-<!-- ══ FILTRES ══════════════════════════════════════════════════════ -->
-<div class="card-modern mb-4">
-    <div class="card-header-modern">
-        <h3 class="card-title-modern">
-            <i class="fas fa-filter"></i>
-            Filtres de recherche
-        </h3>
+<div class="qop">
+
+
+<!-- =====================================================
+     HERO
+     ===================================================== -->
+
+<header class="qop-hero">
+
+    <div class="qop-hero-content">
+
+        <span class="qop-eyebrow">
+
+            <i class="fas fa-layer-group"></i>
+
+            Gestion des compétences
+
+        </span>
+
+        <h1>
+
+            <i class="fas fa-users me-2"></i>
+
+            Opérateurs
+
+        </h1>
+
+        <p>
+
+            Consultez les collaborateurs, leurs affectations
+            et leurs niveaux de compétence.
+
+        </p>
+
     </div>
-    <div class="card-body-modern">
+
+
+    <div class="qop-hero-summary">
+
+        <div class="qop-hero-icon">
+
+            <i class="fas fa-users"></i>
+
+        </div>
+
+        <div>
+
+            <span class="qop-hero-number">
+
+                {{ total }}
+
+            </span>
+
+            <span class="qop-hero-label">
+
+                Opérateur{{ total|pluralize:"s" }}
+
+            </span>
+
+        </div>
+
+    </div>
+
+</header>
+
+
+
+<!-- =====================================================
+     SECTION FILTRES
+     ===================================================== -->
+
+<div class="qop-section-heading">
+
+    <div>
+
+        <h2 class="qop-section-title">
+
+            Recherche et filtres
+
+        </h2>
+
+        <p class="qop-section-desc">
+
+            Retrouvez rapidement un opérateur
+            ou filtrez par ligne de production.
+
+        </p>
+
+    </div>
+
+</div>
+
+
+
+<!-- =====================================================
+     FILTER CARD
+     ===================================================== -->
+
+<section class="qop-filter-card"
+         aria-labelledby="qop-filter-title">
+
+
+    <!-- HEADER -->
+
+    <div class="qop-filter-header">
+
+        <div class="qop-filter-header-icon">
+
+            <i class="fas fa-filter"></i>
+
+        </div>
+
+        <div>
+
+            <h2 id="qop-filter-title">
+
+                Filtres de recherche
+
+            </h2>
+
+            <p>
+
+                Affinez les résultats selon vos critères.
+
+            </p>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- FORM -->
+
+    <div class="qop-filter-body">
+
         <form method="get">
+
             <div class="row g-3 align-items-end">
 
-                <!-- Recherche -->
-                <div class="col-md-5">
-                    <label style="display:block; font-size:13px; font-weight:600;
-                                  color:var(--gray-700); margin-bottom:10px;
-                                  text-transform:uppercase; letter-spacing:.05em;">
-                        <i class="fas fa-search me-1" style="color:var(--accent-color);"></i>
-                        Recherche
-                    </label>
-                    <div class="search-container">
-                        <div class="search-input-wrapper">
-                            <input type="text" name="search"
-                                   class="search-input"
-                                   placeholder="Nom, prénom ou matricule…"
-                                   value="{{ search }}">
-                            <i class="fas fa-search search-icon"></i>
-                        </div>
-                    </div>
-                </div>
 
-                <!-- Filtre ligne -->
-                <div class="col-md-4">
-                    <label style="display:block; font-size:13px; font-weight:600;
-                                  color:var(--gray-700); margin-bottom:10px;
-                                  text-transform:uppercase; letter-spacing:.05em;">
-                        <i class="fas fa-industry me-1" style="color:var(--success-color);"></i>
-                        Ligne de production
-                    </label>
-                    <select name="line" class="filter-select">
-                        <option value="">— Toutes les lignes —</option>
-                        {% for line in lines %}
-                        <option value="{{ line.pk }}"
-                            {% if selected_line == line.pk|stringformat:"s" %}selected{% endif %}>
-                            {{ line.name }} ({{ line.code }})
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
+                <!-- RECHERCHE -->
 
-                <!-- Boutons -->
-                <div class="col-md-3 d-flex gap-2">
-                    <button type="submit" class="btn-filter btn-filter-primary flex-grow-1">
+                <div class="col-12 col-lg-5">
+
+                    <label class="qop-label"
+                           for="operator-search">
+
                         <i class="fas fa-search"></i>
-                        Rechercher
-                    </button>
-                    <a href="{% url 'quality_operators' %}" class="btn-filter btn-filter-secondary">
-                        <i class="fas fa-times"></i>
-                    </a>
+
+                        Rechercher un opérateur
+
+                    </label>
+
+
+                    <div class="qop-input-wrap">
+
+                        <i class="fas fa-search qop-input-icon"
+                           aria-hidden="true"></i>
+
+
+                        <input
+                            type="search"
+                            id="operator-search"
+                            name="search"
+                            class="qop-input"
+                            placeholder="Nom, prénom ou matricule..."
+                            value="{{ search }}"
+                        >
+
+                    </div>
+
                 </div>
+
+
+
+                <!-- LIGNE -->
+
+                <div class="col-12 col-lg-4">
+
+                    <label class="qop-label"
+                           for="operator-line">
+
+                        <i class="fas fa-industry"></i>
+
+                        Ligne de production
+
+                    </label>
+
+
+                    <select
+                        name="line"
+                        id="operator-line"
+                        class="qop-select"
+                    >
+
+                        <option value="">
+
+                            Toutes les lignes
+
+                        </option>
+
+
+                        {% for line in lines %}
+
+
+                        <option
+                            value="{{ line.pk }}"
+
+                            {% if selected_line == line.pk|stringformat:"s" %}
+                                selected
+                            {% endif %}
+                        >
+
+                            {{ line.name }} ({{ line.code }})
+
+                        </option>
+
+
+                        {% endfor %}
+
+
+                    </select>
+
+                </div>
+
+
+
+                <!-- ACTIONS -->
+
+                <div class="col-12 col-lg-3">
+
+                    <div class="qop-actions">
+
+
+                        <!-- SEARCH -->
+
+                        <button
+                            type="submit"
+                            class="qop-btn qop-btn-primary"
+                        >
+
+                            <i class="fas fa-search"></i>
+
+                            Rechercher
+
+                        </button>
+
+
+
+                        <!-- RESET -->
+
+                        <a
+                            href="{% url 'quality_operators' %}"
+                            class="qop-btn qop-btn-secondary"
+                            title="Réinitialiser les filtres"
+                            aria-label="Réinitialiser les filtres"
+                        >
+
+                            <i class="fas fa-undo"></i>
+
+                        </a>
+
+
+                    </div>
+
+                </div>
+
 
             </div>
+
         </form>
+
     </div>
+
+</section>
+
+
+
+<!-- =====================================================
+     SECTION RÉSULTATS
+     ===================================================== -->
+
+<div class="qop-section-heading">
+
+    <div>
+
+        <h2 class="qop-section-title">
+
+            Répertoire des opérateurs
+
+        </h2>
+
+        <p class="qop-section-desc">
+
+            Liste des collaborateurs et suivi
+            de leurs compétences.
+
+        </p>
+
+    </div>
+
 </div>
 
-<!-- ══ TABLEAU DES OPÉRATEURS ══════════════════════════════════════ -->
-<div class="card-modern">
 
-    <!-- Header avec compteur -->
-    <div class="results-header">
-        <div>
-            <span class="results-count-text">
-                <i class="fas fa-users me-1"></i>
-                Résultats
-                <span class="results-count-badge">{{ total }}</span>
-            </span>
+
+<!-- =====================================================
+     RESULTS CARD
+     ===================================================== -->
+
+<section class="qop-results"
+         aria-labelledby="qop-results-title">
+
+
+    <!-- RESULTS HEADER -->
+
+    <div class="qop-results-header">
+
+
+        <div class="qop-results-heading">
+
+
+            <div class="qop-results-icon">
+
+                <i class="fas fa-list-ul"></i>
+
+            </div>
+
+
+            <div>
+
+                <h2 class="qop-results-title"
+                    id="qop-results-title">
+
+                    Liste des opérateurs
+
+                </h2>
+
+
+                <p class="qop-results-subtitle">
+
+                    Cliquez sur un opérateur pour
+                    consulter sa fiche.
+
+                </p>
+
+            </div>
+
+
         </div>
-        {% if search or selected_line %}
-        <div style="font-size:12px; color:var(--gray-400);">
-            {% if search %}
-                Recherche : « <strong style="color:var(--gray-600);">{{ search }}</strong> »
-            {% endif %}
-            {% if selected_line %}
-                {% for line in lines %}
-                    {% if line.pk|stringformat:"s" == selected_line %}
-                        · Ligne : <strong style="color:var(--gray-600);">{{ line.name }}</strong>
-                    {% endif %}
-                {% endfor %}
-            {% endif %}
-        </div>
+
+
+
+        <!-- COMPTEUR -->
+
+        <span class="qop-results-count">
+
+            <i class="fas fa-users"></i>
+
+            <strong>
+
+                {{ total }}
+
+            </strong>
+
+            résultat{{ total|pluralize:"s" }}
+
+        </span>
+
+
+    </div>
+
+
+
+    <!-- =================================================
+         FILTRES ACTIFS
+         ================================================= -->
+
+    {% if search or selected_line %}
+
+
+    <div class="qop-active-filters">
+
+
+        <span class="qop-filter-caption">
+
+            <i class="fas fa-filter me-1"></i>
+
+            Filtres actifs :
+
+        </span>
+
+
+
+        <!-- SEARCH -->
+
+        {% if search %}
+
+
+        <span class="qop-active-tag">
+
+            <i class="fas fa-search"></i>
+
+            {{ search }}
+
+        </span>
+
+
         {% endif %}
-    </div>
 
-    <!-- Table -->
-    <div class="table-responsive">
-        <table class="table table-modern mb-0">
-            <thead>
-                <tr>
-                    <th style="padding-left:24px; width:60px;"></th>
-                    <th>Employé</th>
-                    <th>Matricule</th>
-                    <th>Ligne</th>
-                    <th>Chef d'équipe</th>
-                    <th class="text-center" style="width:200px;">Niveaux</th>
-                    <th class="text-center" style="width:80px;">Tâches</th>
-                    <th class="text-center" style="width:60px;"></th>
-                </tr>
-            </thead>
-            <tbody>
-            {% for item in employees_data %}
-                <tr class="emp-row"
-                    onclick="window.location='{% url 'quality_operator_detail' item.employee.pk %}'">
 
-                    <!-- Avatar -->
-                    <td style="padding-left:24px;">
-                        <div class="emp-avatar">
-                            {{ item.employee.first_name|first|upper }}{{ item.employee.last_name|first|upper }}
-                        </div>
-                    </td>
 
-                    <!-- Nom complet -->
-                    <td>
-                        <div style="font-weight:600; color:var(--gray-800); font-size:14px;">
-                            {{ item.employee.last_name }}
-                            <span style="font-weight:400; color:var(--gray-600);">
-                                {{ item.employee.first_name }}
-                            </span>
-                        </div>
-                    </td>
+        <!-- LINE -->
 
-                    <!-- Matricule -->
-                    <td>
-                        <span class="matricule-badge">
-                            {{ item.employee.matricule }}
-                        </span>
-                    </td>
+        {% if selected_line %}
 
-                    <!-- Ligne -->
-                    <td>
-                        {% if item.employee.line %}
-                            <a href="{% url 'quality_line_detail' item.employee.line.pk %}"
-                               class="line-tag"
-                               onclick="event.stopPropagation();">
-                                <i class="fas fa-industry" style="font-size:11px;"></i>
-                                {{ item.employee.line.name }}
-                            </a>
-                        {% else %}
-                            <span style="font-size:13px; color:var(--gray-400);">
-                                Non assigné
-                            </span>
-                        {% endif %}
-                    </td>
 
-                    <!-- Chef d'équipe -->
-                    <td>
-                        {% if item.employee.manager %}
-                            <span class="manager-tag">
-                                <i class="fas fa-user-tie"></i>
-                                {{ item.employee.manager.get_full_name|default:item.employee.manager.username }}
-                            </span>
-                        {% else %}
-                            <span style="font-size:13px; color:var(--gray-400);">—</span>
-                        {% endif %}
-                    </td>
+            {% for line in lines %}
 
-                    <!-- Niveaux -->
-                    <td class="text-center">
-                        {% if item.nb_tasks > 0 %}
-                            <div class="level-pills">
-                                {% if item.nb_I > 0 %}
-                                <span class="level-pill level-pill-I">
-                                    I <strong>{{ item.nb_I }}</strong>
-                                </span>
-                                {% endif %}
-                                {% if item.nb_L > 0 %}
-                                <span class="level-pill level-pill-L">
-                                    L <strong>{{ item.nb_L }}</strong>
-                                </span>
-                                {% endif %}
-                                {% if item.nb_U > 0 %}
-                                <span class="level-pill level-pill-U">
-                                    U <strong>{{ item.nb_U }}</strong>
-                                </span>
-                                {% endif %}
-                            </div>
 
-                            <!-- Progress bar -->
-                            {% with total=item.nb_tasks %}
-                            {% if total > 0 %}
-                            <div class="progress-bar-mini">
-                                {% if item.nb_I > 0 %}
-                                <div class="seg-I"
-                                     style="width:{% widthratio item.nb_I total 100 %}%;"></div>
-                                {% endif %}
-                                {% if item.nb_L > 0 %}
-                                <div class="seg-L"
-                                     style="width:{% widthratio item.nb_L total 100 %}%;"></div>
-                                {% endif %}
-                                {% if item.nb_U > 0 %}
-                                <div class="seg-U"
-                                     style="width:{% widthratio item.nb_U total 100 %}%;"></div>
-                                {% endif %}
-                            </div>
-                            {% endif %}
-                            {% endwith %}
-                        {% else %}
-                            <span style="font-size:12px; color:var(--gray-300);">—</span>
-                        {% endif %}
-                    </td>
+                {% if line.pk|stringformat:"s" == selected_line %}
 
-                    <!-- Nombre tâches -->
-                    <td class="text-center">
-                        <span class="task-count">{{ item.nb_tasks }}</span>
-                    </td>
 
-                    <!-- Bouton voir -->
-                    <td class="text-center">
-                        <a href="{% url 'quality_operator_detail' item.employee.pk %}"
-                           class="view-btn"
-                           onclick="event.stopPropagation();"
-                           title="Voir le détail">
-                            <i class="fas fa-chevron-right" style="font-size:12px;"></i>
-                        </a>
-                    </td>
-                </tr>
+                <span class="qop-active-tag">
 
-            {% empty %}
-                <tr>
-                    <td colspan="8">
-                        <div class="empty-state">
-                            <div class="empty-state-icon">
-                                <i class="fas fa-search"></i>
-                            </div>
-                            <div class="empty-state-title">
-                                Aucun opérateur trouvé
-                            </div>
-                            <div class="empty-state-desc">
-                                Modifiez vos filtres ou effacez la recherche
-                            </div>
-                            <a href="{% url 'quality_operators' %}"
-                               class="btn-filter btn-filter-secondary mt-3"
-                               style="display:inline-flex;">
-                                <i class="fas fa-times"></i>
-                                Effacer les filtres
-                            </a>
-                        </div>
-                    </td>
-                </tr>
+                    <i class="fas fa-industry"></i>
+
+                    {{ line.name }}
+
+                </span>
+
+
+                {% endif %}
+
+
             {% endfor %}
-            </tbody>
-        </table>
+
+
+        {% endif %}
+
+
+
+        <!-- RESET -->
+
+        <a href="{% url 'quality_operators' %}"
+           class="qop-active-tag"
+           style="
+           color:#b54747;
+           background:#fff2f2;
+           border-color:#f5dede;
+           text-decoration:none;
+           ">
+
+            <i class="fas fa-times"></i>
+
+            Effacer tout
+
+        </a>
+
+
     </div>
 
-    <!-- Footer -->
-    {% if employees_data %}
-    <div class="table-footer">
-        <span class="footer-info">
-            {{ total }} opérateur{{ total|pluralize:"s" }} affiché{{ total|pluralize:"s" }}
-        </span>
-        <span class="footer-info">
-            <i class="fas fa-eye"></i>
-            Consultation uniquement
-        </span>
-    </div>
+
     {% endif %}
+
+
+
+    <!-- =================================================
+         TABLE
+         ================================================= -->
+
+    <div class="qop-table-wrap">
+
+
+        <table class="qop-table">
+
+
+            <!-- HEAD -->
+
+            <thead>
+
+                <tr>
+
+                    <th scope="col"
+                        style="width:65px;">
+
+                        Profil
+
+                    </th>
+
+
+                    <th scope="col">
+
+                        Employé
+
+                    </th>
+
+
+                    <th scope="col">
+
+                        Matricule
+
+                    </th>
+
+
+                    <th scope="col">
+
+                        Ligne
+
+                    </th>
+
+
+                    <th scope="col">
+
+                        Chef d'équipe
+
+                    </th>
+
+
+                    <th scope="col"
+                        class="text-center"
+                        style="width:75px;">
+
+                        Tâches
+
+                    </th>
+
+
+                    <th scope="col"
+                        class="text-center"
+                        style="width:65px;">
+
+                        Détail
+
+                    </th>
+
+                </tr>
+
+            </thead>
+
+
+
+            <!-- BODY -->
+
+            <tbody>
+
+
+                {% for item in employees_data %}
+
+
+
+                <tr
+                    class="qop-row"
+                    data-operator-url="{% url 'quality_operator_detail' item.employee.pk %}"
+                    tabindex="0"
+                    aria-label="Consulter la fiche de {{ item.employee.last_name }} {{ item.employee.first_name }}"
+                >
+
+
+
+                    <!-- AVATAR -->
+
+                    <td>
+
+                        <div class="qop-avatar"
+                             aria-hidden="true">
+
+                            {{ item.employee.first_name|first|upper }}{{ item.employee.last_name|first|upper }}
+
+                        </div>
+
+                    </td>
+
+
+
+                    <!-- EMPLOYEE -->
+
+                    <td>
+
+
+                        <a
+                            href="{% url 'quality_operator_detail' item.employee.pk %}"
+                            class="qop-employee-name"
+                        >
+
+                            {{ item.employee.last_name }}
+
+                            {{ item.employee.first_name }}
+
+                        </a>
+
+
+                        <span class="qop-employee-sub">
+
+                            Fiche opérateur
+
+                        </span>
+
+
+                    </td>
+
+
+
+                    <!-- MATRICULE -->
+
+                    <td>
+
+
+                        <span class="qop-matricule">
+
+                            <i class="fas fa-id-card"></i>
+
+                            {{ item.employee.matricule }}
+
+                        </span>
+
+
+                    </td>
+
+
+
+                    <!-- LINE -->
+
+                    <td>
+
+
+                        {% if item.employee.line %}
+
+
+                        <a
+                            href="{% url 'quality_line_detail' item.employee.line.pk %}"
+                            class="qop-line"
+                        >
+
+                            <i class="fas fa-industry"></i>
+
+                            {{ item.employee.line.name }}
+
+                        </a>
+
+
+                        {% else %}
+
+
+                        <span class="qop-unassigned">
+
+                            <i class="fas fa-minus-circle"></i>
+
+                            Non assigné
+
+                        </span>
+
+
+                        {% endif %}
+
+
+                    </td>
+
+
+
+                    <!-- MANAGER -->
+
+                    <td>
+
+
+                        {% if item.employee.manager %}
+
+
+                        <span class="qop-manager">
+
+                            <i class="fas fa-user-tie"></i>
+
+                            {{ item.employee.manager.get_full_name|default:item.employee.manager.username }}
+
+                        </span>
+
+
+                        {% else %}
+
+
+                        <span class="qop-unassigned">
+
+                            —
+
+                        </span>
+
+
+                        {% endif %}
+
+
+                    </td>
+
+                    
+
+
+
+                    <!-- =================================================
+                         TASK COUNT
+                         ================================================= -->
+
+                    <td class="text-center">
+
+
+                        <span class="qop-task-count">
+
+                            {{ item.nb_tasks }}
+
+                        </span>
+
+
+                    </td>
+
+
+
+                    <!-- =================================================
+                         VIEW ACTION
+                         ================================================= -->
+
+                    <td class="text-center">
+
+
+                        <a
+                            href="{% url 'quality_operator_detail' item.employee.pk %}"
+                            class="qop-view-btn"
+                            title="Voir la fiche de {{ item.employee.last_name }} {{ item.employee.first_name }}"
+                            aria-label="Voir la fiche de {{ item.employee.last_name }} {{ item.employee.first_name }}"
+                        >
+
+                            <i class="fas fa-arrow-right"></i>
+
+                        </a>
+
+
+                    </td>
+
+
+
+                </tr>
+
+
+
+                <!-- =================================================
+                     EMPTY STATE
+                     ================================================= -->
+
+                {% empty %}
+
+
+
+                <tr>
+
+
+                    <td colspan="8">
+
+
+                        <div class="qop-empty">
+
+
+                            <!-- ICON -->
+
+                            <div class="qop-empty-icon">
+
+                                <i class="fas fa-search"></i>
+
+                            </div>
+
+
+
+                            <!-- TITLE -->
+
+                            <h3>
+
+                                Aucun opérateur trouvé
+
+                            </h3>
+
+
+
+                            <!-- DESCRIPTION -->
+
+                            <p>
+
+                                {% if search or selected_line %}
+
+                                    Aucun résultat ne correspond
+                                    à vos critères de recherche.
+
+                                {% else %}
+
+                                    Aucun opérateur n'est disponible
+                                    pour le moment.
+
+                                {% endif %}
+
+                            </p>
+
+
+
+                            <!-- RESET -->
+
+                            {% if search or selected_line %}
+
+
+                            <a
+                                href="{% url 'quality_operators' %}"
+                                class="qop-btn qop-btn-secondary"
+                                style="
+                                width:auto;
+                                padding:0 18px;
+                                "
+                            >
+
+                                <i class="fas fa-undo"></i>
+
+                                Réinitialiser les filtres
+
+                            </a>
+
+
+                            {% endif %}
+
+
+
+                        </div>
+
+
+                    </td>
+
+
+                </tr>
+
+
+
+                {% endfor %}
+
+
+
+            </tbody>
+
+
+
+        </table>
+
+
+    </div>
+
+
+
+    <!-- =================================================
+         FOOTER
+         ================================================= -->
+
+    {% if employees_data %}
+
+
+    <footer class="qop-footer">
+
+
+
+        <!-- COUNT -->
+
+        <span class="qop-footer-info">
+
+
+            <i class="fas fa-users"></i>
+
+
+            {{ employees_data|length }} opérateur{{ employees_data|length|pluralize:"s" }}
+            affiché{{ employees_data|length|pluralize:"s" }}
+
+            {% if employees_data|length != total %}
+
+                sur {{ total }} résultat{{ total|pluralize:"s" }}
+
+            {% endif %}
+
+
+        </span>
+
+
+
+        <!-- READ ONLY -->
+
+        <span class="qop-footer-info">
+
+
+            <i class="fas fa-eye"></i>
+
+
+            Consultation uniquement
+
+
+        </span>
+
+
+
+    </footer>
+
+
+    {% endif %}
+
+
+
+</section>
+
+
+
+<!-- =====================================================
+     LÉGENDE
+     ===================================================== -->
+
+<div class="d-flex
+            align-items-center
+            flex-wrap
+            gap-3
+            mt-3"
+
+     style="
+     color:#8390a4;
+     font-size:11px;
+     ">
+
+
+
+    <span class="fw-bold">
+
+        Niveaux :
+
+    </span>
+
+
+
+    <span class="d-inline-flex align-items-center gap-2">
+
+        <span class="qop-level qop-level-I">
+
+            I
+
+        </span>
+
+        En formation
+
+    </span>
+
+
+
+    <span class="d-inline-flex align-items-center gap-2">
+
+        <span class="qop-level qop-level-L">
+
+            L
+
+        </span>
+
+        Approuvé
+
+    </span>
+
+
+
+    <span class="d-inline-flex align-items-center gap-2">
+
+        <span class="qop-level qop-level-U">
+
+            U
+
+        </span>
+
+        Formateur
+
+    </span>
+
+
+
 </div>
+
+
+
+</div>
+<!-- FIN .qop -->
+
+
+<!-- =====================================================
+     INTERACTION DES LIGNES
+     ===================================================== -->
+
+<script>
+(function () {
+    "use strict";
+
+    const rows = document.querySelectorAll(
+        ".qop-row[data-operator-url]"
+    );
+
+    rows.forEach(function (row) {
+
+        /*
+         * Clic sur une ligne :
+         * ouvre la fiche opérateur.
+         *
+         * Les liens internes restent indépendants.
+         */
+
+        row.addEventListener("click", function (event) {
+
+            if (event.target.closest("a, button")) {
+                return;
+            }
+
+            const url = row.dataset.operatorUrl;
+
+            if (url) {
+                window.location.href = url;
+            }
+
+        });
+
+
+        /*
+         * Accessibilité clavier :
+         * Entrée ouvre la fiche.
+         */
+
+        row.addEventListener("keydown", function (event) {
+
+            if (event.target !== row) {
+                return;
+            }
+
+            if (event.key === "Enter") {
+
+                const url = row.dataset.operatorUrl;
+
+                if (url) {
+                    window.location.href = url;
+                }
+
+            }
+
+        });
+
+    });
+
+})();
+</script>
+
 
 {% endblock %}

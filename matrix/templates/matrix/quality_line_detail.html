@@ -1,602 +1,3052 @@
+
 <!-- matrix/templates/matrix/quality_line_detail.html -->
+
 {% extends 'matrix/quality_base.html' %}
-{% block title %}{{ line.name }} — Détail{% endblock %}
+
+{% block title %}
+{{ line.name }} — Détail
+{% endblock %}
+
+{% block page_title %}
+Détail de ligne
+{% endblock %}
+
 
 {% block extra_css %}
+
 <style>
-    /* ══ MATRICE ══════════════════════════════════════════ */
-    .matrix-wrap { overflow-x:auto; border-radius:8px; }
 
-    .matrix-table {
-        border-collapse:separate; border-spacing:0;
-        font-size:.78rem; min-width:100%;
+/* =====================================================
+   DESIGN PROFESSIONNEL — MATRICE DE COMPÉTENCES
+   ===================================================== */
+
+.qld {
+    --ink: #18273f;
+    --muted: #697991;
+    --border: #e2e9f3;
+    --primary: #285bd4;
+    --navy: #142a4d;
+    --surface: #ffffff;
+
+    color: var(--ink);
+    padding-bottom: 2rem;
+}
+
+.qld *,
+.qld *::before,
+.qld *::after {
+    box-sizing: border-box;
+}
+
+
+/* =====================================================
+   HERO / EN-TÊTE
+   ===================================================== */
+
+.qld-hero {
+    position: relative;
+    overflow: hidden;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+
+    gap: 1.5rem;
+    padding: 1.8rem;
+    margin-bottom: 1.5rem;
+
+    color: white;
+
+    background: linear-gradient(
+        115deg,
+        #132747 0%,
+        #1b3c6e 68%,
+        #285caa 100%
+    );
+
+    border-radius: 20px;
+
+    box-shadow:
+        0 16px 34px rgba(20,45,85,.13);
+}
+
+.qld-hero::after {
+    content: "";
+
+    position: absolute;
+
+    right: -70px;
+    top: -120px;
+
+    width: 285px;
+    height: 285px;
+
+    border: 1px solid rgba(255,255,255,.15);
+    border-radius: 50%;
+
+    box-shadow:
+        0 0 0 55px rgba(255,255,255,.035),
+        0 0 0 110px rgba(255,255,255,.025);
+
+    pointer-events: none;
+}
+
+.qld-hero-main {
+    position: relative;
+    z-index: 1;
+}
+
+.qld-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+
+    padding: 0;
+    margin: 0 0 1rem;
+
+    list-style: none;
+
+    color: #c4d8fa;
+
+    font-size: .76rem;
+}
+
+.qld-breadcrumb a {
+    color: #d8e6ff;
+    text-decoration: none;
+}
+
+.qld-breadcrumb a:hover {
+    color: white;
+    text-decoration: underline;
+}
+
+.qld-eyebrow {
+    display: block;
+
+    margin-bottom: .4rem;
+
+    color: #a9c6f5;
+
+    font-size: .68rem;
+    font-weight: 800;
+
+    text-transform: uppercase;
+    letter-spacing: .13em;
+}
+
+.qld-hero h1 {
+    margin: 0;
+
+    color: white;
+
+    font-size: clamp(1.5rem, 2.7vw, 2rem);
+    font-weight: 800;
+
+    letter-spacing: -.035em;
+    overflow-wrap: anywhere;
+}
+
+.qld-hero p {
+    margin: .6rem 0 0;
+
+    color: #c7d8f0;
+
+    font-size: .85rem;
+}
+
+.qld-code {
+    display: inline-block;
+
+    margin-left: .5rem;
+    padding: .25rem .55rem;
+
+    vertical-align: middle;
+
+    border: 1px solid rgba(255,255,255,.23);
+    border-radius: 6px;
+
+    color: #e4eeff;
+
+    font-size: .7rem;
+    font-weight: 700;
+
+    letter-spacing: 0;
+}
+
+.qld-readonly {
+    position: relative;
+    z-index: 1;
+
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+
+    padding: .65rem .95rem;
+
+    border: 1px solid rgba(255,255,255,.22);
+    border-radius: 999px;
+
+    background: rgba(255,255,255,.1);
+
+    color: white;
+
+    font-size: .76rem;
+    font-weight: 700;
+
+    white-space: nowrap;
+}
+
+
+/* =====================================================
+   KPI CARDS
+   ===================================================== */
+
+.qld-kpis {
+    margin-bottom: 1.5rem;
+}
+
+.qld-kpi,
+.qld-completion {
+
+    display: flex;
+    align-items: center;
+    gap: .85rem;
+
+    height: 100%;
+    min-height: 110px;
+
+    padding: 1rem;
+
+    background: white;
+
+    border: 1px solid var(--border);
+    border-radius: 15px;
+
+    box-shadow:
+        0 3px 13px rgba(23,45,84,.035);
+
+    transition:
+        transform .2s ease,
+        box-shadow .2s ease;
+}
+
+.qld-kpi:hover,
+.qld-completion:hover {
+
+    transform: translateY(-3px);
+
+    box-shadow:
+        0 12px 28px rgba(23,45,84,.08);
+}
+
+.qld-kpi-icon {
+
+    display: grid;
+    place-items: center;
+
+    flex: 0 0 42px;
+
+    width: 42px;
+    height: 42px;
+
+    border-radius: 12px;
+
+    font-size: 1rem;
+}
+
+.qld-kpi-icon.people {
+    color: #315cd3;
+    background: #edf3ff;
+}
+
+.qld-kpi-icon.operators {
+    color: #7350b9;
+    background: #f3edff;
+}
+
+.qld-kpi-icon.leaders {
+    color: #1a8b66;
+    background: #eaf7f2;
+}
+
+.qld-kpi-icon.tasks {
+    color: #ae771d;
+    background: #fff5e6;
+}
+
+.qld-kpi-value {
+
+    color: var(--ink);
+
+    font-size: 1.5rem;
+    font-weight: 800;
+
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+}
+
+.qld-kpi-label {
+
+    margin-top: .3rem;
+
+    color: var(--muted);
+
+    font-size: .73rem;
+    font-weight: 600;
+}
+
+
+/* =====================================================
+   COMPLETION
+   ===================================================== */
+
+.qld-completion {
+    gap: 1rem;
+}
+
+.qld-completion-ring {
+
+    display: grid;
+    place-items: center;
+
+    flex: 0 0 58px;
+
+    width: 58px;
+    height: 58px;
+
+    border-radius: 50%;
+
+    color: white;
+
+    font-size: .83rem;
+    font-weight: 800;
+}
+
+.qld-completion-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.qld-completion-title {
+
+    color: var(--ink);
+
+    font-size: .83rem;
+    font-weight: 800;
+}
+
+.qld-completion-desc {
+
+    margin-top: .25rem;
+
+    color: var(--muted);
+
+    font-size: .68rem;
+}
+
+.qld-progress {
+
+    height: 8px;
+
+    margin-top: .65rem;
+
+    overflow: hidden;
+
+    border-radius: 999px;
+
+    background: #eaf0f8;
+}
+
+.qld-progress .progress-bar {
+    border-radius: 999px;
+}
+
+
+/* =====================================================
+   TITRES DE SECTION
+   ===================================================== */
+
+.qld-section {
+
+    display: flex;
+    justify-content: space-between;
+    align-items: end;
+    flex-wrap: wrap;
+
+    gap: 1rem;
+
+    margin: 1.5rem 0 1rem;
+}
+
+.qld-section h2 {
+
+    margin: 0;
+
+    color: var(--ink);
+
+    font-size: 1.08rem;
+    font-weight: 800;
+
+    letter-spacing: -.02em;
+}
+
+.qld-section p {
+
+    margin: .3rem 0 0;
+
+    color: var(--muted);
+
+    font-size: .78rem;
+}
+
+.qld-hint {
+
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+
+    color: #5c7091;
+
+    font-size: .72rem;
+}
+
+
+/* =====================================================
+   LÉGENDE
+   ===================================================== */
+
+.qld-legend {
+
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+
+    gap: .5rem;
+
+    padding: .85rem;
+
+    margin-bottom: 1.2rem;
+
+    background: white;
+
+    border: 1px solid var(--border);
+    border-radius: 13px;
+}
+
+.qld-legend-title {
+
+    margin-right: .5rem;
+
+    color: #63758e;
+
+    font-size: .7rem;
+    font-weight: 800;
+
+    text-transform: uppercase;
+    letter-spacing: .07em;
+}
+
+.qld-legend-item {
+
+    display: inline-flex;
+    align-items: center;
+
+    gap: .4rem;
+
+    padding: .4rem .7rem;
+
+    border-radius: 8px;
+
+    font-size: .72rem;
+    font-weight: 700;
+}
+
+.qld-legend-dot {
+
+    flex: 0 0 9px;
+
+    width: 9px;
+    height: 9px;
+
+    border-radius: 3px;
+}
+
+.qld-legend-I {
+    color: #a85b11;
+    background: #fff2e3;
+}
+
+.qld-legend-I .qld-legend-dot {
+    background: #de8323;
+}
+
+.qld-legend-L {
+    color: #217648;
+    background: #e8f6ee;
+}
+
+.qld-legend-L .qld-legend-dot {
+    background: #279b60;
+}
+
+.qld-legend-U {
+    color: #2459b3;
+    background: #eaf2ff;
+}
+
+.qld-legend-U .qld-legend-dot {
+    background: #3476d8;
+}
+
+.qld-legend-chief {
+    color: #5c53a5;
+    background: #f0edff;
+}
+
+.qld-legend-chief .qld-legend-dot {
+    background: #7165c0;
+}
+
+.qld-legend-none {
+    color: #66758a;
+    background: #f0f3f7;
+}
+
+.qld-legend-none .qld-legend-dot {
+    background: #b3bdca;
+}
+
+
+/* =====================================================
+   CONTAINER MATRICE / TABS
+   ===================================================== */
+
+.qld-tab-shell {
+
+    overflow: hidden;
+
+    background: white;
+
+    border: 1px solid var(--border);
+    border-radius: 16px;
+
+    box-shadow:
+        0 5px 22px rgba(20,45,85,.045);
+}
+
+.qld-tabs {
+
+    display: flex;
+    flex-wrap: nowrap;
+
+    gap: .4rem;
+
+    overflow-x: auto;
+
+    padding: .75rem .8rem 0;
+
+    border-bottom: 1px solid var(--border);
+
+    scrollbar-width: thin;
+}
+
+.qld-tabs .nav-item {
+    flex: 0 0 auto;
+}
+
+.qld-tabs .nav-link {
+
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+
+    padding: .75rem 1rem;
+
+    border: 1px solid transparent;
+    border-bottom: 3px solid transparent;
+
+    border-radius: 9px 9px 0 0;
+
+    background: transparent;
+
+    color: #60718c;
+
+    font-size: .79rem;
+    font-weight: 700;
+
+    white-space: nowrap;
+
+    transition:
+        background .2s ease,
+        color .2s ease;
+}
+
+.qld-tabs .nav-link:hover {
+
+    background: #f5f8fe;
+
+    color: #224f99;
+}
+
+.qld-tabs .nav-link.active {
+
+    color: #2456bd;
+
+    background: #f3f7ff;
+
+    border-color:
+        #e7eefb
+        #e7eefb
+        #2c64cf;
+}
+
+.qld-tab-count {
+
+    display: inline-block;
+
+    padding: .15rem .45rem;
+
+    border-radius: 7px;
+
+    background: #e6edf8;
+
+    color: #4e6481;
+
+    font-size: .68rem;
+}
+
+.qld-tabs .nav-link.active .qld-tab-count {
+
+    background: #dbe8ff;
+
+    color: #2456bd;
+}
+
+.qld-matrix-note {
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+
+    gap: .5rem;
+
+    padding: .8rem 1rem;
+
+    background: #f9fbff;
+
+    border-bottom: 1px solid var(--border);
+
+    color: #697991;
+
+    font-size: .74rem;
+}
+
+.qld-tab-shell .tab-pane > .card {
+
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+}
+
+
+/* =====================================================
+   MATRICE
+   ===================================================== */
+
+.qld .matrix-wrap {
+
+    max-width: 100%;
+
+    overflow: auto;
+
+    scrollbar-color: #bdcde2 #f4f7fb;
+}
+
+.qld .matrix-table {
+
+    width: max-content;
+    min-width: 100%;
+
+    margin: 0;
+
+    border: 0 !important;
+
+    border-collapse: separate;
+    border-spacing: 0;
+
+    table-layout: auto;
+
+    font-size: .76rem;
+}
+
+
+/* En-têtes employés */
+
+.qld .matrix-table thead tr:first-child th {
+
+    position: sticky;
+    top: 0;
+
+    z-index: 12;
+
+    height: 130px;
+
+    padding: .45rem .3rem;
+
+    vertical-align: bottom;
+
+    color: #e9f1ff;
+
+    background: #203b62;
+
+    border-top: 0;
+    border-bottom: 1px solid #476081;
+    border-right: 1px solid #476081;
+}
+
+
+/* Première colonne fixe */
+
+.qld .matrix-table thead th.th-task {
+
+    position: sticky !important;
+
+    top: 0 !important;
+    left: 0;
+
+    z-index: 40 !important;
+
+    min-width: 216px;
+    width: 216px;
+    max-width: 216px;
+
+    padding: 1rem !important;
+
+    vertical-align: bottom;
+
+    background: #142b4d !important;
+
+    color: white;
+
+    text-align: left;
+
+    font-size: .8rem;
+    font-weight: 800;
+
+    box-shadow:
+        3px 0 10px rgba(13,30,56,.09);
+}
+
+
+/* Nom des employés */
+
+.qld .matrix-table thead th.th-emp-name {
+
+    min-width: 162px;
+    max-width: 180px;
+
+    text-align: center;
+
+    border-right:
+        2px solid #7a8da9 !important;
+}
+
+.qld .matrix-table thead th.qld-chief-col {
+
+    background: #3a3676 !important;
+}
+
+.qld .emp-name-wrap {
+
+    display: inline-block;
+
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+
+    transform: rotate(180deg);
+
+    max-height: 100px;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    font-size: .71rem;
+    font-weight: 750;
+
+    line-height: 1.2;
+}
+
+.qld .emp-badge {
+
+    display: block;
+
+    margin-top: .4rem;
+
+    color: #bdcde4;
+
+    font-size: .62rem;
+    font-weight: 600;
+}
+
+.qld .leader-marker {
+
+    display: inline-block;
+
+    margin-top: .3rem;
+
+    padding: .15rem .4rem;
+
+    border-radius: 4px;
+
+    background: #f1cc84;
+
+    color: #533813;
+
+    font-size: .57rem;
+    font-weight: 900;
+}
+
+
+/* En-têtes I / L / U */
+
+.qld .matrix-table thead tr:nth-child(2) th {
+
+    position: sticky;
+
+    top: 130px;
+
+    z-index: 21;
+
+    height: 31px;
+
+    padding: .3rem .15rem;
+
+    min-width: 54px;
+    width: 54px;
+    max-width: 60px;
+
+    color: white;
+
+    text-align: center;
+
+    font-size: .7rem;
+    font-weight: 900;
+
+    border-top: 0;
+
+    border-right:
+        1px solid rgba(255,255,255,.2);
+
+    border-bottom:
+        2px solid #e1e8f2;
+}
+
+.qld .matrix-table .th-level-I {
+    background: #ad641d !important;
+}
+
+.qld .matrix-table .th-level-L {
+    background: #237c51 !important;
+}
+
+.qld .matrix-table .th-level-U {
+    background: #285eaf !important;
+}
+
+
+/* Ligne tâche */
+
+.qld .matrix-table tbody th.td-task {
+
+    position: sticky;
+    left: 0;
+
+    z-index: 8;
+
+    min-width: 216px;
+    width: 216px;
+    max-width: 216px;
+
+    padding: .6rem .75rem;
+
+    background: white;
+
+    color: #283b55;
+
+    font-size: .74rem;
+    font-weight: 650;
+
+    text-align: left;
+
+    white-space: normal;
+    overflow-wrap: anywhere;
+
+    border-top: 0;
+
+    border-right:
+        2px solid #cbd8eb;
+
+    border-bottom:
+        1px solid #e8eef5;
+
+    box-shadow:
+        3px 0 8px rgba(16,35,62,.035);
+}
+
+.qld-task-id {
+
+    display: inline-block;
+
+    margin-right: .35rem;
+
+    padding: .15rem .3rem;
+
+    border-radius: 4px;
+
+    color: #6380a4;
+
+    background: #eef3f9;
+
+    font-size: .64rem;
+    font-weight: 800;
+}
+
+
+/* Cellules */
+
+.qld .matrix-table tbody td {
+
+    height: 43px;
+
+    padding: .28rem .12rem;
+
+    min-width: 54px;
+    width: 54px;
+    max-width: 60px;
+
+    text-align: center;
+    vertical-align: middle;
+
+    border-top: 0;
+
+    border-right:
+        1px solid #eaf0f5;
+
+    border-bottom:
+        1px solid #eaf0f5;
+
+    font-size: .73rem;
+    font-weight: 850;
+
+    font-variant-numeric: tabular-nums;
+}
+
+
+/* Niveau I */
+
+.qld .matrix-table tbody td.cell-I-filled {
+
+    background: #fff4e7;
+
+    color: #a85b13;
+}
+
+
+/* Niveau L */
+
+.qld .matrix-table tbody td.cell-L-filled {
+
+    background: #eaf7ee;
+
+    color: #1e7a4a;
+}
+
+
+/* Niveau U */
+
+.qld .matrix-table tbody td.cell-U-filled {
+
+    background: #eaf2ff;
+
+    color: #245cae;
+}
+
+
+/* Cellule vide */
+
+.qld .matrix-table tbody td.cell-empty {
+
+    background: #fafbfd;
+
+    color: #c4cedb;
+
+    font-weight: 450;
+}
+
+
+/* Dates */
+
+.qld .cell-date {
+
+    display: block;
+
+    margin-top: .15rem;
+
+    color: #77869c;
+
+    font-size: .55rem;
+    font-weight: 550;
+
+    line-height: 1.2;
+
+    white-space: nowrap;
+}
+
+
+/* Séparateurs */
+
+.qld .matrix-table .col-leader-first {
+
+    border-left:
+        3px solid #7665c0 !important;
+}
+
+.qld .matrix-table .col-leader {
+
+    border-left:
+        1px solid #c8c0ed !important;
+}
+
+.qld .matrix-table .emp-separator {
+
+    border-right:
+        2px solid #c6d3e5 !important;
+}
+
+
+/* Groupes de tâches */
+
+.qld .matrix-table .group-row td {
+
+    position: relative;
+
+    z-index: 1;
+
+    padding: .65rem 1rem;
+
+    color: white !important;
+
+    background: #34547e !important;
+
+    text-align: left !important;
+
+    font-size: .71rem;
+    font-weight: 800;
+
+    letter-spacing: .05em;
+    text-transform: uppercase;
+
+    border: 0;
+}
+
+
+/* Hover */
+
+.qld .matrix-table tbody tr:not(.group-row):hover > td,
+.qld .matrix-table tbody tr:not(.group-row):hover > th {
+
+    filter: brightness(.975);
+}
+
+
+/* État vide */
+
+.qld-empty {
+
+    padding: 3rem 1.25rem;
+
+    text-align: center;
+
+    color: #7989a0;
+}
+
+.qld-empty i {
+
+    display: block;
+
+    margin-bottom: .75rem;
+
+    color: #a9bbd5;
+
+    font-size: 2rem;
+}
+
+
+/* =====================================================
+   INFORMATIONS CHEF D'ÉQUIPE
+   ===================================================== */
+
+.qld-leader-info {
+
+    padding: 1.1rem 1.25rem;
+
+    background: linear-gradient(
+        90deg,
+        #f0f5ff,
+        #fafcff
+    );
+
+    border-bottom: 1px solid var(--border);
+}
+
+.qld-avatar {
+
+    display: grid;
+    place-items: center;
+
+    flex: 0 0 44px;
+
+    width: 44px;
+    height: 44px;
+
+    border-radius: 12px;
+
+    color: #325cb0;
+
+    background: #dfeaff;
+
+    font-size: .85rem;
+    font-weight: 800;
+}
+
+.qld-leader-name {
+
+    font-size: .87rem;
+    font-weight: 800;
+}
+
+.qld-leader-username {
+
+    color: #7887a0;
+
+    font-size: .7rem;
+}
+
+.qld-mini-stat {
+
+    min-width: 75px;
+
+    padding: .2rem .75rem;
+
+    border-left: 1px solid #dfe7f4;
+
+    text-align: center;
+}
+
+.qld-mini-stat strong {
+
+    display: block;
+
+    font-size: 1.05rem;
+    font-weight: 800;
+}
+
+.qld-mini-stat span {
+
+    display: block;
+
+    color: #718199;
+
+    font-size: .66rem;
+}
+
+
+/* =====================================================
+   TABLEAU RÉCAPITULATIF
+   ===================================================== */
+
+.qld-summary {
+
+    margin-top: 1.5rem;
+
+    overflow: hidden;
+
+    border: 1px solid var(--border);
+    border-radius: 16px;
+
+    background: white;
+
+    box-shadow:
+        0 5px 20px rgba(22,47,88,.045);
+}
+
+.qld-summary-head {
+
+    padding: 1.2rem;
+
+    border-bottom: 1px solid var(--border);
+}
+
+.qld-summary-head h2 {
+
+    margin: 0;
+
+    font-size: 1.04rem;
+    font-weight: 800;
+}
+
+.qld-summary-head p {
+
+    margin: .35rem 0 0;
+
+    color: var(--muted);
+
+    font-size: .76rem;
+}
+
+.qld-summary-table {
+
+    margin: 0;
+
+    white-space: nowrap;
+
+    font-size: .78rem;
+}
+
+.qld-summary-table thead th {
+
+    padding: .9rem 1rem;
+
+    background: #f5f8fc;
+
+    color: #62758d;
+
+    border-bottom: 1px solid var(--border);
+
+    font-size: .71rem;
+    font-weight: 800;
+}
+
+.qld-summary-table tbody td {
+
+    padding: .9rem 1rem;
+
+    vertical-align: middle;
+
+    border-bottom: 1px solid #edf1f7;
+}
+
+.qld-summary-table tbody tr:last-child td {
+
+    border-bottom: 0;
+}
+
+.qld-summary-table tbody tr:hover {
+
+    background: #fafcff;
+}
+
+.qld-summary-avatar {
+
+    display: grid;
+    place-items: center;
+
+    flex: 0 0 34px;
+
+    width: 34px;
+    height: 34px;
+
+    border-radius: 9px;
+
+    color: #2e5cba;
+
+    background: #e7efff;
+
+    font-size: .68rem;
+    font-weight: 850;
+}
+
+.qld-summary-name {
+
+    font-size: .78rem;
+    font-weight: 750;
+}
+
+.qld-summary-user {
+
+    color: #8390a3;
+
+    font-size: .69rem;
+}
+
+.qld-value-pill {
+
+    display: inline-block;
+
+    min-width: 35px;
+
+    padding: .3rem .5rem;
+
+    border-radius: 7px;
+
+    color: #395b86;
+
+    background: #edf3fb;
+
+    font-size: .72rem;
+    font-weight: 800;
+
+    text-align: center;
+}
+
+.qld-pct {
+
+    font-weight: 850;
+
+    font-variant-numeric: tabular-nums;
+}
+
+
+/* =====================================================
+   RESPONSIVE
+   ===================================================== */
+
+@media (max-width: 767px) {
+
+    .qld-hero {
+
+        padding: 1.3rem;
+
+        border-radius: 16px;
     }
 
-    /* En-têtes */
-    .matrix-table thead th {
-        position:sticky; top:0; z-index:12;
-        background:#1a237e; color:#fff;
-        font-weight:600; font-size:.68rem;
-        padding:4px 2px; text-align:center;
-        white-space:nowrap;
-        border-right:1px solid rgba(255,255,255,.1);
-    }
-    .matrix-table thead th.th-task {
-        position:sticky; left:0; z-index:20;
-        background:#0d1b6e; text-align:left;
-        padding-left:10px;
-        min-width:200px; max-width:240px;
-    }
-    /* ✅ En-tête I / L / U au-dessus des colonnes */
-    .matrix-table thead th.th-level {
-        font-size:.70rem;
-        min-width:52px; max-width:60px;
-        padding:3px 1px;
-    }
-    .th-level-I { background:#e65100 !important; }
-    .th-level-L { background:#2e7d32 !important; }
-    .th-level-U { background:#1565c0 !important; }
+    .qld-kpi {
 
-    /* En-têtes employés (ligne du haut) */
-    .matrix-table thead th.th-emp-name {
-        min-width:156px; max-width:180px;
-        height:120px; vertical-align:bottom;
-        padding-bottom:6px;
-    }
-    .th-emp-name .emp-name-wrap {
-        writing-mode:vertical-rl;
-        text-orientation:mixed;
-        transform:rotate(180deg);
-        display:inline-block;
-        font-size:.68rem; line-height:1.2;
-        max-height:100px;
-        overflow:hidden; text-overflow:ellipsis;
-    }
-    .th-emp-name .emp-badge {
-        display:block; margin-top:3px;
-        font-size:.58rem; opacity:.7;
-    }
-    .leader-marker {
-        font-size:.55rem; background:#ff6f00; color:#fff;
-        border-radius:3px; padding:1px 3px;
-        display:block; margin-top:2px;
+        padding: .8rem;
+
+        gap: .5rem;
+
+        min-height: 95px;
     }
 
-    /* Colonnes données */
-    .matrix-table tbody th.td-task {
-        position:sticky; left:0; z-index:8;
-        background:#f8f9fa; font-weight:500;
-        font-size:.76rem; padding:4px 8px;
-        border-right:2px solid #dee2e6;
-        white-space:normal; max-width:240px;
-        border-bottom:1px solid #e9ecef;
-    }
-    .matrix-table tbody td {
-        text-align:center; vertical-align:middle;
-        padding:2px 1px; border:1px solid #e9ecef;
-        min-width:52px; max-width:60px;
+    .qld-kpi-icon {
+
+        flex-basis: 35px;
+
+        width: 35px;
+        height: 35px;
     }
 
-    /* ✅ Cellules niveaux */
-    .cell-I-filled {
-        background:#fff8e1; color:#e65100;
-        font-weight:800; font-size:.78rem;
-    }
-    .cell-L-filled {
-        background:#e8f5e9; color:#1b5e20;
-        font-weight:800; font-size:.78rem;
-    }
-    .cell-U-filled {
-        background:#e3f2fd; color:#0d47a1;
-        font-weight:800; font-size:.78rem;
-    }
-    .cell-empty {
-        background:#fafafa; color:#e0e0e0;
-    }
-    .cell-date {
-        font-size:.55rem; color:#9e9e9e;
-        display:block; line-height:1; margin-top:1px;
+    .qld-section {
+
+        align-items: start;
     }
 
-    /* Chef d'équipe */
-    .col-leader {
-        border-left:2px solid #5c6bc0 !important;
-    }
-    .col-leader-first {
-        border-left:3px solid #283593 !important;
+    .qld-hint {
+
+        width: 100%;
     }
 
-    /* Séparateur entre employés */
-    .emp-separator {
-        border-right:2px solid #bdbdbd !important;
+    .qld .matrix-table thead th.th-task,
+    .qld .matrix-table tbody th.td-task {
+
+        min-width: 170px;
+
+        width: 170px;
+        max-width: 170px;
     }
 
-    /* Groupe */
-    .group-row td {
-        background:#283593!important; color:#fff!important;
-        font-weight:700; font-size:.70rem;
-        text-transform:uppercase; letter-spacing:.6px;
-        padding:5px 10px; text-align:left!important;
+    .qld-mini-stat {
+
+        min-width: 60px;
+
+        padding: .25rem .45rem;
     }
 
-    /* ══ LÉGENDE ══════════════════════════════════════════ */
-    .legend { display:flex; flex-wrap:wrap; gap:.5rem; }
-    .legend-item {
-        display:inline-flex; align-items:center;
-        gap:5px; padding:3px 10px;
-        border-radius:20px; font-size:.76rem; font-weight:600;
-    }
-    .legend-dot { width:12px; height:12px; border-radius:3px; }
+}
 
-    /* ══ KPIs ═════════════════════════════════════════════ */
-    .kpi-box {
-        text-align:center; padding:.75rem; border-radius:10px;
-    }
-    .kpi-box .num { font-size:1.5rem; font-weight:800; line-height:1; }
-    .kpi-box .lbl { font-size:.70rem; color:#757575; margin-top:3px; }
+@media (prefers-reduced-motion: reduce) {
 
-    .completion-ring {
-        width:50px; height:50px; border-radius:50%;
-        display:flex; align-items:center; justify-content:center;
-        font-weight:800; font-size:.82rem; color:#fff;
+    .qld * {
+        scroll-behavior: auto !important;
     }
 
-    /* Tabs */
-    .nav-tabs .nav-link { font-size:.84rem; font-weight:600; color:#555; }
-    .nav-tabs .nav-link.active { color:#1a237e; border-bottom:2px solid #1a237e; }
+    .qld-kpi,
+    .qld-completion {
+
+        transition: none;
+    }
+
+    .qld-kpi:hover,
+    .qld-completion:hover {
+
+        transform: none;
+    }
+}
+
 </style>
+
 {% endblock %}
+
 
 
 {% block content %}
 
-<!-- ══ BREADCRUMB + TITRE ══════════════════════════════════════════ -->
-<div class="d-flex justify-content-between align-items-start mb-4">
-    <div>
-        <nav aria-label="breadcrumb" class="mb-1">
-            <ol class="breadcrumb mb-0" style="font-size:.8rem;">
-                <li class="breadcrumb-item">
-                    <a href="{% url 'quality_dashboard' %}" class="text-decoration-none">
-                        <i class="fas fa-chart-pie me-1"></i>Dashboard
+<div class="qld">
+
+
+<!-- =====================================================
+     HERO / EN-TÊTE
+     ===================================================== -->
+
+<header class="qld-hero">
+
+    <div class="qld-hero-main">
+
+        <nav aria-label="Fil d'Ariane">
+
+            <ol class="qld-breadcrumb">
+
+                <li>
+                    <a href="{% url 'quality_dashboard' %}">
+
+                        <i class="fas fa-chart-pie me-1"></i>
+
+                        Tableau de bord
+
                     </a>
                 </li>
-                <li class="breadcrumb-item active">{{ line.name }}</li>
+
+                <li aria-hidden="true">/</li>
+
+                <li aria-current="page">
+                    {{ line.name }}
+                </li>
+
             </ol>
+
         </nav>
-        <h4 class="fw-bold mb-0">
-            <i class="fas fa-industry me-2 text-primary"></i>
+
+
+        <span class="qld-eyebrow">
+
+            Matrice de compétences · Détail de ligne
+
+        </span>
+
+
+        <h1>
+
+            <i class="fas fa-industry me-2"></i>
+
             {{ line.name }}
-            <small class="text-muted fw-normal" style="font-size:.75rem;">
+
+            <span class="qld-code">
                 {{ line.code }}
-            </small>
-        </h4>
+            </span>
+
+        </h1>
+
+
+        <p>
+
+            Consultez les compétences,
+            les équipes et l'avancement de la ligne.
+
+        </p>
+
     </div>
-    <span class="badge bg-info-subtle text-info fs-6 py-2 px-3">
-        <i class="fas fa-eye me-1"></i>Lecture seule
+
+
+    <span class="qld-readonly">
+
+        <i class="fas fa-eye"></i>
+
+        Lecture seule
+
     </span>
-</div>
 
-<!-- ══ KPIs ═══════════════════════════════════════════════════════ -->
-<div class="row g-3 mb-4">
-    <div class="col-6 col-md-2">
-        <div class="kpi-box" style="background:#e8eaf6;">
-            <div class="num text-primary">{{ stats.total_employees }}</div>
-            <div class="lbl">Total</div>
-        </div>
-    </div>
-    <div class="col-6 col-md-2">
-        <div class="kpi-box" style="background:#f3e5f5;">
-            <div class="num" style="color:#6a1b9a;">{{ stats.total_operators }}</div>
-            <div class="lbl">Opérateurs</div>
-        </div>
-    </div>
-    <div class="col-6 col-md-2">
-        <div class="kpi-box" style="background:#e3f2fd;">
-            <div class="num text-primary">{{ stats.total_leaders }}</div>
-            <div class="lbl">Chefs</div>
-        </div>
-    </div>
-    <div class="col-6 col-md-2">
-        <div class="kpi-box" style="background:#e8f5e9;">
-            <div class="num text-success">{{ stats.total_tasks }}</div>
-            <div class="lbl">Tâches</div>
-        </div>
-    </div>
-    <div class="col-12 col-md-4">
-        <div class="card border-0 h-100" style="background:#fff8e1;">
-            <div class="card-body d-flex align-items-center gap-3 py-2">
-                <div class="completion-ring"
-                     style="background:{% if stats.completion_rate >= 70 %}#2e7d32{% elif stats.completion_rate >= 40 %}#f57f17{% else %}#c62828{% endif %};">
-                    {{ stats.completion_rate }}%
-                </div>
-                <div>
-                    <div class="fw-bold" style="font-size:.88rem;">Taux de Complétion</div>
-                    <div class="progress mt-1" style="height:6px; width:140px;">
-                        <div class="progress-bar
-                            {% if stats.completion_rate >= 70 %}bg-success
-                            {% elif stats.completion_rate >= 40 %}bg-warning
-                            {% else %}bg-danger{% endif %}"
-                             style="width:{{ stats.completion_rate }}%"></div>
-                    </div>
-                </div>
+</header>
+
+
+
+<!-- =====================================================
+     INDICATEURS
+     ===================================================== -->
+
+<div class="row g-3 qld-kpis">
+
+
+    <!-- EFFECTIF TOTAL -->
+
+    <div class="col-6 col-lg-2">
+
+        <div class="qld-kpi">
+
+            <div class="qld-kpi-icon people">
+
+                <i class="fas fa-users"></i>
+
             </div>
+
+            <div>
+
+                <div class="qld-kpi-value">
+
+                    {{ stats.total_employees }}
+
+                </div>
+
+                <div class="qld-kpi-label">
+
+                    Effectif total
+
+                </div>
+
+            </div>
+
         </div>
+
     </div>
+
+
+
+    <!-- OPÉRATEURS -->
+
+    <div class="col-6 col-lg-2">
+
+        <div class="qld-kpi">
+
+            <div class="qld-kpi-icon operators">
+
+                <i class="fas fa-hard-hat"></i>
+
+            </div>
+
+            <div>
+
+                <div class="qld-kpi-value">
+
+                    {{ stats.total_operators }}
+
+                </div>
+
+                <div class="qld-kpi-label">
+
+                    Opérateurs
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- CHEFS D'ÉQUIPE -->
+
+    <div class="col-6 col-lg-2">
+
+        <div class="qld-kpi">
+
+            <div class="qld-kpi-icon leaders">
+
+                <i class="fas fa-user-tie"></i>
+
+            </div>
+
+            <div>
+
+                <div class="qld-kpi-value">
+
+                    {{ stats.total_leaders }}
+
+                </div>
+
+                <div class="qld-kpi-label">
+
+                    Chefs d'équipe
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- TÂCHES -->
+
+    <div class="col-6 col-lg-2">
+
+        <div class="qld-kpi">
+
+            <div class="qld-kpi-icon tasks">
+
+                <i class="fas fa-tasks"></i>
+
+            </div>
+
+            <div>
+
+                <div class="qld-kpi-value">
+
+                    {{ stats.total_tasks }}
+
+                </div>
+
+                <div class="qld-kpi-label">
+
+                    Tâches
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- TAUX DE COMPLÉTION -->
+
+    <div class="col-12 col-lg-4">
+
+        <div class="qld-completion">
+
+
+            <div class="qld-completion-ring"
+
+                 style="
+                 background:
+                 {% if stats.completion_rate >= 70 %}
+                     #258557
+                 {% elif stats.completion_rate >= 40 %}
+                     #d69a31
+                 {% else %}
+                     #cb5961
+                 {% endif %};
+                 ">
+
+                {{ stats.completion_rate }}%
+
+            </div>
+
+
+
+            <div class="qld-completion-content">
+
+                <div class="qld-completion-title">
+
+                    Taux de complétion
+
+                </div>
+
+                <div class="qld-completion-desc">
+
+                    Progression globale des compétences
+
+                </div>
+
+
+                <div class="progress qld-progress"
+                     role="progressbar"
+                     aria-label="Complétion globale"
+                     aria-valuemin="0"
+                     aria-valuemax="100"
+                     aria-valuenow="{{ stats.completion_rate|default:0 }}">
+
+
+                    <div class="progress-bar
+
+                        {% if stats.completion_rate >= 70 %}
+                            bg-success
+                        {% elif stats.completion_rate >= 40 %}
+                            bg-warning
+                        {% else %}
+                            bg-danger
+                        {% endif %}"
+
+                         style="
+                         width: {{ stats.completion_rate|default:0 }}%;
+                         ">
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
 </div>
 
-<!-- ══ LÉGENDE ════════════════════════════════════════════════════ -->
-<div class="legend mb-3">
-    <div class="legend-item" style="background:#fff8e1; color:#e65100;">
-        <div class="legend-dot" style="background:#ff9800;"></div>I — En formation
+
+
+<!-- =====================================================
+     SECTION MATRICE
+     ===================================================== -->
+
+<div class="qld-section">
+
+    <div>
+
+        <h2>
+            Matrice de compétences
+        </h2>
+
+        <p>
+
+            Explorez la vue globale ou les compétences
+            par chef d'équipe.
+
+        </p>
+
     </div>
-    <div class="legend-item" style="background:#e8f5e9; color:#1b5e20;">
-        <div class="legend-dot" style="background:#4caf50;"></div>L — Approuvé
-    </div>
-    <div class="legend-item" style="background:#e3f2fd; color:#0d47a1;">
-        <div class="legend-dot" style="background:#2196f3;"></div>U — Formateur
-    </div>
-    <div class="legend-item" style="background:#e8eaf6; color:#283593;">
-        <div class="legend-dot" style="background:#5c6bc0;"></div>Chef d'équipe
-    </div>
-    <div class="legend-item bg-light text-muted">
-        <div class="legend-dot" style="background:#e0e0e0;"></div>Non formé
-    </div>
+
+
+    <span class="qld-hint">
+
+        <i class="fas fa-arrows-alt-h"></i>
+
+        Faites défiler horizontalement pour consulter
+        tous les employés.
+
+    </span>
+
 </div>
 
-<!-- ══ ONGLETS ════════════════════════════════════════════════════ -->
-<ul class="nav nav-tabs mb-0">
-    <li class="nav-item">
-        <button class="nav-link active" data-bs-toggle="tab"
-                data-bs-target="#tab-global" type="button">
-            <i class="fas fa-globe me-1"></i>Vue Globale
-            <span class="badge bg-secondary rounded-pill ms-1">{{ employees|length }}</span>
-        </button>
-    </li>
-    {% for item in matrices_by_leader %}
-    <li class="nav-item">
-        <button class="nav-link" data-bs-toggle="tab"
-                data-bs-target="#tab-leader-{{ item.leader.id }}" type="button">
-            <i class="fas fa-user-tie me-1"></i>{{ item.leader_name }}
-            <span class="badge bg-primary rounded-pill ms-1">{{ item.operator_count }}</span>
-        </button>
-    </li>
-    {% endfor %}
-</ul>
 
-<!-- ══ CONTENU ONGLETS ════════════════════════════════════════════ -->
-<div class="tab-content">
 
-    <!-- ────────────────────────────────────────────────────────
-         VUE GLOBALE
-    ──────────────────────────────────────────────────────────── -->
-    <div class="tab-pane fade show active" id="tab-global">
-        <div class="card border-0 shadow-sm border-top-0 rounded-top-0">
-            <div class="card-body p-0">
-                {% if employees %}
-                <div class="matrix-wrap" style="max-height:75vh; overflow:auto;">
-                    <table class="matrix-table table table-bordered mb-0">
+<!-- =====================================================
+     LÉGENDE
+     ===================================================== -->
 
-                        <!-- ✅ DOUBLE EN-TÊTE : Nom + I/L/U -->
-                        <thead>
-                            <!-- Ligne 1 : Noms des employés (colspan=3) -->
-                            <tr>
-                                <th class="th-task" rowspan="2"
-                                    style="vertical-align:bottom;">
-                                    <i class="fas fa-tasks me-1 opacity-75"></i>Tâche
-                                </th>
-                                {% for emp in employees %}
-                                <th class="th-emp-name" colspan="3"
-                                    style="border-right:2px solid rgba(255,255,255,.3);
-                                    {% for lid, lemp in team_leader_employees.items %}
-                                        {% if lemp.id == emp.id %}background:#283593;{% endif %}
-                                    {% endfor %}">
-                                    <span class="emp-name-wrap"
-                                          title="{{ emp.last_name }} {{ emp.first_name }} ({{ emp.matricule }})">
-                                        {{ emp.last_name }} {{ emp.first_name|first }}.
-                                    </span>
-                                    {% for lid, lemp in team_leader_employees.items %}
-                                        {% if lemp.id == emp.id %}
-                                        <span class="leader-marker">Chef</span>
-                                        {% endif %}
+<div class="qld-legend">
+
+
+    <span class="qld-legend-title">
+
+        Légende
+
+    </span>
+
+
+
+    <span class="qld-legend-item qld-legend-I">
+
+        <span class="qld-legend-dot"></span>
+
+        I — En formation
+
+    </span>
+
+
+
+    <span class="qld-legend-item qld-legend-L">
+
+        <span class="qld-legend-dot"></span>
+
+        L — Approuvé
+
+    </span>
+
+
+
+    <span class="qld-legend-item qld-legend-U">
+
+        <span class="qld-legend-dot"></span>
+
+        U — Formateur
+
+    </span>
+
+
+
+    <span class="qld-legend-item qld-legend-chief">
+
+        <span class="qld-legend-dot"></span>
+
+        Chef d'équipe
+
+    </span>
+
+
+
+    <span class="qld-legend-item qld-legend-none">
+
+        <span class="qld-legend-dot"></span>
+
+        Non formé
+
+    </span>
+
+
+</div>
+
+
+
+<!-- =====================================================
+     CONTAINER DES MATRICES
+     ===================================================== -->
+
+<div class="qld-tab-shell">
+
+
+    <!-- NAVIGATION -->
+
+    <ul class="nav qld-tabs" role="tablist">
+
+
+        <!-- VUE GLOBALE -->
+
+        <li class="nav-item">
+
+            <button class="nav-link active"
+                    data-bs-toggle="tab"
+                    data-bs-target="#tab-global"
+                    type="button">
+
+                <i class="fas fa-globe"></i>
+
+                Vue globale
+
+                <span class="qld-tab-count">
+
+                    {{ employees|length }}
+
+                </span>
+
+            </button>
+
+        </li>
+
+
+
+        <!-- CHEFS D'ÉQUIPE -->
+
+        {% for item in matrices_by_leader %}
+
+        <li class="nav-item">
+
+            <button class="nav-link"
+                    data-bs-toggle="tab"
+                    data-bs-target="#tab-leader-{{ item.leader.id }}"
+                    type="button">
+
+                <i class="fas fa-user-tie"></i>
+
+                {{ item.leader_name }}
+
+                <span class="qld-tab-count">
+
+                    {{ item.operator_count }}
+
+                </span>
+
+            </button>
+
+        </li>
+
+        {% endfor %}
+
+
+    </ul>
+
+
+
+    <!-- =================================================
+         CONTENU DES ONGLETS
+         ================================================= -->
+
+    <div class="tab-content">
+
+
+
+        <!-- =============================================
+             VUE GLOBALE
+             ============================================= -->
+
+        <div class="tab-pane fade show active"
+             id="tab-global">
+
+
+            <div class="card border-0">
+
+                <div class="card-body p-0">
+
+
+                    {% if employees %}
+
+
+                    <!-- INFORMATION MATRICE -->
+
+                    <div class="qld-matrix-note">
+
+                        <span>
+
+                            <i class="fas fa-table me-1"></i>
+
+                            Vue globale de la ligne
+
+                        </span>
+
+
+                        <span>
+
+                            {{ employees|length }} personnes
+
+                            ·
+
+                            {{ tasks|length }} tâches
+
+                        </span>
+
+                    </div>
+
+
+
+                    <!-- MATRICE GLOBALE -->
+
+                    <div class="matrix-wrap"
+                         style="max-height:75vh;">
+
+
+                        <table class="matrix-table table mb-0">
+
+
+                            <!-- EN-TÊTES -->
+
+                            <thead>
+
+
+                                <!-- PREMIÈRE LIGNE -->
+
+                                <tr>
+
+
+                                    <!-- TÂCHE -->
+
+                                    <th class="th-task"
+                                        rowspan="2"
+                                        scope="col">
+
+                                        <i class="fas fa-tasks me-1"></i>
+
+                                        Tâche
+
+                                    </th>
+
+
+
+                                    <!-- EMPLOYÉS -->
+
+                                    {% for emp in employees %}
+
+
+                                    <th class="th-emp-name
+
+                                        {% for lid, lemp in team_leader_employees.items %}
+
+                                            {% if lemp.id == emp.id %}
+
+                                                qld-chief-col
+
+                                            {% endif %}
+
+                                        {% endfor %}"
+
+                                        colspan="3"
+                                        scope="colgroup">
+
+
+                                        <!-- NOM -->
+
+                                        <span class="emp-name-wrap"
+
+                                              title="{{ emp.last_name }} {{ emp.first_name }} ({{ emp.matricule }})">
+
+
+                                            {{ emp.last_name }}
+
+                                            {{ emp.first_name|first }}.
+
+
+                                        </span>
+
+
+
+                                        <!-- MARQUEUR CHEF -->
+
+                                        {% for lid, lemp in team_leader_employees.items %}
+
+                                            {% if lemp.id == emp.id %}
+
+                                                <span class="leader-marker">
+
+                                                    Chef
+
+                                                </span>
+
+                                            {% endif %}
+
+                                        {% endfor %}
+
+
+
+                                        <!-- MATRICULE -->
+
+                                        <span class="emp-badge">
+
+                                            {{ emp.matricule }}
+
+                                        </span>
+
+
+                                    </th>
+
+
                                     {% endfor %}
-                                    <span class="emp-badge">{{ emp.matricule }}</span>
-                                </th>
-                                {% endfor %}
-                            </tr>
 
-                            <!-- Ligne 2 : I / L / U pour chaque employé -->
-                            <tr>
-                                {% for emp in employees %}
-                                <th class="th-level th-level-I">I</th>
-                                <th class="th-level th-level-L">L</th>
-                                <th class="th-level th-level-U"
-                                    style="border-right:2px solid rgba(255,255,255,.3);">U</th>
-                                {% endfor %}
-                            </tr>
-                        </thead>
 
-                        <tbody>
-                        {% for row in global_matrix_rows %}
+                                </tr>
 
-                            <!-- Séparateur de groupe -->
-                            {% if row.group_changed and row.group_title %}
-                            <tr class="group-row">
-                                <td colspan="{{ employees|length|add:employees|length|add:employees|length|add:1 }}">
-                                    <i class="fas fa-layer-group me-1"></i>
-                                    {{ row.group_title }}
-                                </td>
-                            </tr>
-                            {% endif %}
 
-                            <tr>
-                                <!-- Tâche -->
-                                <th class="td-task">
-                                    <span class="text-muted me-1" style="font-size:.68rem;">
-                                        {{ row.task.task_number }}
-                                    </span>
-                                    {{ row.task.title|truncatechars:36 }}
-                                </th>
 
-                                <!-- ✅ 3 colonnes par employé : I / L / U -->
-                                {% for cell in row.cells %}
+                                <!-- DEUXIÈME LIGNE I / L / U -->
 
-                                    <!-- Colonne I -->
-                                    <td class="{% if cell.has_I %}cell-I-filled{% else %}cell-empty{% endif %}
-                                               {% if cell.is_team_leader %}col-leader-first{% endif %}">
+                                <tr>
+
+
+                                    {% for emp in employees %}
+
+
+                                    <th class="th-level th-level-I"
+                                        scope="col">
+
+                                        I
+
+                                    </th>
+
+
+                                    <th class="th-level th-level-L"
+                                        scope="col">
+
+                                        L
+
+                                    </th>
+
+
+                                    <th class="th-level th-level-U"
+                                        scope="col"
+
+                                        style="
+                                        border-right:
+                                        2px solid rgba(255,255,255,.3);
+                                        ">
+
+                                        U
+
+                                    </th>
+
+
+                                    {% endfor %}
+
+
+                                </tr>
+
+
+                            </thead>
+
+
+
+                            <!-- CONTENU MATRICE -->
+
+                            <tbody>
+
+
+                                {% for row in global_matrix_rows %}
+
+
+
+                                <!-- GROUPE DE TÂCHES -->
+
+                                {% if row.group_changed and row.group_title %}
+
+
+                                <tr class="group-row">
+
+
+                                    <td colspan="{{ employees|length|add:employees|length|add:employees|length|add:1 }}">
+
+
+                                        <i class="fas fa-layer-group me-1"></i>
+
+                                        {{ row.group_title }}
+
+
+                                    </td>
+
+
+                                </tr>
+
+
+                                {% endif %}
+
+
+
+                                <!-- LIGNE TÂCHE -->
+
+                                <tr>
+
+
+                                    <th class="td-task"
+                                        scope="row"
+                                        title="{{ row.task.title }}">
+
+
+                                        <span class="qld-task-id">
+
+                                            {{ row.task.task_number }}
+
+                                        </span>
+
+
+                                        {{ row.task.title|truncatechars:36 }}
+
+
+                                    </th>
+
+
+
+                                    <!-- CELLULES EMPLOYÉS -->
+
+                                    {% for cell in row.cells %}
+
+
+
+                                    <!-- NIVEAU I -->
+
+                                    <td class="
+
                                         {% if cell.has_I %}
+                                            cell-I-filled
+                                        {% else %}
+                                            cell-empty
+                                        {% endif %}
+
+                                        {% if cell.is_team_leader %}
+                                            col-leader-first
+                                        {% endif %}
+
+                                        ">
+
+
+                                        {% if cell.has_I %}
+
+
                                             I
-                                            <span class="cell-date">{{ cell.date_I }}</span>
+
+
+                                            <span class="cell-date">
+
+                                                {{ cell.date_I }}
+
+                                            </span>
+
+
                                         {% else %}
+
                                             —
+
                                         {% endif %}
+
+
                                     </td>
 
-                                    <!-- Colonne L -->
-                                    <td class="{% if cell.has_L %}cell-L-filled{% else %}cell-empty{% endif %}
-                                               {% if cell.is_team_leader %}col-leader{% endif %}">
+
+
+                                    <!-- NIVEAU L -->
+
+                                    <td class="
+
                                         {% if cell.has_L %}
+                                            cell-L-filled
+                                        {% else %}
+                                            cell-empty
+                                        {% endif %}
+
+                                        {% if cell.is_team_leader %}
+                                            col-leader
+                                        {% endif %}
+
+                                        ">
+
+
+                                        {% if cell.has_L %}
+
+
                                             L
-                                            <span class="cell-date">{{ cell.date_L }}</span>
+
+
+                                            <span class="cell-date">
+
+                                                {{ cell.date_L }}
+
+                                            </span>
+
+
                                         {% else %}
+
                                             —
+
                                         {% endif %}
+
+
                                     </td>
 
-                                    <!-- Colonne U -->
-                                    <td class="{% if cell.has_U %}cell-U-filled{% else %}cell-empty{% endif %}
-                                               {% if cell.is_team_leader %}col-leader{% endif %}
-                                               emp-separator">
+
+
+                                    <!-- NIVEAU U -->
+
+                                    <td class="
+
                                         {% if cell.has_U %}
+                                            cell-U-filled
+                                        {% else %}
+                                            cell-empty
+                                        {% endif %}
+
+                                        {% if cell.is_team_leader %}
+                                            col-leader
+                                        {% endif %}
+
+                                        emp-separator
+
+                                        ">
+
+
+                                        {% if cell.has_U %}
+
+
                                             U
-                                            <span class="cell-date">{{ cell.date_U }}</span>
+
+
+                                            <span class="cell-date">
+
+                                                {{ cell.date_U }}
+
+                                            </span>
+
+
                                         {% else %}
+
                                             —
+
                                         {% endif %}
+
+
                                     </td>
 
+
+
+                                    {% endfor %}
+
+
+                                </tr>
+
+
+
                                 {% endfor %}
-                            </tr>
-                        {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-                {% else %}
-                <div class="text-center text-muted py-5">
-                    <i class="fas fa-table fa-3x d-block mb-2 opacity-25"></i>
-                    Aucun employé sur cette ligne
-                </div>
-                {% endif %}
-            </div>
-        </div>
-    </div>
 
-    <!-- ────────────────────────────────────────────────────────
-         ONGLETS PAR CHEF D'ÉQUIPE
-    ──────────────────────────────────────────────────────────── -->
-    {% for item in matrices_by_leader %}
-    <div class="tab-pane fade" id="tab-leader-{{ item.leader.id }}">
-        <div class="card border-0 shadow-sm border-top-0 rounded-top-0">
 
-            <!-- Info chef -->
-            <div class="card-header border-0 py-3" style="background:#e8eaf6;">
-                <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
-                    <div class="d-flex align-items-center gap-3">
-                        <div class="rounded-circle bg-primary text-white
-                                    d-flex align-items-center justify-content-center"
-                             style="width:46px;height:46px;font-size:1rem;font-weight:700;">
-                            {{ item.leader.first_name|first|upper }}{{ item.leader.last_name|first|upper }}
-                        </div>
-                        <div>
-                            <div class="fw-bold">{{ item.leader_name }}</div>
-                            <small class="text-muted">
-                                <i class="fas fa-at me-1"></i>{{ item.leader.username }}
-                            </small>
-                        </div>
+                            </tbody>
+
+
+                        </table>
+
+
                     </div>
-                    <div class="d-flex gap-3 flex-wrap">
-                        <div class="text-center">
-                            <div class="fw-bold fs-5">{{ item.operator_count }}</div>
-                            <div class="text-muted" style="font-size:.7rem;">Opérateurs</div>
+
+
+
+                    {% else %}
+
+
+
+                    <!-- AUCUN EMPLOYÉ -->
+
+                    <div class="qld-empty">
+
+
+                        <i class="fas fa-table"></i>
+
+
+                        <div class="fw-semibold">
+
+                            Aucun employé sur cette ligne
+
                         </div>
-                        <div class="text-center">
-                            <div class="fw-bold fs-5">{{ tasks|length }}</div>
-                            <div class="text-muted" style="font-size:.7rem;">Tâches</div>
-                        </div>
-                        <div class="text-center">
-                            <div class="completion-ring"
-                                 style="width:42px;height:42px;font-size:.75rem;
-                                 background:{% if item.completion_rate >= 70 %}#2e7d32{% elif item.completion_rate >= 40 %}#f57f17{% else %}#c62828{% endif %};">
-                                {{ item.completion_rate }}%
+
+
+                    </div>
+
+
+
+                    {% endif %}
+
+
+                </div>
+
+            </div>
+
+
+        </div>
+
+
+
+        <!-- =================================================
+             MATRICES PAR CHEF D'ÉQUIPE
+             ================================================= -->
+
+        {% for item in matrices_by_leader %}
+
+
+
+        <div class="tab-pane fade"
+             id="tab-leader-{{ item.leader.id }}">
+
+
+
+            <div class="card border-0">
+
+
+                <!-- INFORMATIONS DU CHEF -->
+
+                <div class="qld-leader-info">
+
+
+                    <div class="d-flex
+                                align-items-center
+                                justify-content-between
+                                flex-wrap
+                                gap-3">
+
+
+
+                        <!-- PROFIL -->
+
+                        <div class="d-flex
+                                    align-items-center
+                                    gap-3">
+
+
+
+                            <!-- AVATAR -->
+
+                            <div class="qld-avatar">
+
+
+                                {{ item.leader.first_name|first|upper }}{{ item.leader.last_name|first|upper }}
+
+
                             </div>
-                            <div class="text-muted" style="font-size:.7rem;">Complétion</div>
+
+
+
+                            <!-- INFORMATIONS -->
+
+                            <div>
+
+
+                                <div class="qld-leader-name">
+
+                                    {{ item.leader_name }}
+
+                                </div>
+
+
+
+                                <small class="qld-leader-username">
+
+
+                                    <i class="fas fa-at me-1"></i>
+
+
+                                    {{ item.leader.username }}
+
+
+                                </small>
+
+
+                            </div>
+
+
                         </div>
+
+
+
+                        <!-- STATISTIQUES -->
+
+                        <div class="d-flex
+                                    align-items-center
+                                    flex-wrap
+                                    gap-3">
+
+
+
+                            <!-- OPÉRATEURS -->
+
+                            <div class="qld-mini-stat">
+
+
+                                <strong>
+
+                                    {{ item.operator_count }}
+
+                                </strong>
+
+
+                                <span>
+
+                                    Opérateurs
+
+                                </span>
+
+
+                            </div>
+
+
+
+                            <!-- TÂCHES -->
+
+                            <div class="qld-mini-stat">
+
+
+                                <strong>
+
+                                    {{ tasks|length }}
+
+                                </strong>
+
+
+                                <span>
+
+                                    Tâches
+
+                                </span>
+
+
+                            </div>
+
+
+
+                            <!-- COMPLÉTION -->
+
+                            <div class="qld-mini-stat">
+
+
+                                <div class="qld-completion-ring"
+
+                                     style="
+                                     width:42px;
+                                     height:42px;
+                                     font-size:.75rem;
+                                     margin:auto;
+
+                                     background:
+
+                                     {% if item.completion_rate >= 70 %}
+
+                                         #258557
+
+                                     {% elif item.completion_rate >= 40 %}
+
+                                         #d69a31
+
+                                     {% else %}
+
+                                         #cb5961
+
+                                     {% endif %};
+
+                                     ">
+
+
+                                    {{ item.completion_rate }}%
+
+
+                                </div>
+
+
+
+                                <span class="mt-1">
+
+                                    Complétion
+
+                                </span>
+
+
+                            </div>
+
+
+                        </div>
+
+
                     </div>
+
+
                 </div>
-            </div>
 
-            <!-- Matrice du chef -->
-            <div class="card-body p-0">
-                {% if item.employees %}
-                <div class="matrix-wrap" style="max-height:70vh; overflow:auto;">
-                    <table class="matrix-table table table-bordered mb-0">
 
-                        <thead>
-                            <!-- Ligne 1 : Noms -->
-                            <tr>
-                                <th class="th-task" rowspan="2"
-                                    style="vertical-align:bottom;">
-                                    <i class="fas fa-tasks me-1 opacity-75"></i>Tâche
-                                </th>
-                                {% for emp in item.employees %}
-                                <th class="th-emp-name" colspan="3"
-                                    style="border-right:2px solid rgba(255,255,255,.3);
-                                    {% if item.leader_employee and emp.id == item.leader_employee.id %}
-                                    background:#283593;{% endif %}">
-                                    <span class="emp-name-wrap"
-                                          title="{{ emp.last_name }} {{ emp.first_name }} ({{ emp.matricule }})">
-                                        {{ emp.last_name }} {{ emp.first_name|first }}.
-                                    </span>
-                                    {% if item.leader_employee and emp.id == item.leader_employee.id %}
-                                    <span class="leader-marker">Chef</span>
-                                    {% endif %}
-                                    <span class="emp-badge">{{ emp.matricule }}</span>
-                                </th>
-                                {% endfor %}
-                            </tr>
 
-                            <!-- Ligne 2 : I / L / U -->
-                            <tr>
-                                {% for emp in item.employees %}
-                                <th class="th-level th-level-I">I</th>
-                                <th class="th-level th-level-L">L</th>
-                                <th class="th-level th-level-U"
-                                    style="border-right:2px solid rgba(255,255,255,.3);">U</th>
-                                {% endfor %}
-                            </tr>
-                        </thead>
+                <!-- MATRICE DU CHEF -->
 
-                        <tbody>
-                        {% for row in item.matrix_rows %}
+                <div class="card-body p-0">
 
-                            {% if row.group_changed and row.group_title %}
-                            <tr class="group-row">
-                                <td colspan="{{ item.employees|length|add:item.employees|length|add:item.employees|length|add:1 }}">
-                                    <i class="fas fa-layer-group me-1"></i>
-                                    {{ row.group_title }}
-                                </td>
-                            </tr>
-                            {% endif %}
 
-                            <tr>
-                                <th class="td-task">
-                                    <span class="text-muted me-1" style="font-size:.68rem;">
-                                        {{ row.task.task_number }}
-                                    </span>
-                                    {{ row.task.title|truncatechars:36 }}
-                                </th>
+                    {% if item.employees %}
 
-                                {% for cell in row.cells %}
-                                    <td class="{% if cell.has_I %}cell-I-filled{% else %}cell-empty{% endif %}
-                                               {% if cell.is_team_leader %}col-leader-first{% endif %}">
+
+
+                    <!-- INFORMATION -->
+
+                    <div class="qld-matrix-note">
+
+
+                        <span>
+
+
+                            <i class="fas fa-table me-1"></i>
+
+
+                            Matrice de l'équipe
+
+
+                        </span>
+
+
+
+                        <span>
+
+
+                            {{ item.operator_count }} opérateurs
+
+
+                            ·
+
+
+                            {{ tasks|length }} tâches
+
+
+                        </span>
+
+
+                    </div>
+
+
+
+                    <!-- TABLEAU -->
+
+                    <div class="matrix-wrap"
+                         style="max-height:70vh;">
+
+
+
+                        <table class="matrix-table table mb-0">
+
+
+
+                            <!-- EN-TÊTES -->
+
+                            <thead>
+
+
+
+                                <!-- NOMS -->
+
+                                <tr>
+
+
+
+                                    <th class="th-task"
+                                        rowspan="2"
+                                        scope="col">
+
+
+                                        <i class="fas fa-tasks me-1"></i>
+
+
+                                        Tâche
+
+
+                                    </th>
+
+
+
+                                    {% for emp in item.employees %}
+
+
+
+                                    <th class="th-emp-name
+
+                                        {% if item.leader_employee and emp.id == item.leader_employee.id %}
+
+                                            qld-chief-col
+
+                                        {% endif %}
+
+                                        "
+
+                                        colspan="3"
+                                        scope="colgroup">
+
+
+
+                                        <!-- NOM -->
+
+                                        <span class="emp-name-wrap"
+
+                                              title="{{ emp.last_name }} {{ emp.first_name }} ({{ emp.matricule }})">
+
+
+
+                                            {{ emp.last_name }}
+
+
+                                            {{ emp.first_name|first }}.
+
+
+
+                                        </span>
+
+
+
+                                        <!-- CHEF -->
+
+                                        {% if item.leader_employee and emp.id == item.leader_employee.id %}
+
+
+
+                                        <span class="leader-marker">
+
+
+                                            Chef
+
+
+                                        </span>
+
+
+
+                                        {% endif %}
+
+
+
+                                        <!-- MATRICULE -->
+
+                                        <span class="emp-badge">
+
+
+                                            {{ emp.matricule }}
+
+
+                                        </span>
+
+
+
+                                    </th>
+
+
+
+                                    {% endfor %}
+
+
+
+                                </tr>
+
+
+
+                                <!-- NIVEAUX -->
+
+                                <tr>
+
+
+
+                                    {% for emp in item.employees %}
+
+
+
+                                    <th class="th-level th-level-I"
+                                        scope="col">
+
+
+                                        I
+
+
+                                    </th>
+
+
+
+                                    <th class="th-level th-level-L"
+                                        scope="col">
+
+
+                                        L
+
+
+                                    </th>
+
+
+
+                                    <th class="th-level th-level-U"
+                                        scope="col"
+
+                                        style="
+                                        border-right:
+                                        2px solid rgba(255,255,255,.3);
+                                        ">
+
+
+                                        U
+
+
+                                    </th>
+
+
+
+                                    {% endfor %}
+
+
+
+                                </tr>
+
+
+
+                            </thead>
+
+
+
+                            <!-- CONTENU -->
+
+                            <tbody>
+
+
+
+                                {% for row in item.matrix_rows %}
+
+
+
+                                <!-- GROUPE -->
+
+                                {% if row.group_changed and row.group_title %}
+
+
+
+                                <tr class="group-row">
+
+
+
+                                    <td colspan="{{ item.employees|length|add:item.employees|length|add:item.employees|length|add:1 }}">
+
+
+
+                                        <i class="fas fa-layer-group me-1"></i>
+
+
+
+                                        {{ row.group_title }}
+
+
+
+                                    </td>
+
+
+
+                                </tr>
+
+
+
+                                {% endif %}
+
+
+
+                                <!-- TÂCHE -->
+
+                                <tr>
+
+
+
+                                    <th class="td-task"
+                                        scope="row"
+                                        title="{{ row.task.title }}">
+
+
+
+                                        <span class="qld-task-id">
+
+
+                                            {{ row.task.task_number }}
+
+
+                                        </span>
+
+
+
+                                        {{ row.task.title|truncatechars:36 }}
+
+
+
+                                    </th>
+
+
+
+                                    <!-- CELLULES -->
+
+                                    {% for cell in row.cells %}
+
+
+
+                                    <!-- I -->
+
+                                    <td class="
+
                                         {% if cell.has_I %}
-                                            I<span class="cell-date">{{ cell.date_I }}</span>
-                                        {% else %}—{% endif %}
+                                            cell-I-filled
+                                        {% else %}
+                                            cell-empty
+                                        {% endif %}
+
+                                        {% if cell.is_team_leader %}
+                                            col-leader-first
+                                        {% endif %}
+
+                                        ">
+
+
+
+                                        {% if cell.has_I %}
+
+
+
+                                            I
+
+
+                                            <span class="cell-date">
+
+
+                                                {{ cell.date_I }}
+
+
+                                            </span>
+
+
+
+                                        {% else %}
+
+
+                                            —
+
+
+                                        {% endif %}
+
+
+
                                     </td>
 
-                                    <td class="{% if cell.has_L %}cell-L-filled{% else %}cell-empty{% endif %}
-                                               {% if cell.is_team_leader %}col-leader{% endif %}">
+
+
+                                    <!-- L -->
+
+                                    <td class="
+
                                         {% if cell.has_L %}
-                                            L<span class="cell-date">{{ cell.date_L }}</span>
-                                        {% else %}—{% endif %}
+                                            cell-L-filled
+                                        {% else %}
+                                            cell-empty
+                                        {% endif %}
+
+                                        {% if cell.is_team_leader %}
+                                            col-leader
+                                        {% endif %}
+
+                                        ">
+
+
+
+                                        {% if cell.has_L %}
+
+
+
+                                            L
+
+
+                                            <span class="cell-date">
+
+
+                                                {{ cell.date_L }}
+
+
+                                            </span>
+
+
+
+                                        {% else %}
+
+
+                                            —
+
+
+                                        {% endif %}
+
+
+
                                     </td>
 
-                                    <td class="{% if cell.has_U %}cell-U-filled{% else %}cell-empty{% endif %}
-                                               {% if cell.is_team_leader %}col-leader{% endif %}
-                                               emp-separator">
+
+
+                                    <!-- U -->
+
+                                    <td class="
+
                                         {% if cell.has_U %}
-                                            U<span class="cell-date">{{ cell.date_U }}</span>
-                                        {% else %}—{% endif %}
+                                            cell-U-filled
+                                        {% else %}
+                                            cell-empty
+                                        {% endif %}
+
+                                        {% if cell.is_team_leader %}
+                                            col-leader
+                                        {% endif %}
+
+                                        emp-separator
+
+                                        ">
+
+
+
+                                        {% if cell.has_U %}
+
+
+
+                                            U
+
+
+                                            <span class="cell-date">
+
+
+                                                {{ cell.date_U }}
+
+
+                                            </span>
+
+
+
+                                        {% else %}
+
+
+                                            —
+
+
+                                        {% endif %}
+
+
+
                                     </td>
+
+
+
+                                    {% endfor %}
+
+
+
+                                </tr>
+
+
+
                                 {% endfor %}
-                            </tr>
-                        {% endfor %}
-                        </tbody>
-                    </table>
+
+
+
+                            </tbody>
+
+
+
+                        </table>
+
+
+
+                    </div>
+
+
+
+                    {% else %}
+
+
+
+                    <!-- AUCUN OPÉRATEUR -->
+
+                    <div class="qld-empty">
+
+
+                        <i class="fas fa-users-slash"></i>
+
+
+
+                        <div class="fw-semibold">
+
+
+                            Aucun opérateur
+
+
+                        </div>
+
+
+
+                    </div>
+
+
+
+                    {% endif %}
+
+
+
                 </div>
-                {% else %}
-                <div class="text-center text-muted py-4">
-                    <i class="fas fa-users-slash fa-2x d-block mb-2 opacity-25"></i>
-                    Aucun opérateur
-                </div>
-                {% endif %}
+
+
+
             </div>
+
+
+
         </div>
+
+
+
+        {% endfor %}
+
+
+
     </div>
-    {% endfor %}
+    <!-- FIN TAB CONTENT -->
+</div>
+<!-- FIN QLD TAB SHELL -->
+
 
 </div>
+<!-- FIN QLD -->
 
-<!-- ══ RÉSUMÉ PAR CHEF ════════════════════════════════════════════ -->
-{% if matrices_by_leader %}
-<div class="card border-0 shadow-sm mt-4">
-    <div class="card-header bg-white border-0 fw-semibold">
-        <i class="fas fa-chart-bar me-2 text-primary"></i>
-        Résumé par Chef d'Équipe
-    </div>
-    <div class="card-body p-0">
-        <table class="table table-hover mb-0">
-            <thead class="table-light">
-                <tr>
-                    <th>Chef d'équipe</th>
-                    <th class="text-center">Opérateurs</th>
-                    <th class="text-center">Tâches</th>
-                    <th class="text-center">Complétion</th>
-                    <th style="width:200px;">Progression</th>
-                </tr>
-            </thead>
-            <tbody>
-            {% for item in matrices_by_leader %}
-            <tr>
-                <td>
-                    <div class="d-flex align-items-center gap-2">
-                        <div class="rounded-circle bg-primary text-white
-                                    d-flex align-items-center justify-content-center"
-                             style="width:32px;height:32px;font-size:.75rem;font-weight:700;">
-                            {{ item.leader.first_name|first|upper }}{{ item.leader.last_name|first|upper }}
-                        </div>
-                        <div>
-                            <div class="fw-semibold" style="font-size:.88rem;">{{ item.leader_name }}</div>
-                            <div class="text-muted" style="font-size:.72rem;">{{ item.leader.username }}</div>
-                        </div>
-                    </div>
-                </td>
-                <td class="text-center">
-                    <span class="badge bg-secondary rounded-pill">{{ item.operator_count }}</span>
-                </td>
-                <td class="text-center">
-                    <span class="badge bg-light text-dark border">{{ tasks|length }}</span>
-                </td>
-                <td class="text-center fw-bold
-                    {% if item.completion_rate >= 70 %}text-success
-                    {% elif item.completion_rate >= 40 %}text-warning
-                    {% else %}text-danger{% endif %}">
-                    {{ item.completion_rate }}%
-                </td>
-                <td>
-                    <div class="progress" style="height:10px;">
-                        <div class="progress-bar
-                            {% if item.completion_rate >= 70 %}bg-success
-                            {% elif item.completion_rate >= 40 %}bg-warning
-                            {% else %}bg-danger{% endif %}"
-                             style="width:{{ item.completion_rate }}%"></div>
-                    </div>
-                </td>
-            </tr>
-            {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</div>
-{% endif %}
 
 {% endblock %}

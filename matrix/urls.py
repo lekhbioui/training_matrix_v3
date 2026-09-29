@@ -1,8 +1,9 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import CustomLoginView, EmployeeViewSet, TaskViewSet, MatrixEntryViewSet, employees_to_requalify, get_employee_tasks, matrix_view, process_requalification, requalification_history, rh_assign_team_leader, rh_manage_users, rh_user_create, rh_user_delete, rh_user_update
+from .views import CustomLoginView, EmployeeViewSet, TaskViewSet, MatrixEntryViewSet, employees_to_requalify, export_matrice_excel, export_matrice_select, get_employee_tasks, matrix_view, process_requalification, requalification_history, rh_assign_team_leader, rh_manage_users, rh_user_create, rh_user_delete, rh_user_update
 from django.contrib.auth import views as auth_views
 from . import views
+from . import views_training_questions
 
 router = DefaultRouter()
 router.register(r'employees', EmployeeViewSet)
@@ -10,6 +11,17 @@ router.register(r'tasks', TaskViewSet)
 router.register(r'entries', MatrixEntryViewSet)
 
 urlpatterns = [
+    path("requalification/<int:request_id>/plan/", views.requalification_plan_view, name="requalification_plan_view"),
+    path("requalification/<int:request_id>/plan/image/", views.requalification_plan_image, name="requalification_plan_image"),
+    path("training-requests/", views.training_requests_list, name="training_requests_list"),
+    path("training-requests/<int:request_id>/plan/upload/", views.training_plan_upload, name="training_plan_upload"),
+    path("training-requests/<int:request_id>/plan/", views.training_plan_view, name="training_plan_view"),
+    path("rh/training-questions/", views_training_questions.training_question_list, name="training_question_list"),
+    path("rh/training-questions/create/", views_training_questions.training_question_create, name="training_question_create"),
+    path("rh/training-questions/<int:pk>/edit/", views_training_questions.training_question_update, name="training_question_update"),
+    path("rh/training-questions/<int:pk>/toggle-active/", views_training_questions.training_question_toggle_active, name="training_question_toggle_active"),
+    path("rh/training-questions/<int:pk>/delete/", views_training_questions.training_question_delete, name="training_question_delete"),
+    path("rh/training-questions/tasks-by-line/", views_training_questions.training_question_tasks_by_line, name="training_question_tasks_by_line"),
     path('', CustomLoginView.as_view(), name='login'),
     path("api/", include(router.urls)),
     path("matrix/", matrix_view, name="matrix_view"),
@@ -35,6 +47,10 @@ urlpatterns = [
     path('rh/line/<int:pk>/delete/', views.line_delete, name='line_delete'),
     path('lines/<int:line_id>/', views.line_detail, name='line_detail'),
     path("rh/training-approvals/", views.rh_training_approvals, name="rh_training_approvals"),
+
+        # ✅ NOUVELLE URL pour les demandes Niveau I avec questionnaires
+    path('rh/approvals/level-i/', views.rh_level_i_approvals, name='rh_level_i_approvals'),
+    
     path('rh/dashboard/', views.rh_dashboard, name='rh_dashboard'),
     path('rh/transfer/', views.transfer_employee_view, name='transfer_employee'),
     path('rh/transfer/<int:employee_id>/', views.transfer_employee_view, name='transfer_employee_specific'),
@@ -126,5 +142,36 @@ path(
     views.download_excel_template,
     name='download_excel_template',
 ),
-    
+
+    path('matrice/export-select/', export_matrice_select, name='export_matrice_select'),
+    path('matrice/export-excel/', export_matrice_excel, name='export_matrice_excel'),
+
+
+    path(
+        "rh/training-requests/<int:request_id>/review/",
+        views.review_training_request,
+        name="review_training_request",
+    ),
+
+
+
+    path(
+    "ajax/get-questionnaire-by-task/",
+    views.get_questionnaire_by_task,
+    name="ajax_get_questionnaire",
+),
+
+
+
+path(
+    "training-plan/<int:request_id>/",
+    views.training_plan_view,
+    name="training_plan_view",
+),
+
+path(
+    "training-plan/<int:request_id>/image/",
+    views.training_plan_image,
+    name="training_plan_image",
+),
 ]

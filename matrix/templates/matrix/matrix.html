@@ -1504,6 +1504,10 @@
                 </span>
                 {% endif %}
                 
+                <a href="{% url 'training_requests_list' %}" class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50 rounded-lg">
+                    <i class="fas fa-folder-open" aria-hidden="true"></i> Mes demandes de formation
+                </a>
+
                 <!-- Menu utilisateur avec dropdown -->
                 <div class="relative" id="user-menu-container">
                     <button type="button" 
@@ -1648,7 +1652,7 @@
 
                 <!-- Boutons d'impression -->
                 <div class="flex items-center gap-2">
-                    <button type="button" 
+                    <!-- <button type="button" 
                             onclick="printOnePageA4()" 
                             class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold
                                    bg-gradient-to-r from-indigo-600 to-purple-600 text-white
@@ -1658,7 +1662,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
                         </svg>
                         1 page A4
-                    </button>
+                    </button> -->
                     <!-- Après le bouton "1 page A4" -->
 <a href="{% url 'export_matrice_excel' %}?line_id={{ selected_line_id }}"
    class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold
@@ -1669,7 +1673,18 @@
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
               d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
     </svg>
-    Export Excel
+    Exporter tous les opérateurs
+</a>
+<a href="{% url 'export_matrice_select' %}?line_id={{ selected_line_id }}"
+   class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold
+          bg-gradient-to-r from-emerald-600 to-green-600 text-white
+          shadow-lg shadow-emerald-200 hover:shadow-xl hover:shadow-emerald-300
+          transform hover:-translate-y-0.5 transition-all duration-200">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+              d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+    </svg>
+    Exporter les opérateurs sélectionnés
 </a>
                     <!-- <button type="button" 
                             onclick="printNormal()" 
@@ -1886,39 +1901,78 @@ document.addEventListener('DOMContentLoaded', () => {
             </td>
         </tr>
 
-        <!-- 🟨 Niveau I -->
+<!-- 🟨 Niveau I -->
 <tr>
-    <td class="px-4 py-2 font-semibold text-gray-700 sticky left-0 bg-white border-r border-gray-200">I</td>
+    <td class="px-4 py-2 font-semibold text-gray-700 sticky left-0 bg-white border-r border-gray-200">
+        I
+    </td>
+
     {% for cell in row.cells %}
         {% with rec=cell.I %}
-            <td class="matrix-cell {% if rec %}level-I{% else %}level-default{% endif %} border-l border-gray-200"
-                title="{% if rec %}I — {{ rec.trainer.last_name|default:'RH' }} • {{ rec.date|date:'d/m/Y' }}{% endif %}">
+            <td
+                class="
+                    matrix-cell border-l border-gray-200
+                    {% if rec %}
+                        level-I
+                    {% elif cell.pending.I %}
+                        bg-yellow-50
+                    {% else %}
+                        level-default
+                    {% endif %}
+                "
+                title="
+                    {% if rec %}
+                        I — {{ rec.trainer.last_name|default:'RH' }}
+                        • {{ rec.date|date:'d/m/Y' }}
+                    {% elif cell.pending.I %}
+                        Niveau I en attente de validation RH
+                    {% endif %}
+                "
+            >
                 {% if rec %}
                     <strong>I</strong>
-                    {% if rec.date %}<span class="cell-info text-gray-600">{{ rec.date|date:"d/m/Y" }}</span>{% endif %}
-                    
-                    {# ═══════════════════════════════════════════════════════════════ #}
-                    {# AFFICHAGE DU FORMATEUR - NIVEAU I #}
-                    {# ═══════════════════════════════════════════════════════════════ #}
+
+                    {% if rec.date %}
+                        <span class="cell-info text-gray-600">
+                            {{ rec.date|date:"d/m/Y" }}
+                        </span>
+                    {% endif %}
+
                     {% if cell.is_team_leader %}
-                        {# Chef d'équipe : afficher le formateur RH du niveau I #}
                         {% if rec.trainer %}
                             <span class="trainer-info text-purple-600 font-medium">
-                                <i class="fas fa-user-graduate text-xs mr-1"></i>{{ rec.trainer.last_name }}
+                                <i class="fas fa-user-graduate text-xs mr-1"></i>
+                                {{ rec.trainer.last_name }}
                             </span>
                         {% else %}
                             <span class="trainer-info text-green-600 font-medium">
-                                <i class="fas fa-building text-xs mr-1"></i>SV
+                                <i class="fas fa-building text-xs mr-1"></i>
+                                SV
                             </span>
                         {% endif %}
                     {% else %}
-                        {# Opérateur : afficher le chef d'équipe #}
                         {% if cell.team_leader %}
                             <span class="cell-info text-blue-600 font-medium">
-                                <i class="fas fa-user-tie text-xs mr-1"></i>{{ cell.team_leader.last_name }}
+                                <i class="fas fa-user-tie text-xs mr-1"></i>
+                                {{ cell.team_leader.last_name }}
                             </span>
                         {% endif %}
                     {% endif %}
+
+                {% elif cell.pending.I %}
+                    <span
+                        class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800 ring-1 ring-inset ring-yellow-300"
+                    >
+                        <i class="fas fa-clock text-xs"></i>
+                        En attente RH
+                    </span>
+
+                    {% if cell.pending.I.training_date %}
+                        <span class="cell-info text-yellow-700">
+                            {{ cell.pending.I.training_date|date:"d/m/Y" }}
+                        </span>
+                    {% endif %}
+
                 {% else %}
                     <span class="text-gray-400">-</span>
                 {% endif %}
@@ -1926,46 +1980,79 @@ document.addEventListener('DOMContentLoaded', () => {
         {% endwith %}
     {% endfor %}
 </tr>
+
 
 <!-- 🟦 Niveau L -->
 <tr>
-    <td class="px-4 py-2 font-semibold text-gray-700 sticky left-0 bg-white border-r border-gray-200">L</td>
+    <td class="px-4 py-2 font-semibold text-gray-700 sticky left-0 bg-white border-r border-gray-200">
+        L
+    </td>
+
     {% for cell in row.cells %}
         {% with rec=cell.L %}
-            <td class="matrix-cell border-l border-gray-200 {% if rec %}level-L{% else %}level-default{% endif %}"
-                title="{% if rec %}L — {{ rec.trainer.last_name|default:'RH' }} • {{ rec.date|date:'d/m/Y' }}{% endif %}">
-                
+            <td
+                class="
+                    matrix-cell border-l border-gray-200
+                    {% if rec %}
+                        level-L
+                    {% elif cell.pending.L %}
+                        bg-yellow-50
+                    {% else %}
+                        level-default
+                    {% endif %}
+                "
+                title="
+                    {% if rec %}
+                        L — {{ rec.trainer.last_name|default:'RH' }}
+                        • {{ rec.date|date:'d/m/Y' }}
+                    {% elif cell.pending.L %}
+                        Niveau L en attente de validation RH
+                    {% endif %}
+                "
+            >
                 {% if rec %}
                     <strong>L</strong>
-                    {% if rec.date %}<span class="cell-info text-gray-600">{{ rec.date|date:"d/m/Y" }}</span>{% endif %}
-                    
-                    {# ═══════════════════════════════════════════════════════════════ #}
-                    {# AFFICHAGE DU FORMATEUR - NIVEAU L #}
-                    {# ═══════════════════════════════════════════════════════════════ #}
+
+                    {% if rec.date %}
+                        <span class="cell-info text-gray-600">
+                            {{ rec.date|date:"d/m/Y" }}
+                        </span>
+                    {% endif %}
+
                     {% if cell.is_team_leader %}
-                        {# Chef d'équipe : afficher le formateur RH du niveau L #}
                         {% if rec.trainer %}
                             <span class="trainer-info text-purple-600 font-medium">
-                                <i class="fas fa-user-graduate text-xs mr-1"></i>{{ rec.trainer.last_name }}
+                                <i class="fas fa-user-graduate text-xs mr-1"></i>
+                                {{ rec.trainer.last_name }}
                             </span>
                         {% else %}
                             <span class="trainer-info text-green-600 font-medium">
-                                <i class="fas fa-building text-xs mr-1"></i>SV
+                                <i class="fas fa-building text-xs mr-1"></i>
+                                SV
                             </span>
                         {% endif %}
                     {% else %}
-                        {# Opérateur : afficher le chef d'équipe #}
                         {% if cell.team_leader %}
                             <span class="cell-info text-blue-600 font-medium">
-                                <i class="fas fa-user-tie text-xs mr-1"></i>{{ cell.team_leader.last_name }}
+                                <i class="fas fa-user-tie text-xs mr-1"></i>
+                                {{ cell.team_leader.last_name }}
                             </span>
                         {% endif %}
                     {% endif %}
-                
-                {% elif cell.pending.1 %}
-                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800 ring-1 ring-inset ring-yellow-300">
+
+                {% elif cell.pending.L %}
+                    <span
+                        class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800 ring-1 ring-inset ring-yellow-300"
+                    >
+                        <i class="fas fa-clock text-xs"></i>
                         En attente RH
                     </span>
+
+                    {% if cell.pending.L.training_date %}
+                        <span class="cell-info text-yellow-700">
+                            {{ cell.pending.L.training_date|date:"d/m/Y" }}
+                        </span>
+                    {% endif %}
 
                 {% else %}
                     <span class="text-gray-400">-</span>
@@ -1975,45 +2062,78 @@ document.addEventListener('DOMContentLoaded', () => {
     {% endfor %}
 </tr>
 
+
 <!-- 🟥 Niveau U -->
 <tr>
-    <td class="px-4 py-2 font-semibold text-gray-700 sticky left-0 bg-white border-r border-gray-200">U</td>
+    <td class="px-4 py-2 font-semibold text-gray-700 sticky left-0 bg-white border-r border-gray-200">
+        U
+    </td>
+
     {% for cell in row.cells %}
         {% with rec=cell.U %}
-            <td class="matrix-cell {% if rec %}level-U{% else %}level-default{% endif %} border-l border-gray-200"
-                title="{% if rec %}U — {{ rec.trainer.last_name|default:'RH' }} • {{ rec.date|date:'d/m/Y' }}{% endif %}">
-                
+            <td
+                class="
+                    matrix-cell border-l border-gray-200
+                    {% if rec %}
+                        level-U
+                    {% elif cell.pending.U %}
+                        bg-yellow-50
+                    {% else %}
+                        level-default
+                    {% endif %}
+                "
+                title="
+                    {% if rec %}
+                        U — {{ rec.trainer.last_name|default:'RH' }}
+                        • {{ rec.date|date:'d/m/Y' }}
+                    {% elif cell.pending.U %}
+                        Niveau U en attente de validation RH
+                    {% endif %}
+                "
+            >
                 {% if rec %}
                     <strong>U</strong>
-                    {% if rec.date %}<span class="cell-info text-gray-600">{{ rec.date|date:"d/m/Y" }}</span>{% endif %}
-                    
-                    {# ═══════════════════════════════════════════════════════════════ #}
-                    {# AFFICHAGE DU FORMATEUR - NIVEAU U #}
-                    {# ═══════════════════════════════════════════════════════════════ #}
+
+                    {% if rec.date %}
+                        <span class="cell-info text-gray-600">
+                            {{ rec.date|date:"d/m/Y" }}
+                        </span>
+                    {% endif %}
+
                     {% if cell.is_team_leader %}
-                        {# Chef d'équipe : afficher le formateur RH du niveau U #}
                         {% if rec.trainer %}
                             <span class="trainer-info text-purple-600 font-medium">
-                                <i class="fas fa-user-graduate text-xs mr-1"></i>{{ rec.trainer.last_name }}
+                                <i class="fas fa-user-graduate text-xs mr-1"></i>
+                                {{ rec.trainer.last_name }}
                             </span>
                         {% else %}
                             <span class="trainer-info text-green-600 font-medium">
-                                <i class="fas fa-building text-xs mr-1"></i>SV
+                                <i class="fas fa-building text-xs mr-1"></i>
+                                SV
                             </span>
                         {% endif %}
                     {% else %}
-                        {# Opérateur : afficher le chef d'équipe #}
                         {% if cell.team_leader %}
                             <span class="cell-info text-blue-600 font-medium">
-                                <i class="fas fa-user-tie text-xs mr-1"></i>{{ cell.team_leader.last_name }}
+                                <i class="fas fa-user-tie text-xs mr-1"></i>
+                                {{ cell.team_leader.last_name }}
                             </span>
                         {% endif %}
                     {% endif %}
-                
-                {% elif cell.pending.2 %}
-                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800 ring-1 ring-inset ring-yellow-300">
+
+                {% elif cell.pending.U %}
+                    <span
+                        class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800 ring-1 ring-inset ring-yellow-300"
+                    >
+                        <i class="fas fa-clock text-xs"></i>
                         En attente RH
                     </span>
+
+                    {% if cell.pending.U.training_date %}
+                        <span class="cell-info text-yellow-700">
+                            {{ cell.pending.U.training_date|date:"d/m/Y" }}
+                        </span>
+                    {% endif %}
 
                 {% else %}
                     <span class="text-gray-400">-</span>

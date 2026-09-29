@@ -736,23 +736,23 @@
             <div class="section-header formation-header">
                 <h3 class="section-title">
                     <i class="fas fa-graduation-cap"></i>
-                    Historique des Formations
+                    Historique des Formations et Requalifications
                 </h3>
                 <span style="font-size: 14px; font-weight: 500; color: var(--gray-600);">
-                    {{ formations|length }} formation{{ formations|length|pluralize }}
+                    {{ formation_events|length }} événement{{ formation_events|length|pluralize }}
                 </span>
             </div>
             <div class="section-body">
-                {% if formations %}
+                {% if formation_events %}
                     <div class="timeline">
-                        {% for item in formations %}
+                        {% for item in formation_events %}
                             <div class="timeline-item">
                                 <div class="timeline-marker formation"></div>
                                 <div class="timeline-content formation-content">
                                     <div class="timeline-header">
                                         <div class="timeline-type formation">
                                             <i class="fas fa-graduation-cap"></i>
-                                            Formation
+                                            {% if item.requalification %}Requalification — {{ item.requalification.get_result_display }}{% else %}Formation{% endif %}
                                         </div>
                                         <div class="timeline-date">
                                             {{ item.date|date:"d/m/Y" }}
@@ -797,6 +797,17 @@
                                                 </span>
                                             </div>
                                         {% endif %}
+
+                                        <div class="timeline-detail-row">
+                                            <strong><i class="fas fa-file-image" aria-hidden="true"></i> Plan de formation :</strong>
+                                            {% if item.training_plan_url %}
+                                                <a href="{{ item.training_plan_url }}" class="btn btn-primary" target="_blank" rel="noopener" aria-label="Voir le plan de {{ item.task }} (nouvel onglet)">
+                                                    <i class="fas fa-eye" aria-hidden="true"></i> Voir le plan
+                                                </a>
+                                            {% else %}
+                                                <span style="color: var(--gray-500);">{{ item.training_plan_label }}</span>
+                                            {% endif %}
+                                        </div>
 
                                         {% if item.chef_equipe_name %}
     <div class="timeline-detail-row">

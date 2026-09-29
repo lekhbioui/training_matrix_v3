@@ -1,17 +1,28 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Former les Chefs d'Équipe | RH</title>
-    <link rel="icon" type="image/png" href="{% static 'images/logo.png' %}">
-    
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    
+
+    <link rel="icon" type="image/png"
+          href="{% static 'images/logo.png' %}">
+
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+          rel="stylesheet">
+
     <style>
+
+        /* =========================================
+           VARIABLES
+        ========================================= */
+
         :root {
             --primary-navy: #0A1F44;
             --primary-blue: #1E3A8A;
@@ -20,6 +31,7 @@
             --success-green: #10B981;
             --warning-amber: #F59E0B;
             --danger-red: #EF4444;
+
             --gray-50: #F9FAFB;
             --gray-100: #F3F4F6;
             --gray-200: #E5E7EB;
@@ -27,94 +39,47 @@
             --gray-500: #6B7280;
             --gray-700: #374151;
             --gray-900: #111827;
+
+            --page-bg: #F5F7FB;
+            --border: #E5EAF2;
+            --text: #172033;
+        }
+
+        * {
+            box-sizing: border-box;
         }
 
         body {
+            margin: 0;
             font-family: 'Inter', sans-serif;
-            background: #F5F7FA;
+            background: var(--page-bg);
+            color: var(--text);
+            -webkit-font-smoothing: antialiased;
         }
+
+        button,
+        input,
+        select,
+        textarea {
+            font: inherit;
+        }
+
+        a {
+            text-decoration: none;
+        }
+
+        /* =========================================
+           HEADER ORIGINAL — CONSERVÉ
+        ========================================= */
 
         .corporate-header {
-            background: linear-gradient(135deg, var(--primary-navy) 0%, var(--primary-blue) 100%);
+            background: linear-gradient(
+                135deg,
+                var(--primary-navy) 0%,
+                var(--primary-blue) 100%
+            );
+
             border-bottom: 4px solid var(--purple);
-        }
-
-        .section {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-            border: 1px solid var(--gray-200);
-            margin-bottom: 24px;
-        }
-
-        .section-header {
-            padding: 20px 28px;
-            border-bottom: 1px solid var(--gray-200);
-            background: var(--gray-50);
-        }
-
-        .section-header.purple {
-            background: linear-gradient(135deg, #F5F3FF 0%, #EDE9FE 100%);
-            border-bottom: 2px solid var(--purple);
-        }
-
-        .section-title {
-            font-size: 18px;
-            font-weight: 700;
-            color: var(--gray-900);
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .section-title i { color: var(--purple); }
-
-        .section-body { padding: 28px; }
-
-        .form-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 24px;
-        }
-
-        .form-group {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .form-group.full-width { grid-column: 1 / -1; }
-
-        .form-group label {
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--gray-700);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        .form-group label i { color: var(--purple); margin-right: 6px; }
-        .form-group label .required { color: var(--danger-red); }
-
-        .form-select, .form-input, .form-textarea {
-            width: 100%;
-            padding: 12px 16px;
-            border: 2px solid var(--gray-200);
-            border-radius: 8px;
-            font-size: 14px;
-            transition: all 0.2s ease;
-        }
-
-        .form-select:focus, .form-input:focus, .form-textarea:focus {
-            outline: none;
-            border-color: var(--purple);
-            box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.1);
-        }
-
-        .form-select:disabled {
-            background-color: var(--gray-100);
-            cursor: not-allowed;
-            opacity: 0.6;
         }
 
         .btn {
@@ -130,684 +95,3164 @@
             gap: 8px;
         }
 
-        .btn-primary {
-            background: linear-gradient(135deg, var(--purple) 0%, #A855F7 100%);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 16px rgba(124, 58, 237, 0.35);
-        }
-
         .btn-secondary {
             background: white;
             color: var(--gray-700);
             border: 2px solid var(--gray-300);
         }
 
-        .leader-card {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            padding: 16px;
-            background: linear-gradient(135deg, #F5F3FF 0%, #EDE9FE 100%);
-            border: 2px solid #DDD6FE;
-            border-radius: 10px;
+        /* =========================================
+           CONTENEUR PRINCIPAL
+        ========================================= */
+
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 32px;
         }
 
-        .leader-avatar {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, var(--purple) 0%, #A855F7 100%);
+        /* =========================================
+           BREADCRUMB
+        ========================================= */
+
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+
+            margin-bottom: 28px;
+
+            font-size: 12px;
+            color: #94A3B8;
+        }
+
+        .breadcrumb a {
+            color: var(--accent-blue);
+            font-weight: 600;
+        }
+
+        .breadcrumb i {
+            font-size: 10px;
+        }
+
+        /* =========================================
+           PAGE TITLE
+        ========================================= */
+
+        .page-heading {
+            margin-bottom: 28px;
+        }
+
+        .page-heading h1 {
+            margin: 0;
+            font-size: 26px;
+            font-weight: 800;
+            letter-spacing: -0.7px;
+            color: #0F172A;
+        }
+
+        .page-heading p {
+            margin: 9px 0 0;
+            font-size: 13px;
+            line-height: 1.7;
+            color: #64748B;
+        }
+
+        /* =========================================
+           RÈGLES DE FORMATION
+        ========================================= */
+
+        .rules-card {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+
+            padding: 21px 24px;
+            margin-bottom: 28px;
+
+            background: #EFF6FF;
+            border: 1px solid #BFDBFE;
+            border-radius: 15px;
+        }
+
+        .rules-icon {
+            width: 42px;
+            height: 42px;
+            flex-shrink: 0;
+
             display: flex;
             align-items: center;
             justify-content: center;
-            font-weight: 700;
+
+            background: #DBEAFE;
+            color: #2563EB;
+
+            border-radius: 12px;
             font-size: 18px;
-            color: white;
+        }
+
+        .rules-content h3 {
+            margin: 0 0 12px;
+            font-size: 14px;
+            font-weight: 800;
+            color: #1E3A8A;
+        }
+
+        .rules-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px 24px;
+
+            padding: 0;
+            margin: 0;
+            list-style: none;
+        }
+
+        .rules-list li {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+
+            font-size: 12px;
+            line-height: 1.6;
+            color: #334155;
+        }
+
+        .rules-list i {
+            color: #2563EB;
+        }
+
+        /* =========================================
+           MESSAGES DJANGO
+        ========================================= */
+
+        .message {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+
+            padding: 16px 20px;
+            margin-bottom: 20px;
+
+            border-radius: 12px;
+            border: 1px solid;
+
+            font-size: 13px;
+            line-height: 1.7;
+        }
+
+        .message-success {
+            background: #ECFDF5;
+            border-color: #A7F3D0;
+            color: #065F46;
+        }
+
+        .message-error {
+            background: #FEF2F2;
+            border-color: #FECACA;
+            color: #991B1B;
+        }
+
+        .message-warning {
+            background: #FFFBEB;
+            border-color: #FDE68A;
+            color: #92400E;
+        }
+
+        .message-info {
+            background: #EFF6FF;
+            border-color: #BFDBFE;
+            color: #1E40AF;
+        }
+
+        /* =========================================
+           LAYOUT
+        ========================================= */
+
+        .workspace {
+            display: grid;
+            grid-template-columns:
+                minmax(0, 1fr)
+                minmax(300px, 370px);
+
+            align-items: start;
+            gap: 24px;
+        }
+
+        .workspace > * {
+            min-width: 0;
+        }
+
+        /* =========================================
+           FORM CARD
+        ========================================= */
+
+        .form-card {
+            background: #FFFFFF;
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            overflow: hidden;
+
+            box-shadow:
+                0 4px 24px rgba(15, 23, 42, 0.04);
+        }
+
+        /* =========================================
+           FORM HEADER
+        ========================================= */
+
+        .form-header {
+            position: relative;
+
+            display: flex;
+            align-items: center;
+            gap: 18px;
+
+            padding: 28px 30px;
+
+            background: #FFFFFF;
+            border-bottom: 1px solid #EDF1F6;
+        }
+
+        .form-header-icon {
+            width: 54px;
+            height: 54px;
+            flex-shrink: 0;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            background: #EEF2FF;
+            color: #4F46E5;
+
+            border-radius: 15px;
+            font-size: 21px;
+        }
+
+        .form-header-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .form-eyebrow {
+            margin-bottom: 6px;
+
+            color: #64748B;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+        }
+
+        .form-header h2 {
+            margin: 0;
+
+            color: #0F172A;
+            font-size: 19px;
+            font-weight: 800;
+            letter-spacing: -0.4px;
+        }
+
+        .form-header p {
+            margin: 7px 0 0;
+
+            color: #94A3B8;
+            font-size: 12px;
+            line-height: 1.7;
+        }
+
+        .form-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+
+            padding: 6px 10px;
+
+            background: #ECFDF5;
+            color: #059669;
+            border: 1px solid #A7F3D0;
+            border-radius: 20px;
+
+            font-size: 10px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #10B981;
+        }
+
+        /* =========================================
+           FORM BODY
+        ========================================= */
+
+        .form-body {
+            padding: 0 30px;
+        }
+
+        /* =========================================
+           FORM SECTIONS
+        ========================================= */
+
+        .form-section {
+            padding: 30px 0;
+            border-bottom: 1px solid #EDF1F6;
+        }
+
+        .form-section:last-of-type {
+            border-bottom: none;
+        }
+
+        .section-heading {
+            display: flex;
+            align-items: flex-start;
+            gap: 13px;
+
+            margin-bottom: 25px;
+        }
+
+        .step-number {
+            width: 35px;
+            height: 35px;
+            flex-shrink: 0;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            background: #EFF6FF;
+            color: #2563EB;
+
+            border: 1px solid #DBEAFE;
+            border-radius: 10px;
+
+            font-size: 12px;
+            font-weight: 800;
+        }
+
+        .section-heading h3 {
+            margin: 0;
+
+            font-size: 14px;
+            font-weight: 800;
+            color: #172033;
+        }
+
+        .section-heading p {
+            margin: 5px 0 0;
+
+            font-size: 11px;
+            line-height: 1.7;
+            color: #94A3B8;
+        }
+
+        /* =========================================
+           GRID
+        ========================================= */
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 22px 18px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 9px;
+            min-width: 0;
+        }
+
+        .full-width {
+            grid-column: 1 / -1;
+        }
+
+        /* =========================================
+           LABELS
+        ========================================= */
+
+        .form-label {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 7px;
+
+            color: #334155;
+            font-size: 12px;
+            font-weight: 700;
+            line-height: 1.5;
+        }
+
+        .form-label i {
+            width: 17px;
+            text-align: center;
+            color: #64748B;
+        }
+
+        .required {
+            color: #EF4444;
+        }
+
+        .optional {
+            color: #94A3B8;
+            font-size: 11px;
+            font-weight: 400;
+        }
+
+        /* =========================================
+           INPUTS / SELECTS
+        ========================================= */
+
+        .form-group select,
+        .form-group input:not([type="checkbox"]),
+        .form-group textarea {
+
+            display: block;
+
+            width: 100%;
+            min-width: 0;
+            min-height: 48px;
+
+            padding: 12px 14px;
+
+            background: #FFFFFF;
+
+            border: 1px solid #DCE3ED;
+            border-radius: 10px;
+
+            color: #1E293B;
+
+            font-size: 13px;
+            font-weight: 500;
+
+            outline: none;
+
+            transition:
+                border-color 0.2s,
+                box-shadow 0.2s,
+                background 0.2s;
+        }
+
+        .form-group select {
+            cursor: pointer;
+        }
+
+        .form-group textarea {
+            min-height: 115px;
+            resize: vertical;
+            line-height: 1.7;
+        }
+
+        .form-group select:hover,
+        .form-group input:hover,
+        .form-group textarea:hover {
+            border-color: #94A3B8;
+        }
+
+        .form-group select:focus,
+        .form-group input:focus,
+        .form-group textarea:focus {
+            border-color: #2563EB;
+
+            box-shadow:
+                0 0 0 4px rgba(37, 99, 235, 0.09);
+        }
+
+        .form-group select:disabled {
+            background: #F1F5F9;
+            color: #94A3B8;
+            cursor: not-allowed;
+        }
+
+        .field-hint {
+            display: flex;
+            align-items: flex-start;
+            gap: 7px;
+
+            margin: 0;
+
+            color: #94A3B8;
+            font-size: 11px;
+            line-height: 1.7;
+        }
+
+        .field-hint i {
+            margin-top: 3px;
+            color: #64748B;
+        }
+
+        .field-errors {
+            margin: 0;
+            padding-left: 18px;
+
+            color: #DC2626;
+            font-size: 11px;
+            line-height: 1.6;
+        }
+
+        /* =========================================
+           AUTO SELECT BADGE
+        ========================================= */
+
+        .auto-selected-badge {
+            display: none;
+            align-items: center;
+            gap: 5px;
+
+            margin-left: auto;
+
+            padding: 4px 9px;
+
+            background: #ECFDF5;
+            color: #059669;
+
+            border: 1px solid #A7F3D0;
+            border-radius: 20px;
+
+            font-size: 10px;
+            font-weight: 700;
+        }
+
+        /* =========================================
+           LEVEL GUIDE
+        ========================================= */
+
+        .level-guide {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 7px;
+
+            margin-top: 4px;
+        }
+
+        .level-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+
+            padding: 5px 9px;
+
+            border-radius: 6px;
+
+            font-size: 10px;
+            font-weight: 700;
+        }
+
+        .level-i {
+            background: #FEF3C7;
+            color: #92400E;
+        }
+
+        .level-l {
+            background: #DBEAFE;
+            color: #1D4ED8;
+        }
+
+        .level-u {
+            background: #D1FAE5;
+            color: #047857;
+        }
+
+        /* =========================================
+           TRAINING INFORMATION PANEL
+        ========================================= */
+
+        .training-info-panel {
+            display: none;
+
+            padding: 19px 20px;
+
+            background: #F0FDF4;
+            border: 1px solid #A7F3D0;
+            border-radius: 12px;
+        }
+
+        .training-info-panel.warning {
+            background: #FFFBEB;
+            border-color: #FCD34D;
+        }
+
+        .training-info-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+
+            margin-bottom: 10px;
+
+            color: #065F46;
+            font-size: 12px;
+            font-weight: 800;
+        }
+
+        .training-info-content {
+            color: #047857;
+            font-size: 12px;
+            line-height: 1.9;
+            white-space: pre-line;
+        }
+
+        .training-info-panel.warning .training-info-title,
+        .training-info-panel.warning .training-info-content {
+            color: #92400E;
+        }
+
+        /* =========================================
+           FORCE SAVE
+        ========================================= */
+
+        .force-container {
+            padding: 18px 20px;
+
+            background: #FFF9F2;
+            border: 1px solid #F5DBBC;
+            border-radius: 12px;
+        }
+
+        .force-checkbox-label {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+
+            cursor: pointer;
+        }
+
+        .force-checkbox-label input {
+            width: 18px;
+            height: 18px;
+            flex-shrink: 0;
+
+            margin-top: 2px;
+
+            accent-color: #D97706;
+        }
+
+        .force-title {
+            color: #92400E;
+            font-size: 12px;
+            font-weight: 800;
+            line-height: 1.6;
+        }
+
+        .force-title i {
+            margin-right: 5px;
+        }
+
+        .force-description {
+            margin: 6px 0 0 30px;
+
+            color: #A16207;
+            font-size: 11px;
+            line-height: 1.8;
+        }
+
+        /* =========================================
+           FORM ACTIONS
+        ========================================= */
+
+        .form-actions {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+            gap: 12px;
+
+            margin: 0 -30px;
+            padding: 22px 30px;
+
+            background: #FAFCFF;
+            border-top: 1px solid #EDF1F6;
+        }
+
+        .action-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 9px;
+
+            min-height: 46px;
+            padding: 12px 20px;
+
+            border-radius: 10px;
+            border: 1px solid transparent;
+
+            font-size: 12px;
+            font-weight: 700;
+
+            cursor: pointer;
+
+            transition: all 0.2s ease;
+        }
+
+        .action-reset {
+            background: white;
+            color: #475569;
+            border-color: #DCE3ED;
+        }
+
+        .action-reset:hover {
+            background: #F1F5F9;
+        }
+
+        .action-submit {
+            background: #2563EB;
+            color: #FFFFFF;
+            border-color: #2563EB;
+
+            box-shadow:
+                0 4px 12px rgba(37, 99, 235, 0.15);
+        }
+
+        .action-submit:hover {
+            background: #1D4ED8;
+            transform: translateY(-1px);
+        }
+
+        .action-btn:focus-visible,
+        .btn:focus-visible {
+            outline: 3px solid #93C5FD;
+            outline-offset: 3px;
+        }
+
+        /* =========================================
+           SIDEBAR
+        ========================================= */
+
+        .sidebar-card {
+            background: white;
+
+            border: 1px solid var(--border);
+            border-radius: 18px;
+
+            overflow: hidden;
+
+            box-shadow:
+                0 4px 24px rgba(15, 23, 42, 0.04);
+        }
+
+        .sidebar-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+
+            padding: 22px;
+
+            border-bottom: 1px solid #EDF1F6;
+        }
+
+        .sidebar-icon {
+            width: 40px;
+            height: 40px;
+            flex-shrink: 0;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            background: #EEF2FF;
+            color: #4F46E5;
+
+            border-radius: 11px;
+            font-size: 16px;
+        }
+
+        .sidebar-header h3 {
+            margin: 0;
+
+            color: #0F172A;
+            font-size: 14px;
+            font-weight: 800;
+        }
+
+        .sidebar-header p {
+            margin: 5px 0 0;
+
+            color: #94A3B8;
+            font-size: 11px;
+        }
+
+        .sidebar-body {
+            padding: 16px;
+
+            max-height: 650px;
+            overflow-y: auto;
+        }
+
+        /* =========================================
+           LEADER CARD
+        ========================================= */
+
+        .leader-card {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+
+            padding: 15px;
+            margin-bottom: 10px;
+
+            background: #FFFFFF;
+            border: 1px solid #E8EDF5;
+            border-radius: 12px;
+
+            transition: all 0.2s ease;
+        }
+
+        .leader-card:last-child {
+            margin-bottom: 0;
+        }
+
+        .leader-card:hover {
+            background: #F8FAFF;
+            border-color: #BFDBFE;
+        }
+
+        .leader-avatar {
+            width: 43px;
+            height: 43px;
+            flex-shrink: 0;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            background: #EEF2FF;
+            color: #4338CA;
+
+            border-radius: 12px;
+
+            font-size: 13px;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        .leader-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .leader-name {
+            color: #1E293B;
+            font-size: 12px;
+            font-weight: 800;
+            line-height: 1.5;
+        }
+
+        .leader-matricule {
+            margin-top: 4px;
+
+            color: #94A3B8;
+            font-size: 10px;
+        }
+
+        .leader-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+
+            margin-top: 9px;
         }
 
         .badge {
             display: inline-flex;
             align-items: center;
-            padding: 4px 10px;
-            border-radius: 6px;
-            font-size: 11px;
-            font-weight: 600;
             gap: 4px;
-        }
 
-        .badge-purple { background: var(--purple); color: white; }
-        .badge-line { background: rgba(37, 99, 235, 0.1); color: var(--accent-blue); }
-        .badge-level-i { background: #FEF3C7; color: #92400E; }
-        .badge-level-l { background: #DBEAFE; color: #1E3A8A; }
-        .badge-level-u { background: #D1FAE5; color: #065F46; }
+            padding: 4px 8px;
 
-        .data-table { width: 100%; border-collapse: separate; border-spacing: 0; }
-        .data-table thead th {
-            background: var(--gray-50);
-            padding: 14px 18px;
-            text-align: left;
-            font-size: 11px;
+            border-radius: 6px;
+
+            font-size: 10px;
             font-weight: 700;
-            text-transform: uppercase;
-            border-bottom: 2px solid var(--gray-200);
-        }
-        .data-table tbody td {
-            padding: 14px 18px;
-            border-bottom: 1px solid var(--gray-100);
-        }
-        .data-table tbody tr:hover { background: var(--gray-50); }
-
-        .info-box {
-            background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
-            border: 1px solid #93C5FD;
-            border-radius: 10px;
-            padding: 16px 20px;
-            margin-bottom: 24px;
-            display: flex;
-            gap: 12px;
         }
 
-        .info-box i { color: var(--accent-blue); font-size: 20px; }
-
-        .warning-box {
-            background: linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%);
-            border: 2px solid #FCD34D;
-            border-radius: 10px;
-            padding: 16px 20px;
-            margin-top: 16px;
+        .badge-purple {
+            background: #F3E8FF;
+            color: #7E22CE;
         }
 
-        .force-checkbox-container {
-            background: linear-gradient(135deg, #FEF2F2 0%, #FEE2E2 100%);
-            border: 2px solid #FCA5A5;
-            border-radius: 10px;
-            padding: 16px 20px;
-            margin-top: 20px;
+        .badge-line {
+            background: #EFF6FF;
+            color: #1D4ED8;
         }
 
-        .force-checkbox-label {
+        .badge-level-i {
+            background: #FEF3C7;
+            color: #92400E;
+        }
+
+        .badge-level-l {
+            background: #DBEAFE;
+            color: #1D4ED8;
+        }
+
+        .badge-level-u {
+            background: #D1FAE5;
+            color: #047857;
+        }
+
+        .leader-last {
+            margin-top: 10px;
+
+            color: #94A3B8;
+            font-size: 10px;
+            line-height: 1.7;
+        }
+
+        .leader-count {
+            flex-shrink: 0;
+            text-align: center;
+        }
+
+        .leader-count strong {
+            display: block;
+
+            color: #2563EB;
+            font-size: 20px;
+            font-weight: 800;
+        }
+
+        .leader-count span {
+            color: #94A3B8;
+            font-size: 9px;
+        }
+
+        /* =========================================
+           HISTORIQUE
+        ========================================= */
+
+        .history-card {
+            margin-top: 28px;
+
+            background: #FFFFFF;
+            border: 1px solid var(--border);
+            border-radius: 18px;
+
+            overflow: hidden;
+
+            box-shadow:
+                0 4px 24px rgba(15, 23, 42, 0.04);
+        }
+
+        .history-header {
             display: flex;
             align-items: center;
             gap: 12px;
-            cursor: pointer;
-            font-weight: 600;
-            color: #991B1B;
+
+            padding: 22px 25px;
+
+            border-bottom: 1px solid #EDF1F6;
         }
 
-        .force-checkbox-label input {
-            width: 20px;
-            height: 20px;
-            accent-color: var(--danger-red);
+        .history-icon {
+            width: 40px;
+            height: 40px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            background: #EEF2FF;
+            color: #4F46E5;
+
+            border-radius: 11px;
         }
 
-        .training-info-panel {
-            background: linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%);
-            border: 2px solid #86EFAC;
-            border-radius: 10px;
-            padding: 16px;
-            margin-top: 16px;
+        .history-header h3 {
+            margin: 0;
+
+            font-size: 14px;
+            font-weight: 800;
         }
 
-        .training-info-panel.warning {
-            background: linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%);
-            border-color: #FCD34D;
-        }
+        .history-header p {
+            margin: 5px 0 0;
 
-        /* ✅ NOUVEAU : Badge auto-sélection */
-        .auto-selected-badge {
-            display: inline-block;
-            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
-            color: white;
-            padding: 4px 10px;
-            border-radius: 6px;
+            color: #94A3B8;
             font-size: 11px;
-            font-weight: 600;
-            margin-left: 8px;
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+        .table-wrapper {
+            width: 100%;
+            overflow-x: auto;
         }
-        .fade-in { animation: fadeIn 0.4s ease-out; }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        .data-table th {
+            padding: 15px 20px;
+
+            background: #F8FAFC;
+
+            color: #64748B;
+
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+
+            border-bottom: 1px solid #E2E8F0;
+            white-space: nowrap;
+        }
+
+        .data-table td {
+            padding: 17px 20px;
+
+            color: #475569;
+            font-size: 12px;
+
+            border-bottom: 1px solid #F1F5F9;
+            vertical-align: middle;
+        }
+
+        .data-table tbody tr:hover {
+            background: #F8FAFC;
+        }
+
+        .data-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .table-person {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .table-avatar {
+            width: 34px;
+            height: 34px;
+            flex-shrink: 0;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            background: #EFF6FF;
+            color: #1D4ED8;
+
+            border-radius: 9px;
+
+            font-size: 11px;
+            font-weight: 800;
+        }
+
+        .table-person strong {
+            display: block;
+
+            color: #1E293B;
+            font-size: 12px;
+        }
+
+        .table-person small {
+            color: #94A3B8;
+            font-size: 10px;
+        }
+
+        .empty-state {
+            padding: 45px 20px;
+
+            text-align: center;
+            color: #94A3B8;
+        }
+
+        .empty-state i {
+            font-size: 30px;
+            margin-bottom: 13px;
+        }
+
+        /* =========================================
+           RESPONSIVE
+        ========================================= */
+
+        @media (max-width: 1100px) {
+
+            .workspace {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar-body {
+                max-height: 450px;
+            }
+
+        }
+
+        @media (max-width: 768px) {
+
+            .main-container {
+                padding: 20px 16px;
+            }
+
+            .page-heading h1 {
+                font-size: 22px;
+            }
+
+            .rules-card {
+                padding: 18px;
+            }
+
+            .form-header {
+                padding: 23px 20px;
+            }
+
+            .form-body {
+                padding: 0 20px;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .form-section {
+                padding: 25px 0;
+            }
+
+            .form-actions {
+                margin: 0 -20px;
+                padding: 20px;
+            }
+
+            .form-actions button {
+                flex: 1;
+            }
+
+            .form-status {
+                display: none;
+            }
+
+        }
+
+        @media (max-width: 520px) {
+
+            .form-header {
+                align-items: flex-start;
+            }
+
+            .form-header h2 {
+                font-size: 17px;
+            }
+
+            .form-header-icon {
+                width: 42px;
+                height: 42px;
+                font-size: 17px;
+            }
+
+            .rules-list {
+                flex-direction: column;
+            }
+
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+
+            *,
+            *::before,
+            *::after {
+                transition: none !important;
+            }
+
+        }
+
     </style>
+
 </head>
+
+
 <body>
 
-    <!-- HEADER -->
+    <!-- =========================================
+         HEADER ORIGINAL — AUCUNE MODIFICATION
+    ========================================= -->
+
     <header class="corporate-header">
+
         <div style="max-width: 1400px; margin: 0 auto; padding: 20px 32px; display: flex; justify-content: space-between; align-items: center;">
+
             <div style="display: flex; align-items: center; gap: 16px;">
-                <img src="{% static 'images/logo.png' %}" alt="Logo" style="max-width: 140px;">
+
+                <img src="{% static 'images/logo.png' %}"
+                     alt="Logo"
+                     style="max-width: 140px;">
+
                 <div style="border-left: 1px solid rgba(255,255,255,0.3); padding-left: 16px;">
-                    <div style="color: white; font-size: 18px; font-weight: 700;">Formation Chefs d'Équipe</div>
-                    <div style="color: rgba(255,255,255,0.7); font-size: 12px;">Réservé au Service RH</div>
+
+                    <div style="color: white; font-size: 18px; font-weight: 700;">
+                        Formation Chefs d'Équipe
+                    </div>
+
+                    <div style="color: rgba(255,255,255,0.7); font-size: 12px;">
+                        Réservé au Service RH
+                    </div>
+
                 </div>
+
             </div>
-            <a href="{% url 'employee_list_rh' %}" class="btn btn-secondary">
-                <i class="fas fa-arrow-left"></i> Retour à la liste
+
+            <a href="{% url 'employee_list_rh' %}"
+               class="btn btn-secondary">
+
+                <i class="fas fa-arrow-left"></i>
+
+                Retour à la liste
+
             </a>
+
         </div>
+
     </header>
 
-    <!-- MAIN -->
-    <div style="max-width: 1400px; margin: 0 auto; padding: 32px;">
 
-        <!-- Breadcrumb -->
-        <nav style="margin-bottom: 24px; font-size: 14px; color: var(--gray-500);" class="fade-in">
-            <a href="{% url 'rh_dashboard' %}" style="color: var(--accent-blue); text-decoration: none;">
-                <i class="fas fa-home"></i> Accueil
+    <!-- =========================================
+         MAIN
+    ========================================= -->
+
+    <main class="main-container">
+
+
+        <!-- BREADCRUMB -->
+
+        <nav class="breadcrumb" aria-label="Fil d'Ariane">
+
+            <a href="{% url 'rh_dashboard' %}">
+
+                <i class="fas fa-home"></i>
+
+                Accueil
+
             </a>
-            <i class="fas fa-chevron-right" style="margin: 0 8px; font-size: 10px;"></i>
-            <span>Former les Chefs d'Équipe</span>
+
+            <i class="fas fa-chevron-right"></i>
+
+            <span>
+                Former les Chefs d'Équipe
+            </span>
+
         </nav>
 
-        <!-- Info Box -->
-        <div class="info-box fade-in">
-            <i class="fas fa-info-circle" style="margin-top: 2px;"></i>
-            <div>
-                <p style="font-weight: 600; color: var(--gray-700); margin-bottom: 4px;">Règles de formation</p>
-                <ul style="color: var(--gray-600); font-size: 14px; margin: 0; padding-left: 20px;">
-                    <li>Le premier niveau doit être <strong>I (En formation)</strong></li>
-                    <li>Passage I → L : minimum <strong>7 jours</strong></li>
-                    <li>Passage L → U : minimum <strong>21 jours</strong></li>
-                    <li>Pas de saut direct I → U</li>
-                    <li>La ligne est <strong>automatiquement sélectionnée</strong> selon le chef d'équipe</li>
-                    <li>Utilisez "Forcer l'enregistrement" uniquement pour les cas exceptionnels</li>
-                </ul>
-            </div>
+
+        <!-- PAGE HEADING -->
+
+        <div class="page-heading">
+
+            <h1>
+                Gestion des formations
+            </h1>
+
+            <p>
+                Enregistrez les formations des chefs d'équipe
+                et suivez leur progression dans la matrice
+                de compétences.
+            </p>
+
         </div>
 
-        <!-- Messages -->
-        {% if messages %}
-        {% for message in messages %}
-        <div class="fade-in" style="margin-bottom: 20px; padding: 16px 20px; border-radius: 10px; display: flex; align-items: flex-start; gap: 12px;
-            {% if message.tags == 'success' %}background: #D1FAE5; border: 1px solid #6EE7B7; color: #065F46;
-            {% elif message.tags == 'error' %}background: #FEE2E2; border: 1px solid #FCA5A5; color: #991B1B;
-            {% elif message.tags == 'warning' %}background: #FEF3C7; border: 1px solid #FCD34D; color: #92400E;
-            {% else %}background: #DBEAFE; border: 1px solid #93C5FD; color: #1E3A8A;{% endif %}">
-            <i class="fas {% if message.tags == 'success' %}fa-check-circle{% elif message.tags == 'error' %}fa-exclamation-circle{% elif message.tags == 'warning' %}fa-exclamation-triangle{% else %}fa-info-circle{% endif %}" style="margin-top: 3px;"></i>
-            <span style="white-space: pre-line;">{{ message }}</span>
+
+        <!-- =====================================
+             RÈGLES DE FORMATION
+        ===================================== -->
+
+        <div class="rules-card">
+
+            <div class="rules-icon">
+
+                <i class="fas fa-info-circle"></i>
+
+            </div>
+
+            <div class="rules-content">
+
+                <h3>
+                    Règles de progression des compétences
+                </h3>
+
+                <ul class="rules-list">
+
+                    <li>
+
+                        <i class="fas fa-check-circle"></i>
+
+                        Premier niveau :
+                        <strong>I (En formation)</strong>
+
+                    </li>
+
+                    <li>
+
+                        <i class="fas fa-clock"></i>
+
+                        I → L :
+                        <strong>7 jours minimum</strong>
+
+                    </li>
+
+                    <li>
+
+                        <i class="fas fa-clock"></i>
+
+                        L → U :
+                        <strong>21 jours minimum</strong>
+
+                    </li>
+
+                    <li>
+
+                        <i class="fas fa-ban"></i>
+
+                        Pas de saut direct I → U
+
+                    </li>
+
+                    <li>
+
+                        <i class="fas fa-magic"></i>
+
+                        Ligne automatiquement sélectionnée
+
+                    </li>
+
+                </ul>
+
+            </div>
+
         </div>
-        {% endfor %}
+
+
+        <!-- =====================================
+             MESSAGES DJANGO
+        ===================================== -->
+
+        {% if messages %}
+
+            {% for message in messages %}
+
+                <div
+                    role="alert"
+                    class="message
+                    {% if 'success' in message.tags %}
+                        message-success
+                    {% elif 'error' in message.tags %}
+                        message-error
+                    {% elif 'warning' in message.tags %}
+                        message-warning
+                    {% else %}
+                        message-info
+                    {% endif %}"
+                >
+
+                    {% if 'success' in message.tags %}
+
+                        <i class="fas fa-check-circle"></i>
+
+                    {% elif 'error' in message.tags %}
+
+                        <i class="fas fa-exclamation-circle"></i>
+
+                    {% elif 'warning' in message.tags %}
+
+                        <i class="fas fa-exclamation-triangle"></i>
+
+                    {% else %}
+
+                        <i class="fas fa-info-circle"></i>
+
+                    {% endif %}
+
+                    <span style="white-space: pre-line;">
+                        {{ message }}
+                    </span>
+
+                </div>
+
+            {% endfor %}
+
         {% endif %}
 
-        <div style="display: grid; grid-template-columns: 1fr 400px; gap: 24px;">
-            
-            <!-- Formulaire -->
-            <div class="section fade-in">
-                <div class="section-header purple">
-                    <h3 class="section-title">
+
+        <!-- =====================================
+             WORKSPACE
+        ===================================== -->
+
+        <div class="workspace">
+
+
+            <!-- =================================
+                 FORMULAIRE
+            ================================= -->
+
+            <section class="form-card">
+
+
+                <!-- FORM HEADER -->
+
+                <div class="form-header">
+
+                    <div class="form-header-icon">
+
                         <i class="fas fa-user-graduate"></i>
-                        Enregistrer une Formation
-                    </h3>
+
+                    </div>
+
+                    <div class="form-header-content">
+
+                        <div class="form-eyebrow">
+                            FORMULAIRE RH
+                        </div>
+
+                        <h2>
+                            Enregistrer une formation
+                        </h2>
+
+                        <p>
+                            Complétez les informations ci-dessous
+                            pour enregistrer une nouvelle formation.
+                        </p>
+
+                    </div>
+
+                    <span class="form-status">
+
+                        <span class="status-dot"></span>
+
+                        Nouvelle formation
+
+                    </span>
+
                 </div>
-                <div class="section-body">
+
+
+                <!-- =================================
+                     FORM
+                ================================= -->
+
+                <div class="form-body">
+
                     <form method="post" id="trainingForm">
+
                         {% csrf_token %}
-                        
-                        <div class="form-grid">
-                            <!-- Chef d'équipe -->
-                            <div class="form-group">
-                                <label>
-                                    <i class="fas fa-user-tie"></i>
-                                    Chef d'Équipe <span class="required">*</span>
-                                </label>
-                                {{ form.employee }}
-                            </div>
 
-                            <!-- Ligne (auto-sélectionnée) -->
-                            <div class="form-group">
-                                <label>
-                                    <i class="fas fa-industry"></i>
-                                    Ligne de Production <span class="required">*</span>
-                                    <span id="autoSelectBadge" class="auto-selected-badge" style="display: none;">
-                                        <i class="fas fa-magic"></i> Auto-sélectionné
-                                    </span>
-                                </label>
-                                {{ form.line }}
-                                <small style="color: var(--gray-500); font-size: 12px; margin-top: 4px;">
-                                    <i class="fas fa-lightbulb"></i> La ligne est automatiquement sélectionnée selon le chef d'équipe
-                                </small>
-                            </div>
 
-                            <!-- Tâche -->
-                            <div class="form-group">
-                                <label>
-                                    <i class="fas fa-tasks"></i>
-                                    Tâche <span class="required">*</span>
-                                </label>
-                                {{ form.task }}
-                            </div>
+                        <!-- =========================
+                             SECTION 01
+                        ========================= -->
 
-                            <!-- Niveau -->
-                            <div class="form-group">
-                                <label>
-                                    <i class="fas fa-layer-group"></i>
-                                    Niveau <span class="required">*</span>
-                                </label>
-                                {{ form.level }}
-                            </div>
+                        <div class="form-section">
 
-                            <!-- Date -->
-                            <div class="form-group">
-                                <label>
-                                    <i class="fas fa-calendar-alt"></i>
-                                    Date de Formation <span class="required">*</span>
-                                </label>
-                                {{ form.date }}
-                            </div>
 
-                            <!-- Notes -->
-                            <div class="form-group full-width">
-                                <label>
-                                    <i class="fas fa-comment"></i>
-                                    Notes (optionnel)
-                                </label>
-                                {{ form.note }}
-                            </div>
-                        </div>
+                            <div class="section-heading">
 
-                        <!-- Panel d'information sur la formation actuelle -->
-                        <div id="trainingInfoPanel" class="training-info-panel" style="display: none;">
-                            <div style="font-weight: 600; color: #065F46; margin-bottom: 8px;">
-                                <i class="fas fa-info-circle"></i> État actuel de la formation
-                            </div>
-                            <div id="trainingInfoContent" style="font-size: 14px; color: #047857;"></div>
-                        </div>
-
-                        <!-- Option Forcer -->
-                        <div class="force-checkbox-container">
-                            <label class="force-checkbox-label">
-                                {{ form.force_save }}
-                                <span>
-                                    <i class="fas fa-exclamation-triangle"></i>
-                                    <strong>Forcer l'enregistrement</strong> — Ignorer les restrictions de délai
+                                <span class="step-number">
+                                    01
                                 </span>
-                            </label>
-                            <p style="font-size: 12px; color: #B91C1C; margin: 8px 0 0 32px;">
-                                ⚠️ À utiliser uniquement pour les cas exceptionnels (rattrapage, correction, etc.)
-                            </p>
+
+                                <div>
+
+                                    <h3>
+                                        Informations du chef d'équipe
+                                    </h3>
+
+                                    <p>
+                                        Sélectionnez le responsable
+                                        et sa ligne de production.
+                                    </p>
+
+                                </div>
+
+                            </div>
+
+
+                            <div class="form-grid">
+
+
+                                <!-- EMPLOYEE -->
+
+                                <div class="form-group">
+
+                                    <label
+                                        for="{{ form.employee.id_for_label }}"
+                                        class="form-label"
+                                    >
+
+                                        <i class="fas fa-user-tie"></i>
+
+                                        Chef d'équipe
+
+                                        <span class="required">*</span>
+
+                                    </label>
+
+                                    {{ form.employee }}
+
+                                    {% if form.employee.errors %}
+
+                                        <ul class="field-errors">
+
+                                            {% for error in form.employee.errors %}
+
+                                                <li>
+                                                    {{ error }}
+                                                </li>
+
+                                            {% endfor %}
+
+                                        </ul>
+
+                                    {% endif %}
+
+                                </div>
+
+
+                                <!-- LINE -->
+
+                                <div class="form-group">
+
+                                    <label
+                                        for="{{ form.line.id_for_label }}"
+                                        class="form-label"
+                                    >
+
+                                        <i class="fas fa-industry"></i>
+
+                                        Ligne de production
+
+                                        <span class="required">*</span>
+
+                                        <span
+                                            id="autoSelectBadge"
+                                            class="auto-selected-badge"
+                                        >
+
+                                            <i class="fas fa-check-circle"></i>
+
+                                            Automatique
+
+                                        </span>
+
+                                    </label>
+
+                                    {{ form.line }}
+
+                                    <p class="field-hint">
+
+                                        <i class="fas fa-info-circle"></i>
+
+                                        <span>
+                                            La ligne est sélectionnée
+                                            automatiquement selon le
+                                            chef d'équipe.
+                                        </span>
+
+                                    </p>
+
+                                    {% if form.line.errors %}
+
+                                        <ul class="field-errors">
+
+                                            {% for error in form.line.errors %}
+
+                                                <li>
+                                                    {{ error }}
+                                                </li>
+
+                                            {% endfor %}
+
+                                        </ul>
+
+                                    {% endif %}
+
+                                </div>
+
+
+                            </div>
+
                         </div>
 
-                        <!-- Erreurs -->
-                        {% if form.errors %}
-                        <div style="margin-top: 20px; padding: 16px; background: #FEE2E2; border: 1px solid #FCA5A5; border-radius: 8px; color: #991B1B;">
-                            <strong><i class="fas fa-exclamation-triangle"></i> Erreurs :</strong>
-                            <ul style="margin: 8px 0 0 20px;">
-                                {% for field in form %}
-                                    {% for error in field.errors %}
-                                    <li>{{ field.label }} : {{ error }}</li>
-                                    {% endfor %}
-                                {% endfor %}
-                                {% for error in form.non_field_errors %}
-                                <li>{{ error }}</li>
-                                {% endfor %}
-                            </ul>
+
+                        <!-- =========================
+                             SECTION 02
+                        ========================= -->
+
+                        <div class="form-section">
+
+
+                            <div class="section-heading">
+
+                                <span class="step-number">
+                                    02
+                                </span>
+
+                                <div>
+
+                                    <h3>
+                                        Détails de la formation
+                                    </h3>
+
+                                    <p>
+                                        Définissez la tâche, le niveau
+                                        de compétence et la date.
+                                    </p>
+
+                                </div>
+
+                            </div>
+
+
+                            <div class="form-grid">
+
+
+                                <!-- TASK -->
+
+                                <div class="form-group full-width">
+
+                                    <label
+                                        for="{{ form.task.id_for_label }}"
+                                        class="form-label"
+                                    >
+
+                                        <i class="fas fa-tasks"></i>
+
+                                        Tâche
+
+                                        <span class="required">*</span>
+
+                                    </label>
+
+                                    {{ form.task }}
+
+                                    <p class="field-hint">
+
+                                        <i class="fas fa-info-circle"></i>
+
+                                        <span>
+                                            Les tâches sont filtrées
+                                            automatiquement selon la
+                                            ligne sélectionnée.
+                                        </span>
+
+                                    </p>
+
+                                    {% if form.task.errors %}
+
+                                        <ul class="field-errors">
+
+                                            {% for error in form.task.errors %}
+
+                                                <li>
+                                                    {{ error }}
+                                                </li>
+
+                                            {% endfor %}
+
+                                        </ul>
+
+                                    {% endif %}
+
+                                </div>
+
+
+                                <!-- LEVEL -->
+
+                                <div class="form-group">
+
+                                    <label
+                                        for="{{ form.level.id_for_label }}"
+                                        class="form-label"
+                                    >
+
+                                        <i class="fas fa-layer-group"></i>
+
+                                        Niveau de compétence
+
+                                        <span class="required">*</span>
+
+                                    </label>
+
+                                    {{ form.level }}
+
+
+                                    <div class="level-guide">
+
+                                        <span class="level-badge level-i">
+
+                                            I - En formation
+
+                                        </span>
+
+                                        <span class="level-badge level-l">
+
+                                            L - Autonome
+
+                                        </span>
+
+                                        <span class="level-badge level-u">
+
+                                            U - Formateur
+
+                                        </span>
+
+                                    </div>
+
+                                    {% if form.level.errors %}
+
+                                        <ul class="field-errors">
+
+                                            {% for error in form.level.errors %}
+
+                                                <li>
+                                                    {{ error }}
+                                                </li>
+
+                                            {% endfor %}
+
+                                        </ul>
+
+                                    {% endif %}
+
+                                </div>
+
+
+                                <!-- DATE -->
+
+                                <div class="form-group">
+
+                                    <label
+                                        for="{{ form.date.id_for_label }}"
+                                        class="form-label"
+                                    >
+
+                                        <i class="fas fa-calendar-alt"></i>
+
+                                        Date de formation
+
+                                        <span class="required">*</span>
+
+                                    </label>
+
+                                    {{ form.date }}
+
+                                    {% if form.date.errors %}
+
+                                        <ul class="field-errors">
+
+                                            {% for error in form.date.errors %}
+
+                                                <li>
+                                                    {{ error }}
+                                                </li>
+
+                                            {% endfor %}
+
+                                        </ul>
+
+                                    {% endif %}
+
+                                </div>
+
+
+                                <!-- TRAINING INFO -->
+
+                                <div class="form-group full-width">
+
+                                    <div
+                                        id="trainingInfoPanel"
+                                        class="training-info-panel"
+                                        role="status"
+                                        aria-live="polite"
+                                    >
+
+                                        <div class="training-info-title">
+
+                                            <i class="fas fa-info-circle"></i>
+
+                                            État actuel de la formation
+
+                                        </div>
+
+                                        <div
+                                            id="trainingInfoContent"
+                                            class="training-info-content"
+                                        ></div>
+
+                                    </div>
+
+                                </div>
+
+
+                            </div>
+
                         </div>
+
+
+                        <!-- =========================
+                             SECTION 03
+                        ========================= -->
+
+                        <div class="form-section">
+
+
+                            <!-- <div class="section-heading">
+
+                                <span class="step-number">
+                                    03
+                                </span>
+
+                                <div>
+
+                                    <h3>
+                                        Informations complémentaires
+                                    </h3>
+
+                                    <p>
+                                        Ajoutez des observations
+                                        ou une dérogation exceptionnelle.
+                                    </p>
+
+                                </div>
+
+                            </div> -->
+
+
+                            <div class="form-grid">
+
+
+                                <!-- NOTES -->
+
+                                <!-- <div class="form-group full-width">
+
+                                    <label
+                                        for="{{ form.note.id_for_label }}"
+                                        class="form-label"
+                                    >
+
+                                        <i class="fas fa-comment-alt"></i>
+
+                                        Notes
+
+                                        <span class="optional">
+                                            (Facultatif)
+                                        </span>
+
+                                    </label>
+
+                                    {{ form.note }}
+
+                                    {% if form.note.errors %}
+
+                                        <ul class="field-errors">
+
+                                            {% for error in form.note.errors %}
+
+                                                <li>
+                                                    {{ error }}
+                                                </li>
+
+                                            {% endfor %}
+
+                                        </ul>
+
+                                    {% endif %}
+
+                                </div> -->
+
+
+                                <!-- FORCE SAVE -->
+
+                                <div class="form-group full-width">
+
+                                    <div class="force-container">
+
+                                        <label
+                                            class="force-checkbox-label"
+                                            for="{{ form.force_save.id_for_label }}"
+                                        >
+
+                                            {{ form.force_save }}
+
+                                            <span class="force-title">
+
+                                                <i class="fas fa-exclamation-triangle"></i>
+
+                                                Forcer l'enregistrement
+
+                                                <span style="font-weight: 400;">
+                                                    — Ignorer les restrictions de délai
+                                                </span>
+
+                                            </span>
+
+                                        </label>
+
+                                        <p class="force-description">
+
+                                            Cette option doit être utilisée
+                                            uniquement pour les cas exceptionnels :
+                                            rattrapage, correction ou dérogation.
+
+                                        </p>
+
+                                        {% if form.force_save.errors %}
+
+                                            <ul class="field-errors">
+
+                                                {% for error in form.force_save.errors %}
+
+                                                    <li>
+                                                        {{ error }}
+                                                    </li>
+
+                                                {% endfor %}
+
+                                            </ul>
+
+                                        {% endif %}
+
+                                    </div>
+
+                                </div>
+
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- =========================
+                             FORM ERRORS
+                        ========================= -->
+
+                        {% if form.non_field_errors %}
+
+                            <div
+                                class="message message-error"
+                                role="alert"
+                                style="margin-top: 20px;"
+                            >
+
+                                <i class="fas fa-exclamation-triangle"></i>
+
+                                <div>
+
+                                    <strong>
+                                        Erreurs d'enregistrement
+                                    </strong>
+
+                                    <ul>
+
+                                        {% for error in form.non_field_errors %}
+
+                                            <li>
+                                                {{ error }}
+                                            </li>
+
+                                        {% endfor %}
+
+                                    </ul>
+
+                                </div>
+
+                            </div>
+
                         {% endif %}
 
-                        <!-- Actions -->
-                        <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--gray-200);">
-                            <button type="reset" class="btn btn-secondary">
-                                <i class="fas fa-redo"></i> Réinitialiser
+
+                        <!-- =========================
+                             ACTIONS
+                        ========================= -->
+
+                        <div class="form-actions">
+
+                            <button
+                                type="reset"
+                                class="action-btn action-reset"
+                            >
+
+                                <i class="fas fa-redo"></i>
+
+                                Réinitialiser
+
                             </button>
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-save"></i> Enregistrer
+
+                            <button
+                                type="submit"
+                                class="action-btn action-submit"
+                            >
+
+                                <i class="fas fa-save"></i>
+
+                                Enregistrer la formation
+
                             </button>
+
                         </div>
+
+
                     </form>
-                </div>
-            </div>
 
-            <!-- Liste des chefs -->
-            <div class="section fade-in">
-                <div class="section-header">
-                    <h3 class="section-title">
+                </div>
+
+            </section>
+
+
+            <!-- =================================
+                 SIDEBAR : CHEFS D'ÉQUIPE
+            ================================= -->
+
+            <aside class="sidebar-card">
+
+
+                <div class="sidebar-header">
+
+                    <div class="sidebar-icon">
+
                         <i class="fas fa-users-cog"></i>
-                        Chefs d'Équipe ({{ leaders_data|length }})
-                    </h3>
+
+                    </div>
+
+                    <div>
+
+                        <h3>
+
+                            Chefs d'équipe
+
+                            ({{ leaders_data|length }})
+
+                        </h3>
+
+                        <p>
+                            Liste des responsables de production
+                        </p>
+
+                    </div>
+
                 </div>
-                <div class="section-body" style="padding: 16px; max-height: 600px; overflow-y: auto;">
+
+
+                <div class="sidebar-body">
+
+
                     {% for item in leaders_data %}
-                    <div class="leader-card" style="margin-bottom: 12px;">
-                        <div class="leader-avatar">
-                            {{ item.employee.first_name|first }}{{ item.employee.last_name|first }}
-                        </div>
-                        <div style="flex: 1;">
-                            <div style="font-weight: 600; color: var(--gray-900);">
-                                {{ item.employee.first_name }} {{ item.employee.last_name }}
+
+
+                        <div class="leader-card">
+
+
+                            <!-- AVATAR -->
+
+                            <div class="leader-avatar">
+
+                                {{ item.employee.first_name|first }}{{ item.employee.last_name|first }}
+
                             </div>
-                            <div style="font-size: 12px; color: var(--gray-500); margin-top: 2px;">
-                                {{ item.employee.matricule }}
-                            </div>
-                            <div style="margin-top: 6px; display: flex; gap: 4px; flex-wrap: wrap;">
-                                <span class="badge badge-purple">
-                                    <i class="fas fa-star"></i> Chef
-                                </span>
-                                {% for code in item.managed_lines %}
-                                <span class="badge badge-line">{{ code }}</span>
-                                {% endfor %}
-                            </div>
-                            {% if item.last_training %}
-                            <div style="margin-top: 8px; font-size: 11px; color: var(--gray-500);">
-                                Dernière formation: {{ item.last_training.date|date:"d/m/Y" }}
-                                {% if item.last_training.level == 0 %}
-                                <span class="badge badge-level-i" style="font-size: 9px;">I</span>
-                                {% elif item.last_training.level == 1 %}
-                                <span class="badge badge-level-l" style="font-size: 9px;">L</span>
-                                {% elif item.last_training.level == 3 %}
-                                <span class="badge badge-level-u" style="font-size: 9px;">U</span>
+
+
+                            <!-- INFO -->
+
+                            <div class="leader-info">
+
+                                <div class="leader-name">
+
+                                    {{ item.employee.first_name }}
+
+                                    {{ item.employee.last_name }}
+
+                                </div>
+
+
+                                <div class="leader-matricule">
+
+                                    Matricule :
+
+                                    {{ item.employee.matricule }}
+
+                                </div>
+
+
+                                <!-- BADGES -->
+
+                                <div class="leader-tags">
+
+                                    <span class="badge badge-purple">
+
+                                        <i class="fas fa-star"></i>
+
+                                        Chef
+
+                                    </span>
+
+
+                                    {% for code in item.managed_lines %}
+
+                                        <span class="badge badge-line">
+
+                                            {{ code }}
+
+                                        </span>
+
+                                    {% endfor %}
+
+                                </div>
+
+
+                                <!-- DERNIÈRE FORMATION -->
+
+                                {% if item.last_training %}
+
+                                    <div class="leader-last">
+
+                                        Dernière formation :
+
+                                        {{ item.last_training.date|date:"d/m/Y" }}
+
+
+                                        {% if item.last_training.level == 0 %}
+
+                                            <span class="badge badge-level-i">
+
+                                                I
+
+                                            </span>
+
+                                        {% elif item.last_training.level == 1 %}
+
+                                            <span class="badge badge-level-l">
+
+                                                L
+
+                                            </span>
+
+                                        {% elif item.last_training.level == 3 %}
+
+                                            <span class="badge badge-level-u">
+
+                                                U
+
+                                            </span>
+
+                                        {% endif %}
+
+                                    </div>
+
                                 {% endif %}
+
+
                             </div>
-                            {% endif %}
+
+
+                            <!-- COUNT -->
+
+                            <div class="leader-count">
+
+                                <strong>
+
+                                    {{ item.training_count }}
+
+                                </strong>
+
+                                <span>
+
+                                    Formations
+
+                                </span>
+
+                            </div>
+
+
                         </div>
-                        <div style="text-align: right;">
-                            <div style="font-size: 20px; font-weight: 700; color: var(--purple);">
-                                {{ item.training_count }}
-                            </div>
-                            <div style="font-size: 10px; color: var(--gray-500); text-transform: uppercase;">
-                                Formations
-                            </div>
-                        </div>
-                    </div>
+
+
                     {% empty %}
-                    <div style="text-align: center; padding: 40px; color: var(--gray-400);">
-                        <i class="fas fa-user-tie" style="font-size: 40px; margin-bottom: 12px;"></i>
-                        <p>Aucun chef d'équipe trouvé</p>
-                    </div>
+
+
+                        <div class="empty-state">
+
+                            <i class="fas fa-user-tie"></i>
+
+                            <p>
+                                Aucun chef d'équipe trouvé.
+                            </p>
+
+                        </div>
+
+
                     {% endfor %}
+
+
                 </div>
-            </div>
+
+            </aside>
+
+
         </div>
 
-        <!-- Historique -->
+
+        <!-- =====================================
+             HISTORIQUE DES FORMATIONS
+        ===================================== -->
+
         {% if recent_trainings %}
-        <div class="section fade-in">
-            <div class="section-header">
-                <h3 class="section-title">
-                    <i class="fas fa-history"></i>
-                    Formations Récentes des Chefs
-                </h3>
-            </div>
-            <div style="overflow-x: auto;">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Chef d'Équipe</th>
-                            <th>Tâche</th>
-                            <th>Ligne</th>
-                            <th>Niveau</th>
-                            <th>Date</th>
-                            <th>Formateur</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for record in recent_trainings %}
-                        <tr>
-                            <td>
-                                <div style="display: flex; align-items: center; gap: 10px;">
-                                    <div style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, var(--purple) 0%, #A855F7 100%); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 12px;">
-                                        {{ record.employee.first_name|first }}{{ record.employee.last_name|first }}
-                                    </div>
-                                    <div>
-                                        <strong>{{ record.employee.first_name }} {{ record.employee.last_name }}</strong>
-                                        <div style="font-size: 11px; color: var(--gray-500);">{{ record.employee.matricule }}</div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>
-                                <span class="badge badge-line">{{ record.task.code }}</span>
-                                {{ record.task.title|truncatewords:5 }}
-                            </td>
-                            <td>
-                                {% for line in record.lines.all %}
-                                <span class="badge badge-line">{{ line.code }}</span>
-                                {% empty %}
-                                <span style="color: var(--gray-400);">—</span>
-                                {% endfor %}
-                            </td>
-                            <td>
-                                {% if record.level == 0 %}
-                                <span class="badge badge-level-i">I - En formation</span>
-                                {% elif record.level == 1 %}
-                                <span class="badge badge-level-l">L - Autonome</span>
-                                {% elif record.level == 3 %}
-                                <span class="badge badge-level-u">U - Formateur</span>
-                                {% endif %}
-                            </td>
-                            <td style="font-family: 'JetBrains Mono', monospace; font-size: 13px;">
-                                {{ record.date|date:"d/m/Y" }}
-                            </td>
-                            <td>
-                                {% if record.trainer %}
-                                <span style="color: var(--purple); font-weight: 600;">
-                                    <i class="fas fa-user-graduate"></i>
-                                    {{ record.trainer.first_name }} {{ record.trainer.last_name }}
-                                </span>
-                                {% else %}
-                                <span style="color: var(--gray-400);">—</span>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
+
+
+            <section class="history-card">
+
+
+                <!-- HEADER HISTORIQUE -->
+
+                <div class="history-header">
+
+                    <div class="history-icon">
+
+                        <i class="fas fa-history"></i>
+
+                    </div>
+
+                    <div>
+
+                        <h3>
+
+                            Formations récentes des chefs
+
+                        </h3>
+
+                        <p>
+
+                            Historique des derniers enregistrements
+
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <!-- TABLE -->
+
+                <div class="table-wrapper">
+
+                    <table class="data-table">
+
+
+                        <thead>
+
+                            <tr>
+
+                                <th>
+                                    Chef d'équipe
+                                </th>
+
+                                <th>
+                                    Tâche
+                                </th>
+
+                                <th>
+                                    Ligne
+                                </th>
+
+                                <th>
+                                    Niveau
+                                </th>
+
+                                <th>
+                                    Date
+                                </th>
+
+                                <th>
+                                    Formateur
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+
+                            {% for record in recent_trainings %}
+
+
+                                <tr>
+
+
+                                    <!-- EMPLOYEE -->
+
+                                    <td>
+
+                                        <div class="table-person">
+
+                                            <div class="table-avatar">
+
+                                                {{ record.employee.first_name|first }}{{ record.employee.last_name|first }}
+
+                                            </div>
+
+                                            <div>
+
+                                                <strong>
+
+                                                    {{ record.employee.first_name }}
+
+                                                    {{ record.employee.last_name }}
+
+                                                </strong>
+
+                                                <small>
+
+                                                    {{ record.employee.matricule }}
+
+                                                </small>
+
+                                            </div>
+
+                                        </div>
+
+                                    </td>
+
+
+                                    <!-- TASK -->
+
+                                    <td>
+
+                                        <span class="badge badge-line">
+
+                                            {{ record.task.code }}
+
+                                        </span>
+
+                                        {{ record.task.title|truncatewords:5 }}
+
+                                    </td>
+
+
+                                    <!-- LINE -->
+
+                                    <td>
+
+                                        {% for line in record.lines.all %}
+
+                                            <span class="badge badge-line">
+
+                                                {{ line.code }}
+
+                                            </span>
+
+                                        {% empty %}
+
+                                            —
+
+                                        {% endfor %}
+
+                                    </td>
+
+
+                                    <!-- LEVEL -->
+
+                                    <td>
+
+                                        {% if record.level == 0 %}
+
+                                            <span class="badge badge-level-i">
+
+                                                I - En formation
+
+                                            </span>
+
+                                        {% elif record.level == 1 %}
+
+                                            <span class="badge badge-level-l">
+
+                                                L - Autonome
+
+                                            </span>
+
+                                        {% elif record.level == 3 %}
+
+                                            <span class="badge badge-level-u">
+
+                                                U - Formateur
+
+                                            </span>
+
+                                        {% else %}
+
+                                            —
+
+                                        {% endif %}
+
+                                    </td>
+
+
+                                    <!-- DATE -->
+
+                                    <td>
+
+                                        {{ record.date|date:"d/m/Y" }}
+
+                                    </td>
+
+
+                                    <!-- TRAINER -->
+
+                                    <td>
+
+                                        {% if record.trainer %}
+
+                                            <i
+                                                class="fas fa-user-graduate"
+                                                style="color: #2563EB;"
+                                            ></i>
+
+                                            {{ record.trainer.first_name }}
+
+                                            {{ record.trainer.last_name }}
+
+                                        {% else %}
+
+                                            —
+
+                                        {% endif %}
+
+                                    </td>
+
+
+                                </tr>
+
+
+                            {% endfor %}
+
+
+                        </tbody>
+
+
+                    </table>
+
+                </div>
+
+
+            </section>
+
+
         {% endif %}
 
-    </div>
+
+    </main>
+
+
+    <!-- =========================================
+         JAVASCRIPT — FONCTIONNALITÉS CONSERVÉES
+    ========================================= -->
 
     <script>
-        // ═══════════════════════════════════════════════════════════════════
-        // ✅ DONNÉES POUR LE FILTRAGE DYNAMIQUE
-        // ═══════════════════════════════════════════════════════════════════
+
+        // =====================================
+        // DONNÉES DJANGO
+        // =====================================
+
         const linesData = {{ lines_data_json|safe }};
+
         const leadersLines = {{ leaders_lines_json|safe }};
+
         const leadersHistory = {{ leaders_history_json|safe }};
-        const employeeLinesMap = {{ employee_lines_json|safe }};  // ✅ NOUVEAU
-        
-        const lineSelect = document.getElementById('id_line');
-        const taskSelect = document.getElementById('id_task');
-        const employeeSelect = document.getElementById('id_employee');
-        const levelSelect = document.getElementById('id_level');
-        const trainingInfoPanel = document.getElementById('trainingInfoPanel');
-        const trainingInfoContent = document.getElementById('trainingInfoContent');
-        const autoSelectBadge = document.getElementById('autoSelectBadge');
-        
-        // Sauvegarder toutes les options de tâches
-        const allTaskOptions = Array.from(taskSelect.options);
-        
-        // ═══════════════════════════════════════════════════════════════════
-        // ✅ FONCTION : Auto-sélection de la ligne selon le chef d'équipe
-        // ═══════════════════════════════════════════════════════════════════
-        function updateLineFromEmployee() {
-            const employeeId = parseInt(employeeSelect.value);
-            
-            if (!employeeId) {
-                lineSelect.value = '';
-                autoSelectBadge.style.display = 'none';
-                // Réafficher toutes les lignes
-                Array.from(lineSelect.options).forEach(option => {
-                    option.style.display = '';
-                });
-                return;
-            }
-            
-            // Trouver les lignes gérées par ce chef
-            const employeeData = employeeLinesMap.find(e => e.employee_id === employeeId);
-            
-            if (employeeData && employeeData.managed_line_ids.length > 0) {
-                // ✅ Auto-sélectionner la première ligne
-                const firstLineId = employeeData.managed_line_ids[0];
-                lineSelect.value = firstLineId;
-                
-                // Afficher le badge "Auto-sélectionné"
-                autoSelectBadge.style.display = 'inline-block';
-                
-                // Filtrer les options pour n'afficher que les lignes gérées
-                Array.from(lineSelect.options).forEach(option => {
-                    if (option.value === '') {
-                        option.style.display = '';
-                    } else if (employeeData.managed_line_ids.includes(parseInt(option.value))) {
-                        option.style.display = '';
-                    } else {
-                        option.style.display = 'none';
-                    }
-                });
-                
-                // Déclencher le changement pour filtrer les tâches
-                lineSelect.dispatchEvent(new Event('change'));
-            } else {
-                // Aucune ligne trouvée
-                lineSelect.value = '';
-                autoSelectBadge.style.display = 'none';
-                Array.from(lineSelect.options).forEach(option => {
-                    option.style.display = '';
-                });
-            }
-        }
-        
-        // ═══════════════════════════════════════════════════════════════════
-        // FONCTION : Afficher l'info de formation
-        // ═══════════════════════════════════════════════════════════════════
-        function updateTrainingInfo() {
-            const empId = parseInt(employeeSelect.value);
-            const lineId = parseInt(lineSelect.value);
-            const taskId = parseInt(taskSelect.value);
-            const newLevel = parseInt(levelSelect.value);
-            
-            if (!empId || !lineId || !taskId || isNaN(newLevel)) {
-                trainingInfoPanel.style.display = 'none';
-                return;
-            }
-            
-            const history = leadersHistory[empId] || [];
-            
-            // Trouver le dernier enregistrement pour cette tâche et ligne
-            const lastRecord = history.find(r => 
-                r.task_id === taskId && r.line_ids.includes(lineId)
+
+        const employeeLinesMap = {{ employee_lines_json|safe }};
+
+
+        // =====================================
+        // ÉLÉMENTS
+        // =====================================
+
+        const trainingForm =
+            document.getElementById('trainingForm');
+
+        const employeeSelect =
+            document.getElementById('id_employee');
+
+        const lineSelect =
+            document.getElementById('id_line');
+
+        const taskSelect =
+            document.getElementById('id_task');
+
+        const levelSelect =
+            document.getElementById('id_level');
+
+        const trainingDateInput =
+            document.getElementById('id_date');
+
+        const trainingInfoPanel =
+            document.getElementById('trainingInfoPanel');
+
+        const trainingInfoContent =
+            document.getElementById('trainingInfoContent');
+
+        const autoSelectBadge =
+            document.getElementById('autoSelectBadge');
+
+
+        // =====================================
+        // VÉRIFICATION
+        // =====================================
+
+        if (
+            employeeSelect &&
+            lineSelect &&
+            taskSelect &&
+            levelSelect
+        ) {
+
+
+            // =====================================
+            // SAUVEGARDER LES TÂCHES
+            // =====================================
+
+            const allTaskOptions = Array.from(
+                taskSelect.options
+            ).map(
+                option => option.cloneNode(true)
             );
-            
-            if (!lastRecord) {
-                trainingInfoPanel.className = 'training-info-panel';
-                trainingInfoContent.innerHTML = `
-                    <strong>Première formation</strong> sur cette tâche/ligne.<br>
-                    Le niveau doit être <strong>I (En formation)</strong>.
-                `;
-                trainingInfoPanel.style.display = 'block';
-                return;
-            }
-            
-            const levelLabels = {0: 'I (En formation)', 1: 'L (Autonome)', 3: 'U (Formateur)'};
-            const lastDate = new Date(lastRecord.date);
-            const today = new Date();
-            const daysSince = Math.floor((today - lastDate) / (1000 * 60 * 60 * 24));
-            
-            let message = `
-                <strong>Niveau actuel :</strong> ${levelLabels[lastRecord.level] || lastRecord.level}<br>
-                <strong>Dernière formation :</strong> ${lastDate.toLocaleDateString('fr-FR')}<br>
-                <strong>Jours écoulés :</strong> ${daysSince} jour(s)
-            `;
-            
-            let isWarning = false;
-            
-            // Vérifier les conditions
-            if (lastRecord.level === 0 && newLevel === 1) {
-                if (daysSince < 7) {
-                    message += `<br><br>⚠️ <strong>Attention :</strong> Passage I→L nécessite 7 jours minimum (${daysSince}/7)`;
-                    isWarning = true;
-                } else {
-                    message += `<br><br>✅ Passage I→L autorisé (${daysSince} ≥ 7 jours)`;
+
+
+            // =====================================
+            // FILTRER LES TÂCHES
+            // =====================================
+
+            function filterTasks() {
+
+                const selectedLineId =
+                    parseInt(lineSelect.value);
+
+                const previousTask =
+                    taskSelect.value;
+
+                taskSelect.innerHTML = '';
+
+                const emptyOption =
+                    new Option('Sélectionner une tâche', '');
+
+                taskSelect.add(emptyOption);
+
+
+                if (!selectedLineId) {
+
+                    updateTrainingInfo();
+
+                    return;
+
                 }
-            } else if (lastRecord.level === 1 && newLevel === 3) {
-                if (daysSince < 21) {
-                    message += `<br><br>⚠️ <strong>Attention :</strong> Passage L→U nécessite 21 jours minimum (${daysSince}/21)`;
-                    isWarning = true;
-                } else {
-                    message += `<br><br>✅ Passage L→U autorisé (${daysSince} ≥ 21 jours)`;
+
+
+                const lineInfo = linesData.find(
+                    line => Number(line.id) === selectedLineId
+                );
+
+
+                if (
+                    lineInfo &&
+                    Array.isArray(lineInfo.task_ids)
+                ) {
+
+                    allTaskOptions.forEach(option => {
+
+                        const taskId =
+                            parseInt(option.value);
+
+                        if (
+                            option.value &&
+                            lineInfo.task_ids.some(
+                                id => Number(id) === taskId
+                            )
+                        ) {
+
+                            taskSelect.appendChild(
+                                option.cloneNode(true)
+                            );
+
+                        }
+
+                    });
+
                 }
-            } else if (lastRecord.level === 0 && newLevel === 3) {
-                message += `<br><br>❌ <strong>Interdit :</strong> Impossible de passer directement de I à U`;
-                isWarning = true;
-            } else if (newLevel < lastRecord.level) {
-                message += `<br><br>❌ <strong>Attention :</strong> Rétrogradation de niveau`;
-                isWarning = true;
-            }
-            
-            trainingInfoPanel.className = isWarning ? 'training-info-panel warning' : 'training-info-panel';
-            trainingInfoContent.innerHTML = message;
-            trainingInfoPanel.style.display = 'block';
-        }
-        
-        // ═══════════════════════════════════════════════════════════════════
-        // ✅ EVENT : Quand on sélectionne un chef d'équipe
-        // ═══════════════════════════════════════════════════════════════════
-        if (employeeSelect) {
-            employeeSelect.addEventListener('change', function() {
-                updateLineFromEmployee();
+
+
+                // Restaurer la tâche sélectionnée
+                // si elle appartient à la ligne.
+
+                const taskExists = Array.from(
+                    taskSelect.options
+                ).some(
+                    option => option.value === previousTask
+                );
+
+
+                if (taskExists) {
+
+                    taskSelect.value = previousTask;
+
+                }
+
+
                 updateTrainingInfo();
-            });
-        }
-        
-        // ═══════════════════════════════════════════════════════════════════
-        // EVENT : Quand on change la ligne, filtrer les tâches
-        // ═══════════════════════════════════════════════════════════════════
-        if (lineSelect) {
-            lineSelect.addEventListener('change', function() {
-                const selectedLineId = parseInt(this.value);
-                
-                taskSelect.innerHTML = '<option value="">---------</option>';
-                
-                if (selectedLineId) {
-                    const lineInfo = linesData.find(l => l.id === selectedLineId);
-                    
-                    if (lineInfo && lineInfo.task_ids) {
-                        allTaskOptions.forEach(option => {
-                            if (option.value && lineInfo.task_ids.includes(parseInt(option.value))) {
-                                taskSelect.appendChild(option.cloneNode(true));
-                            }
-                        });
+
+            }
+
+
+            // =====================================
+            // SÉLECTION AUTOMATIQUE DE LA LIGNE
+            // =====================================
+
+            function updateLineFromEmployee(
+                preserveSelection = false
+            ) {
+
+                const employeeId =
+                    parseInt(employeeSelect.value);
+
+
+                autoSelectBadge.style.display = 'none';
+
+
+                // Réinitialiser les options de lignes.
+
+                Array.from(lineSelect.options).forEach(
+                    option => {
+
+                        option.hidden = false;
+
+                        option.disabled = false;
+
                     }
+                );
+
+
+                if (!employeeId) {
+
+                    lineSelect.value = '';
+
+                    filterTasks();
+
+                    return;
+
                 }
-                
-                updateTrainingInfo();
-            });
-        }
-        
-        // ═══════════════════════════════════════════════════════════════════
-        // EVENT : Quand on change la tâche ou le niveau
-        // ═══════════════════════════════════════════════════════════════════
-        if (taskSelect) taskSelect.addEventListener('change', updateTrainingInfo);
-        if (levelSelect) levelSelect.addEventListener('change', updateTrainingInfo);
-        
-        // ═══════════════════════════════════════════════════════════════════
-        // ✅ INITIALISATION : Si un employé est déjà sélectionné
-        // ═══════════════════════════════════════════════════════════════════
-        document.addEventListener('DOMContentLoaded', function() {
-            if (employeeSelect.value) {
-                updateLineFromEmployee();
+
+
+                // Rechercher les lignes du chef.
+
+                const employeeData = employeeLinesMap.find(
+                    item => Number(item.employee_id) === employeeId
+                );
+
+
+                if (
+                    !employeeData ||
+                    !Array.isArray(employeeData.managed_line_ids) ||
+                    employeeData.managed_line_ids.length === 0
+                ) {
+
+                    lineSelect.value = '';
+
+                    filterTasks();
+
+                    return;
+
+                }
+
+
+                const managedIds =
+                    employeeData.managed_line_ids.map(
+                        id => Number(id)
+                    );
+
+
+                const currentLine =
+                    parseInt(lineSelect.value);
+
+
+                // Conserver la ligne sélectionnée
+                // après une erreur de formulaire.
+
+                if (
+                    !preserveSelection ||
+                    !managedIds.includes(currentLine)
+                ) {
+
+                    lineSelect.value = String(
+                        managedIds[0]
+                    );
+
+                }
+
+
+                // Masquer les lignes non gérées.
+
+                Array.from(lineSelect.options).forEach(
+                    option => {
+
+                        if (!option.value) {
+                            return;
+                        }
+
+                        const allowed = managedIds.includes(
+                            Number(option.value)
+                        );
+
+                        option.hidden = !allowed;
+
+                        option.disabled = !allowed;
+
+                    }
+                );
+
+
+                autoSelectBadge.style.display =
+                    'inline-flex';
+
+
+                filterTasks();
+
             }
-        });
-        
-        // ═══════════════════════════════════════════════════════════════════
-        // Animation
-        // ═══════════════════════════════════════════════════════════════════
-        document.querySelectorAll('.fade-in').forEach((el, index) => {
-            el.style.opacity = '0';
-            el.style.transform = 'translateY(10px)';
-            setTimeout(() => {
-                el.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
-                el.style.opacity = '1';
-                el.style.transform = 'translateY(0)';
-            }, index * 80);
-        });
+
+
+            // =====================================
+            // INFORMATION SUR LA FORMATION
+            // =====================================
+
+            function updateTrainingInfo() {
+
+
+                const empId =
+                    parseInt(employeeSelect.value);
+
+                const lineId =
+                    parseInt(lineSelect.value);
+
+                const taskId =
+                    parseInt(taskSelect.value);
+
+                const newLevel =
+                    parseInt(levelSelect.value);
+
+
+                // Tous les champs doivent être sélectionnés.
+
+                if (
+                    !empId ||
+                    !lineId ||
+                    !taskId ||
+                    isNaN(newLevel)
+                ) {
+
+                    trainingInfoPanel.style.display = 'none';
+
+                    return;
+
+                }
+
+
+                const history =
+                    leadersHistory[empId] || [];
+
+
+                // Trouver le dernier enregistrement
+                // pour cette tâche et cette ligne.
+
+                const matchingRecords = history.filter(
+                    record => {
+
+                        return (
+                            Number(record.task_id) === taskId
+                            &&
+                            Array.isArray(record.line_ids)
+                            &&
+                            record.line_ids.some(
+                                id => Number(id) === lineId
+                            )
+                        );
+
+                    }
+                );
+
+
+                matchingRecords.sort((a, b) => {
+
+                    const dateA = new Date(a.date);
+
+                    const dateB = new Date(b.date);
+
+                    return dateB - dateA;
+
+                });
+
+
+                const lastRecord = matchingRecords[0];
+
+
+                // =================================
+                // PREMIÈRE FORMATION
+                // =================================
+
+                if (!lastRecord) {
+
+
+                    trainingInfoPanel.className =
+                        'training-info-panel';
+
+
+                    let message =
+                        'Première formation sur cette tâche et cette ligne.\n' +
+                        'Le premier niveau doit être I - En formation.';
+
+
+                    if (newLevel !== 0) {
+
+                        trainingInfoPanel.className =
+                            'training-info-panel warning';
+
+                        message +=
+                            '\n\n⚠️ Attention : la première formation doit commencer au niveau I.';
+
+                    }
+
+
+                    trainingInfoContent.textContent = message;
+
+                    trainingInfoPanel.style.display = 'block';
+
+                    return;
+
+                }
+
+
+                // =================================
+                // NIVEAUX
+                // =================================
+
+                const levelLabels = {
+
+                    0: 'I - En formation',
+
+                    1: 'L - Autonome',
+
+                    3: 'U - Formateur'
+
+                };
+
+
+                const lastLevel =
+                    Number(lastRecord.level);
+
+
+                const lastDate =
+                    new Date(lastRecord.date);
+
+
+                // Utiliser la date choisie dans le
+                // formulaire si elle est renseignée.
+
+                let referenceDate = new Date();
+
+                if (
+                    trainingDateInput &&
+                    trainingDateInput.value
+                ) {
+
+                    const selectedDate =
+                        new Date(
+                            trainingDateInput.value + 'T12:00:00'
+                        );
+
+                    if (!isNaN(selectedDate.getTime())) {
+
+                        referenceDate = selectedDate;
+
+                    }
+
+                }
+
+
+                // =================================
+                // CALCUL DES JOURS
+                // =================================
+
+                const daysSince = Math.floor(
+
+                    (
+
+                        Date.UTC(
+                            referenceDate.getFullYear(),
+                            referenceDate.getMonth(),
+                            referenceDate.getDate()
+                        )
+
+                        -
+
+                        Date.UTC(
+                            lastDate.getFullYear(),
+                            lastDate.getMonth(),
+                            lastDate.getDate()
+                        )
+
+                    )
+
+                    / (1000 * 60 * 60 * 24)
+
+                );
+
+
+                // =================================
+                // MESSAGE
+                // =================================
+
+                let message =
+
+                    'Niveau actuel : ' +
+                    (levelLabels[lastLevel] || lastLevel)
+
+                    + '\nDernière formation : ' +
+                    lastDate.toLocaleDateString('fr-FR')
+
+                    + '\nJours écoulés : ' +
+                    daysSince;
+
+
+                let isWarning = false;
+
+
+                // =================================
+                // DATE ANTÉRIEURE
+                // =================================
+
+                if (daysSince < 0) {
+
+                    message +=
+
+                        '\n\n⚠️ La date choisie est antérieure à la dernière formation.';
+
+                    isWarning = true;
+
+                }
+
+
+                // =================================
+                // I -> L
+                // =================================
+
+                if (
+                    lastLevel === 0 &&
+                    newLevel === 1
+                ) {
+
+                    if (daysSince < 7) {
+
+                        message +=
+
+                            '\n\n⚠️ Passage I → L : 7 jours minimum requis (' +
+                            daysSince +
+                            '/7 jours).';
+
+                        isWarning = true;
+
+                    } else {
+
+                        message +=
+
+                            '\n\n✅ Délai I → L respecté.';
+
+                    }
+
+                }
+
+
+                // =================================
+                // L -> U
+                // =================================
+
+                else if (
+                    lastLevel === 1 &&
+                    newLevel === 3
+                ) {
+
+                    if (daysSince < 21) {
+
+                        message +=
+
+                            '\n\n⚠️ Passage L → U : 21 jours minimum requis (' +
+                            daysSince +
+                            '/21 jours).';
+
+                        isWarning = true;
+
+                    } else {
+
+                        message +=
+
+                            '\n\n✅ Délai L → U respecté.';
+
+                    }
+
+                }
+
+
+                // =================================
+                // I -> U
+                // =================================
+
+                else if (
+                    lastLevel === 0 &&
+                    newLevel === 3
+                ) {
+
+                    message +=
+
+                        '\n\n❌ Passage direct I → U interdit.';
+
+                    isWarning = true;
+
+                }
+
+
+                // =================================
+                // RÉTROGRADATION
+                // =================================
+
+                else if (newLevel < lastLevel) {
+
+                    message +=
+
+                        '\n\n⚠️ Attention : rétrogradation de niveau.';
+
+                    isWarning = true;
+
+                }
+
+
+                // =================================
+                // AFFICHAGE
+                // =================================
+
+                trainingInfoPanel.className =
+
+                    isWarning
+
+                    ? 'training-info-panel warning'
+
+                    : 'training-info-panel';
+
+
+                trainingInfoContent.textContent = message;
+
+                trainingInfoPanel.style.display = 'block';
+
+            }
+
+
+            // =====================================
+            // ÉVÉNEMENTS
+            // =====================================
+
+            employeeSelect.addEventListener(
+                'change',
+                function() {
+
+                    updateLineFromEmployee(false);
+
+                }
+            );
+
+
+            lineSelect.addEventListener(
+                'change',
+                function() {
+
+                    autoSelectBadge.style.display = 'none';
+
+                    filterTasks();
+
+                }
+            );
+
+
+            taskSelect.addEventListener(
+                'change',
+                updateTrainingInfo
+            );
+
+
+            levelSelect.addEventListener(
+                'change',
+                updateTrainingInfo
+            );
+
+
+            if (trainingDateInput) {
+
+                trainingDateInput.addEventListener(
+                    'change',
+                    updateTrainingInfo
+                );
+
+            }
+
+
+            // =====================================
+            // INITIALISATION
+            // =====================================
+
+            if (employeeSelect.value) {
+
+                updateLineFromEmployee(true);
+
+            }
+
+            else if (lineSelect.value) {
+
+                filterTasks();
+
+            }
+
+
+            // =====================================
+            // RÉINITIALISATION
+            // =====================================
+
+            if (trainingForm) {
+
+                trainingForm.addEventListener(
+                    'reset',
+                    function() {
+
+                        setTimeout(function() {
+
+                            updateLineFromEmployee(true);
+
+                            if (!employeeSelect.value) {
+
+                                lineSelect.value = '';
+
+                                filterTasks();
+
+                            }
+
+                            trainingInfoPanel.style.display =
+                                'none';
+
+                        }, 0);
+
+                    }
+                );
+
+            }
+
+
+        }
+
     </script>
+
 
 </body>
 </html>
