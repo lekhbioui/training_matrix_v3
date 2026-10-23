@@ -1,5 +1,6 @@
 # admin.py
 
+from django.db import DatabaseError
 from django.utils import timezone
 from django.contrib.messages import constants as message_constants
 from django.contrib import admin
@@ -9,6 +10,7 @@ from django.utils.html import format_html
 from django.urls import reverse
 from django.db.models import Q
 from import_export.admin import ImportExportModelAdmin
+from jsonschema import ValidationError
 
 from .models import (
     Employee, LineTransfer, LineTransferApprovalRequest, PendingEmployee, ProductionLine, Task,
@@ -802,50 +804,156 @@ class ProductionLineAdmin(admin.ModelAdmin):
 # ADMIN TRAINING APPROVAL REQUEST
 # ═══════════════════════════════════════════════════════════════════════════════
 
+from .services_training_approval import approve_training_request
+
+
 @admin.register(TrainingApprovalRequest)
 class TrainingApprovalRequestAdmin(admin.ModelAdmin):
-    # Files are managed only by the owning leader through the dedicated view.
-    exclude = ("training_plan_image",)
-    readonly_fields = ("training_plan_link",)
 
+    list_display = (
+        "employee",
+        "task",
+        "requested_level",
+        "requested_by",
+        "status_display",
+        "date_requested",
+        "training_plan_link",
+    )
+
+    list_filter = (
+        "approved",
+        "requested_level",
+        "date_requested",
+    )
+
+    search_fields = (
+        "employee__first_name",
+        "employee__last_name",
+        "employee__matricule",
+        "task__title",
+    )
+
+    date_hierarchy = "date_requested"
+
+    ordering = ("-date_requested",)
+
+    list_per_page = 50
+
+    actions = (
+        "approve_selected",
+        "repair_approved",
+    )
+
+    # Les demandes sont créées par les workflows applicatifs.
+    def has_add_permission(self, request):
+        return False
+
+    # Empêcher l'édition directe de la décision et des
+    # informations sensibles.
     def get_readonly_fields(self, request, obj=None):
-        fields = list(super().get_readonly_fields(request, obj))
-        if obj and obj.requires_training_plan:
-            fields += ["approved", "reviewed_by", "reviewed_at", "rejection_reason",
-                       "requested_level", "training_record", "requested_by"]
-        return fields
+        return (
+            "employee",
+            "task",
+            "requested_level",
+            "line",
+            "training_date",
+            "training_record",
+            "requested_by",
+            "date_requested",
+            "approved",
+            "reviewed_by",
+            "reviewed_at",
+            "rejection_reason",
+            "notification_seen",
+            "training_plan_link",
+        )
+
+    def get_exclude(self, request, obj=None):
+        return ("training_plan_image",)
 
     @admin.display(description="Plan de formation")
     def training_plan_link(self, obj):
         if obj and obj.has_training_plan:
-            return format_html('<a href="{}" target="_blank" rel="noopener">Voir le plan</a>',
-                               reverse("training_plan_view", args=[obj.pk]))
-        return "Aucun plan disponible"
+            return format_html(
+                '<a href="{}" target="_blank" rel="noopener">'
+                'Voir le plan</a>',
+                reverse("training_plan_view", args=[obj.pk]),
+            )
 
-    list_display  = (
-        'employee', 'task', 'requested_level',
-        'requested_by', 'status_display', 'date_requested', 'training_plan_link',
-    )
-    list_filter   = ('approved', 'requested_level', 'date_requested')
-    search_fields = ('employee__last_name', 'employee__first_name', 'task__title')
-    date_hierarchy = 'date_requested'
+        return "Aucun plan — dérogation admin possible"
 
-    @admin.display(description='Statut')
+    @admin.display(description="Statut")
     def status_display(self, obj):
         if obj.approved is None:
-            return format_html(
-                '<span style="background:#FEF3C7;color:#92400E;'
-                'padding:3px 8px;border-radius:10px;">⏳ En attente</span>'
+            return "⏳ En attente"
+
+        if obj.approved is True:
+            return "✅ Approuvé"
+
+        return "❌ Refusé"
+
+    def _execute_approvals(self, request, queryset):
+        success = 0
+        errors = []
+
+        if not request.user.is_superuser:
+            self.message_user(
+                request,
+                "Cette dérogation est réservée aux superadministrateurs.",
+                level=message_constants.ERROR,
             )
-        if obj.approved:
-            return format_html(
-                '<span style="background:#D1FAE5;color:#065F46;'
-                'padding:3px 8px;border-radius:10px;">✅ Approuvé</span>'
+            return
+
+        for approval in queryset.order_by("pk"):
+            try:
+                training = approve_training_request(
+                    request_id=approval.pk,
+                    user=request.user,
+                    allow_missing_plan=True,
+                )
+
+            except ValidationError as exc:
+                errors.append(
+                    f"Demande #{approval.pk} : "
+                    + "; ".join(exc.messages)
+                )
+
+            except DatabaseError:
+                errors.append(
+                    f"Demande #{approval.pk} : erreur de base de données."
+                )
+
+            else:
+                success += 1
+
+        if success:
+            self.message_user(
+                request,
+                f"{success} formation(s) synchronisée(s) "
+                "avec la matrice.",
+                level=message_constants.SUCCESS,
             )
-        return format_html(
-            '<span style="background:#FEE2E2;color:#991B1B;'
-            'padding:3px 8px;border-radius:10px;">❌ Refusé</span>'
-        )
+
+        if errors:
+            self.message_user(
+                request,
+                "\n".join(errors[:10]),
+                level=message_constants.ERROR,
+            )
+
+    @admin.action(
+        description="✅ Approuver et synchroniser (plan facultatif)"
+    )
+    def approve_selected(self, request, queryset):
+        pending = queryset.filter(approved__isnull=True)
+        self._execute_approvals(request, pending)
+
+    @admin.action(
+        description="🔄 Réparer les approbations déjà effectuées"
+    )
+    def repair_approved(self, request, queryset):
+        approved = queryset.filter(approved=True)
+        self._execute_approvals(request, approved)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

@@ -317,6 +317,146 @@
             </div>
             {% endif %}
 
+            {% if form.is_date_edit %}
+            <div class="flex gap-3 bg-blue-50 border border-blue-200 rounded-lg p-4 mb-5">
+                <i class="fas fa-circle-info text-blue-500 mt-0.5 flex-shrink-0"></i>
+                <p class="text-sm text-blue-700">Seule la <strong>date de formation</strong> peut être modifiée. Les autres informations sont affichées en lecture seule.</p>
+            </div>
+
+            <fieldset disabled class="space-y-0">
+                <!-- ÉTAPE 1 : EMPLOYÉ -->
+                {% for field in form %}
+                    {% if field.name == 'employee' %}
+                    <div class="field-wrap">
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="w-5 h-5 rounded-full bg-gray-400 text-white text-xs flex items-center justify-center font-bold">1</span>
+                            <label class="field-label mb-0" for="{{ field.id_for_label }}">Employé</label>
+                        </div>
+                        {{ field }}
+                    </div>
+                    {% endif %}
+                {% endfor %}
+
+                <!-- ÉTAPE 2 : LIGNES -->
+                <div class="field-wrap">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="w-5 h-5 rounded-full bg-gray-400 text-white text-xs flex items-center justify-center font-bold">2</span>
+                        <p class="field-label mb-0">Lignes de production</p>
+                    </div>
+                    <div class="lines-chips">
+                        {% for line in form.edit_lines %}
+                            <span class="chip chip-other">
+                                <strong>{{ line.code }}</strong> — {{ line.name }}
+                            </span>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- ÉTAPE 3 : TÂCHE -->
+                {% for field in form %}
+                    {% if field.name == 'task' %}
+                    <div class="field-wrap">
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="w-5 h-5 rounded-full bg-gray-400 text-white text-xs flex items-center justify-center font-bold">3</span>
+                            <label class="field-label mb-0" for="{{ field.id_for_label }}">Tâche</label>
+                        </div>
+                        {{ field }}
+                    </div>
+                    {% endif %}
+                {% endfor %}
+
+                <!-- ÉTAPE 4 : NIVEAU -->
+                {% for field in form %}
+                    {% if field.name == 'level' %}
+                    <div class="field-wrap">
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="w-5 h-5 rounded-full bg-gray-400 text-white text-xs flex items-center justify-center font-bold">4</span>
+                            <label class="field-label mb-0" for="{{ field.id_for_label }}">Niveau</label>
+                        </div>
+                        {{ field }}
+                        <div class="mt-3 p-3 bg-gray-50 rounded border border-gray-200">
+                            <p class="text-xs font-semibold text-gray-600 mb-2">Niveaux :</p>
+                            <div class="space-y-1.5">
+                                <div class="level-badge lv-I"><i class="fas fa-graduation-cap"></i><strong>I</strong> — En formation</div>
+                                <div class="level-badge lv-L"><i class="fas fa-user-check"></i><strong>L</strong> — Autonome</div>
+                                <div class="level-badge lv-U"><i class="fas fa-user-graduate"></i><strong>U</strong> — Formateur</div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                {% endfor %}
+
+                <!-- STATUT RH -->
+                <div class="field-wrap">
+                    <p class="field-label"><i class="fas fa-user-tie mr-1 text-gray-400"></i>Statut RH</p>
+                    <div class="info-box ib-gray">
+                        <i class="fas fa-circle-info flex-shrink-0 mt-0.5"></i>
+                        <span><strong>{{ form.instance.get_approval_status_display }}</strong></span>
+                    </div>
+                </div>
+
+                <!-- QUESTIONNAIRE -->
+                {% if form.edit_questionnaire %}
+                <div class="mt-4">
+                    <div class="form-card overflow-hidden">
+                        <div class="px-6 py-4 border-b border-gray-200" style="background: linear-gradient(135deg, #64748b 0%, #94a3b8 100%);">
+                            <div class="flex items-center gap-3">
+                                <span class="w-8 h-8 rounded-full bg-white/20 backdrop-blur flex items-center justify-center flex-shrink-0">
+                                    <i class="fas fa-clipboard-check text-white text-sm"></i>
+                                </span>
+                                <div>
+                                    <h5 class="text-white font-semibold text-base mb-0.5 font-bold">Questionnaire (lecture seule)</h5>
+                                    <p class="text-slate-100 text-xs">Réponses enregistrées lors de la création.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="px-6 py-5 space-y-4">
+                            {% for answer in form.edit_questionnaire.answers.all %}
+                            <div class="rounded-lg border border-gray-200 bg-white overflow-hidden">
+                                <div class="flex items-start gap-3 px-4 py-3 bg-gray-50 border-b border-gray-100">
+                                    <span class="w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold bg-blue-100 text-blue-700">{{ forloop.counter }}</span>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-sm font-medium text-gray-800">{{ answer.question_text_snapshot }}</p>
+                                    </div>
+                                </div>
+                                <div class="px-4 py-3">
+                                    <div class="questionnaire-field">
+                                        {% if answer.boolean_answer is not None %}
+                                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-sm font-medium
+                                                {% if answer.boolean_answer %}bg-green-100 text-green-700 border border-green-300{% else %}bg-red-100 text-red-700 border border-red-300{% endif %}">
+                                                <i class="fas {% if answer.boolean_answer %}fa-check{% else %}fa-xmark{% endif %}"></i>
+                                                {{ answer.boolean_answer|yesno:'Oui,Non' }}
+                                            </span>
+                                        {% else %}
+                                            <p class="text-sm text-gray-700 bg-gray-50 border border-gray-200 rounded px-3 py-2">{{ answer.text_answer|default:'—' }}</p>
+                                        {% endif %}
+                                    </div>
+                                    {% if answer.comment %}
+                                    <div class="mt-3 q-comment">
+                                        <label class="text-xs text-gray-500 font-medium mb-1 block"><i class="fas fa-comment-dots mr-1"></i>Commentaire</label>
+                                        <p class="text-sm text-gray-700 bg-gray-50 border border-gray-200 rounded px-3 py-2">{{ answer.comment }}</p>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+
+                            {% if form.edit_questionnaire.general_comment %}
+                            <div class="rounded-lg border border-gray-200 bg-white overflow-hidden">
+                                <div class="px-4 py-2 bg-gray-50 border-b border-gray-100">
+                                    <label class="text-sm font-medium text-gray-800"><i class="fas fa-clipboard mr-1"></i>Commentaire général</label>
+                                </div>
+                                <div class="px-4 py-3 q-comment">
+                                    <p class="text-sm text-gray-700 bg-gray-50 border border-gray-200 rounded px-3 py-2">{{ form.edit_questionnaire.general_comment }}</p>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </fieldset>
+            {% else %}
             <p class="text-xs text-gray-400 mb-5"><span class="text-red-500 font-bold">*</span> Champs obligatoires</p>
 
             <!-- ÉTAPE 1 : EMPLOYÉ -->
@@ -470,20 +610,23 @@
                 <div id="questionnaire-dynamic"></div>
             </div>
 
+            {% endif %}
             <!-- ÉTAPE 5 : DATE -->
-            <div id="date-step" class="field-wrap mt-4" style="display:none">
+            <div id="date-step" class="field-wrap mt-4" {% if not form.is_date_edit %}style="display:none"{% endif %}>
                 <div class="flex items-center gap-2 mb-2">
                     <span class="w-5 h-5 rounded-full bg-blue-600 text-white text-xs flex items-center justify-center font-bold">5</span>
                     <label class="field-label required mb-0" for="{{ form.date.id_for_label }}">Date de formation</label>
                 </div>
+                {% if form.is_date_edit %}{{ form.date }}{% else %}
                 <input type="date" id="{{ form.date.id_for_label }}" name="date" value="{{ form.date.value|default:'' }}" max="{% now 'Y-m-d' %}" class="field-input {% if form.date.errors %}is-error{% endif %}">
+                {% endif %}
                 {% if form.date.errors %}<p class="field-error"><i class="fas fa-circle-exclamation"></i>{{ form.date.errors|join:", " }}</p>{% endif %}
                 <div id="delay-info" class="info-box ib-blue" style="display:none"><i class="fas fa-clock flex-shrink-0 mt-0.5"></i><span id="delay-msg"></span></div>
             </div>
 
             {% if form.trainer.is_hidden %}{{ form.trainer }}{% endif %}
 
-            <div id="form-actions" style="display:none" class="flex items-center justify-between pt-5 mt-5 border-t border-gray-200">
+            <div id="form-actions" {% if not form.is_date_edit %}style="display:none"{% endif %} class="flex items-center justify-between pt-5 mt-5 border-t border-gray-200">
                 <a href="{% url 'matrix_view' %}" class="btn btn-ghost"><i class="fas fa-arrow-left"></i>Annuler</a>
                 <button type="submit" class="btn btn-primary"><i class="fas fa-check"></i>{% if form.instance.pk %}Enregistrer les modifications{% else %}Enregistrer la formation{% endif %}</button>
             </div>
@@ -496,6 +639,8 @@
 <script>
 (function () {
     'use strict';
+
+    {% if form.is_date_edit %}return;{% endif %}
 
     const URL_TASKS = '/ajax/get-tasks-by-employee/';
     const URL_Q = '/ajax/get-questionnaire-by-task/';
@@ -540,7 +685,7 @@
             lineName: "{{ emp.line.name|default:''|escapejs }}",
             lineCode: "{{ emp.line.code|default:''|escapejs }}",
             visibleLines: [
-                {% for vl in emp.visible_lines.all %}
+                {% for vl in emp.training_lines %}
                 { id: {{ vl.id }}, name: "{{ vl.name|escapejs }}", code: "{{ vl.code|escapejs }}",
                   isMain: {% if emp.line and vl.id == emp.line.id %}true{% else %}false{% endif %} }{% if not forloop.last %},{% endif %}
                 {% endfor %}
@@ -669,8 +814,11 @@
         return c;
     }
     function selectLine(lineId) {
-        if (!lineId) return;
-        if (lineSel) lineSel.value=String(lineId);
+        const employee = EMPLOYEES[empSel ? empSel.value : ''];
+        if (!lineId || !lineSel || !employee
+            || !(employee.visibleLines || []).some(l => String(l.id) === String(lineId))
+            || !Array.from(lineSel.options).some(o => o.value === String(lineId) && !o.disabled)) return;
+        lineSel.value=String(lineId);
         document.querySelectorAll('.chip').forEach(c=>{
             const a=String(c.dataset.lineId)===String(lineId);
             c.style.outline=a?'2px solid #1e40af':'';
@@ -686,9 +834,10 @@
         if (taskLoading) taskLoading.classList.add('visible');
         taskSel.disabled=true; taskSel.innerHTML='<option value="">Chargement…</option>';
         show(taskStep);
-        fetch(URL_TASKS+'?line_id='+encodeURIComponent(lineId))
+        fetch(URL_TASKS+'?line_id='+encodeURIComponent(lineId)+'&employee_id='+encodeURIComponent(empSel.value))
             .then(r=>r.json())
             .then(data=>{
+                if (data.error) throw new Error(data.error);
                 taskSel.innerHTML='<option value="">— Sélectionnez une tâche —</option>';
                 (data.tasks||[]).forEach(t=>{
                     const o=document.createElement('option');
@@ -701,7 +850,13 @@
                 show(levelStep); show(dateStep); show(formActions);
                 updateQuestionnaire();
             })
-            .catch(()=>{ taskSel.disabled=false; if(taskLoading) taskLoading.classList.remove('visible'); });
+            .catch(error=>{
+                taskSel.disabled=false;
+                if(taskLoading) taskLoading.classList.remove('visible');
+                visWarnMsg.textContent = error.message || 'Impossible de charger les tâches autorisées.';
+                show(visWarn);
+                hide(formActions);
+            });
     }
 
     /* ═══ EMPLOYÉ ═══ */
@@ -714,6 +869,13 @@
         const emp = EMPLOYEES[empId]; 
         if (!emp) return;
         const vls = emp.visibleLines || [];
+        if (lineSel) {
+            Array.from(lineSel.options).forEach(option => {
+                const forbidden = !!option.value && !vls.some(vl => String(vl.id) === option.value);
+                option.disabled = forbidden;
+                option.hidden = forbidden;
+            });
+        }
         
         if (vls.length && vlChips) { 
             vlChips.innerHTML = ''; 
@@ -722,18 +884,14 @@
         }
 
         if (vls.length === 0) {
-            if (emp.lineId) {
-                if (lineAutoNm) lineAutoNm.textContent = emp.lineName + (emp.lineCode ? ' (' + emp.lineCode + ')' : '');
-                show(lineAuto);
-                if (lineSel) lineSel.value = emp.lineId;
-                fetchTasks(emp.lineId);
-            }
+            if (lineSel) lineSel.value = '';
+            visWarnMsg.textContent = 'Aucune ligne de formation autorisée pour cet opérateur.';
+            show(visWarn);
         } else if (vls.length === 1) {
             const vl = vls[0];
             if (lineAutoNm) lineAutoNm.textContent = vl.name + ' (' + vl.code + ')';
             show(lineAuto);
-            if (lineSel) lineSel.value = vl.id;
-            fetchTasks(vl.id);
+            selectLine(vl.id);
         } else {
             show(lineStep);
             if (lineSel && lineSel.value && vls.some(vl => String(vl.id) === String(lineSel.value))) {

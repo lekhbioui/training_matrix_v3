@@ -917,13 +917,11 @@
             chefInfoCard.classList.remove('hidden');
 
             // Remplir les lignes du chef
-            const availableLines = selectedChef.lines.filter(
-                l => !selectedEmployee || l.id !== selectedEmployee.lineId
-            );
+            const availableLines = selectedChef.lines;
 
             if (availableLines.length === 0) {
                 lineSelect.innerHTML =
-                    '<option value="">Aucune ligne disponible (même ligne actuelle)</option>';
+                    '<option value="">Aucune ligne disponible</option>';
                 return;
             }
 

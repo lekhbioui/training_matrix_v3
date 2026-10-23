@@ -573,15 +573,11 @@
                                value="{{ form.first_name.value|default:'' }}"
                                placeholder="Chargé automatiquement"
                                class="field-input
-                                      {% if not form.instance.pk %}
                                           readonly
-                                      {% endif %}
                                       {% if form.first_name.errors %}
                                           has-error
                                       {% endif %}"
-                               {% if not form.instance.pk %}
-                                   readonly
-                               {% endif %}>
+                               readonly>
                         {% if form.first_name.errors %}
                         <p class="field-error">
                             <i class="fas fa-circle-exclamation"></i>
@@ -608,15 +604,11 @@
                                value="{{ form.last_name.value|default:'' }}"
                                placeholder="Chargé automatiquement"
                                class="field-input
-                                      {% if not form.instance.pk %}
                                           readonly
-                                      {% endif %}
                                       {% if form.last_name.errors %}
                                           has-error
                                       {% endif %}"
-                               {% if not form.instance.pk %}
-                                   readonly
-                               {% endif %}>
+                               readonly>
                         {% if form.last_name.errors %}
                         <p class="field-error">
                             <i class="fas fa-circle-exclamation"></i>
@@ -657,15 +649,21 @@
                         <input type="date"
                                id="id_hire_date"
                                name="hire_date"
-                               value="{{ form.hire_date.value|default:'' }}"
-                               class="field-input
-                                      {% if not form.instance.pk %}
-                                          readonly
-                                      {% endif %}"
-                               {% if not form.instance.pk %}
-                                   readonly
-                               {% endif %}>
+                                value="{% if form.instance.pk %}{{ form.instance.hire_date|date:'Y-m-d' }}{% else %}{{ form.hire_date.value|default:'' }}{% endif %}"
+                                class="field-input readonly"
+                                readonly>
                     </div>
+
+                    {% if form.instance.pk %}
+                    <div class="sm:col-span-2">
+                        <label class="field-label" for="id_manager_display">
+                            Chef responsable
+                        </label>
+                        <input type="text" id="id_manager_display"
+                               value="{{ form.instance.manager.get_full_name|default:form.instance.manager.username }}"
+                               class="field-input readonly" readonly>
+                    </div>
+                    {% endif %}
 
                 </div>
             </div>
@@ -692,6 +690,7 @@
                     </label>
                     <select id="{{ form.line.id_for_label }}"
                             name="line"
+                            {% if form.line.field.disabled %}disabled{% endif %}
                             class="field-input
                                    {% if form.line.errors %}
                                        has-error

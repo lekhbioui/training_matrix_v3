@@ -1951,14 +1951,12 @@ def training_record_create(request):
         )
 
         if has_real_errors:
-            messages.error(
-                request,
-                (
-                    "❌ Enregistrement impossible. "
-                    "Merci de corriger les erreurs "
-                    "du formulaire."
-                ),
-            )
+            for name, errors in form.errors.as_data().items():
+                label = form.fields[name].label if name in form.fields else "Formation"
+                for error in errors:
+                    if error.code != "rh_request_pending":
+                        for message in error.messages:
+                            messages.error(request, f"{label} : {message}")
 
         return render(
             request,
@@ -2600,13 +2598,14 @@ def review_training_request(request, request_id):
 
 
 @login_required
+@transaction.atomic
 def training_record_update(request, pk):
     """
     ✅ Modification d'un enregistrement.
     Vérifie que l'employé est toujours visible sur la ligne.
     """
     record = get_object_or_404(
-        TrainingRecord, pk=pk, employee__manager=request.user
+        TrainingRecord.objects.select_for_update(), pk=pk, employee__manager=request.user
     )
 
     # ✅ Récupérer la ligne de cet enregistrement
@@ -2622,15 +2621,6 @@ def training_record_update(request, pk):
 
         if form.is_valid():
             record = form.save()
-
-            matrix_entry, created = MatrixEntry.objects.get_or_create(
-                employee=record.employee,
-                task=record.task,
-                defaults={'level': record.level}
-            )
-            if not created:
-                matrix_entry.level = record.level
-                matrix_entry.save()
 
             messages.success(
                 request,
@@ -3085,47 +3075,34 @@ def line_delete(request, pk):
 
 @login_required
 def get_tasks_by_employee(request):
-    """
-    API pour récupérer les tâches selon l'employé OU la ligne
-    Accepte : employee_id OU line_id
-    """
+    """Tâches accessibles selon les mêmes périmètres que TrainingRecordForm."""
     employee_id = request.GET.get('employee_id')
     line_id = request.GET.get('line_id')
-    
-    tasks = []
-    
-    # ═══════════════════════════════════════════════════════════════════
-    # Priorité 1 : Si on a un line_id direct, l'utiliser
-    # ═══════════════════════════════════════════════════════════════════
-    if line_id:
-        try:
-            tasks = Task.objects.filter(lines__id=line_id).order_by('order', 'task_number').values(
-                'id', 'title', 'code', 'task_number'
-            )
-            return JsonResponse({'tasks': list(tasks)})
-        except Exception as e:
-            return JsonResponse({'tasks': [], 'error': str(e)})
-    
-    # ═══════════════════════════════════════════════════════════════════
-    # Priorité 2 : Si on a un employee_id, récupérer sa ligne
-    # ═══════════════════════════════════════════════════════════════════
+    if not employee_id and not line_id:
+        return JsonResponse({'tasks': []})
+    try:
+        employee_id = int(employee_id) if employee_id else None
+        line_id = int(line_id) if line_id else None
+    except (ValueError, TypeError):
+        return JsonResponse({'tasks': [], 'error': 'Identifiant invalide.'}, status=400)
+
+    form = TrainingRecordForm(user=request.user)
+    employee = None
     if employee_id:
-        try:
-            employee = Employee.objects.select_related('line').get(pk=employee_id)
-            
-            if employee.line:
-                tasks = Task.objects.filter(lines=employee.line).order_by('order', 'task_number').values(
-                    'id', 'title', 'code', 'task_number'
-                )
-                return JsonResponse({'tasks': list(tasks)})
-            else:
+        employee = form.fields['employee'].queryset.filter(pk=employee_id).first()
+        if employee is None:
+            return JsonResponse({'tasks': [], 'error': 'Opérateur non autorisé.'}, status=403)
+        if line_id is None:
+            line_id = employee.line_id
+            if line_id is None:
                 return JsonResponse({'tasks': [], 'message': 'Employé sans ligne assignée'})
-                
-        except Employee.DoesNotExist:
-            return JsonResponse({'tasks': [], 'error': 'Employé non trouvé'})
-    
-    # Aucun paramètre fourni
-    return JsonResponse({'tasks': []})
+    line = form.fields['line'].queryset.filter(pk=line_id).first()
+    if line is None or (employee and not employee.visible_lines.filter(pk=line.pk).exists()):
+        return JsonResponse({'tasks': [], 'error': 'Ligne de formation non autorisée.'}, status=403)
+    tasks = Task.objects.filter(lines=line).order_by('order', 'task_number').values(
+        'id', 'title', 'code', 'task_number'
+    )
+    return JsonResponse({'tasks': list(tasks)})
 
 
 @login_required
@@ -5628,13 +5605,15 @@ def rh_dashboard(request):
 
 
 @login_required
+@user_passes_test(is_rh_user)
+@transaction.atomic
 def transfer_employee_view(request, employee_id=None):
     employee = get_object_or_404(Employee, id=employee_id) if employee_id else None
 
     if request.method == "POST":
         form = EmployeeTransferForm(request.POST)
         if form.is_valid():
-            employee = form.cleaned_data['employee']
+            employee = Employee.objects.select_for_update().get(pk=form.cleaned_data['employee'].pk)
             new_line = form.cleaned_data['new_line']
             reason = form.cleaned_data.get('reason', '')
             
@@ -5643,6 +5622,36 @@ def transfer_employee_view(request, employee_id=None):
 
             old_line = employee.line
             old_manager = employee.manager
+
+            team_leaders = new_line.team_leaders.all()
+            selected_manager = team_leaders.first()
+            if selected_team_leader_id:
+                selected_manager = (
+                    team_leaders.filter(pk=selected_team_leader_id).first()
+                    if selected_team_leader_id.isdecimal() else None
+                )
+                if selected_manager is None:
+                    messages.error(request, "Chef destinataire invalide pour cette ligne.")
+                    return redirect("transfer_employee")
+            elif old_line == new_line:
+                messages.error(request, "Veuillez sélectionner le chef destinataire.")
+                return redirect("transfer_employee")
+            if selected_manager is not None and selected_manager == old_manager:
+                messages.error(request, "Le chef destinataire est déjà responsable de cet opérateur.")
+                return redirect("transfer_employee")
+
+            if old_line == new_line:
+                employee.manager = selected_manager
+                employee.save(update_fields=["manager"])
+                # Garder une trace RH sans créer un faux changement de ligne.
+                LineTransferApprovalRequest.objects.create(
+                    employee=employee, from_line=old_line, to_line=new_line,
+                    new_manager=selected_manager, reason=reason,
+                    requested_by=request.user, approved=True,
+                    decision_by=request.user, decision_date=timezone.now(),
+                )
+                messages.success(request, "Responsable de l'opérateur mis à jour.")
+                return redirect("transfer_employee")
 
             if old_line != new_line:
                 employee._line_transfer_info = {
@@ -5656,28 +5665,7 @@ def transfer_employee_view(request, employee_id=None):
             employee.line = new_line
             
             # ✅ Gestion du chef d'équipe selon le choix
-            if hasattr(new_line, 'team_leaders'):
-                team_leaders = new_line.team_leaders.all()
-                
-                if selected_team_leader_id:
-                    # Chef d'équipe spécifiquement sélectionné par l'utilisateur
-                    try:
-                        from django.contrib.auth import get_user_model
-                        User = get_user_model()
-                        selected_manager = User.objects.get(id=selected_team_leader_id)
-                        # Vérifier que ce manager appartient bien à cette ligne
-                        if selected_manager in team_leaders:
-                            employee.manager = selected_manager
-                        else:
-                            employee.manager = team_leaders.first()
-                    except User.DoesNotExist:
-                        employee.manager = team_leaders.first()
-                else:
-                    # Un seul chef ou aucun - assignation automatique
-                    employee.manager = team_leaders.first()
-            else:
-                employee.manager = None
-            
+            employee.manager = selected_manager
             employee.save()
 
             new_tasks = Task.objects.filter(lines=new_line)
@@ -8518,11 +8506,6 @@ def team_leader_transfer_view(request):
 
         old_line = employee.line
 
-        # ── Vérifier que ce n'est pas la même ligne ───────────────
-        if old_line == new_line:
-            messages.warning(request, "⚠️ L'employé est déjà sur cette ligne.")
-            return redirect('team_leader_transfer')
-
         # ── Vérifier demande en attente ───────────────────────────
         existing = LineTransferApprovalRequest.objects.filter(
             employee=employee,
@@ -8657,6 +8640,8 @@ def team_leader_transfer_view(request):
 
 
 @login_required
+@user_passes_test(is_rh_user)
+@transaction.atomic
 def rh_transfer_approvals(request):
     """
     Vue RH pour approuver ou refuser les demandes de transfert.
@@ -8671,7 +8656,7 @@ def rh_transfer_approvals(request):
         req_id = request.POST.get("request_id")
         action = request.POST.get("action")
 
-        req = get_object_or_404(LineTransferApprovalRequest, pk=req_id)
+        req = get_object_or_404(LineTransferApprovalRequest.objects.select_for_update(), pk=req_id)
 
         if req.approved is not None:
             messages.warning(request, "⚠️ Cette demande a déjà été traitée.")
@@ -8681,9 +8666,17 @@ def rh_transfer_approvals(request):
         # APPROBATION
         # ══════════════════════════════════════════════════════════
         if action == "approve":
-            employee = req.employee
+            employee = Employee.objects.select_for_update().get(pk=req.employee_id)
             old_line = req.from_line
             new_line = req.to_line
+
+            if (employee.manager_id != req.requested_by_id
+                    or employee.line_id != req.from_line_id
+                    or req.new_manager_id is None
+                    or req.new_manager_id == employee.manager_id
+                    or not new_line.team_leaders.filter(pk=req.new_manager_id).exists()):
+                messages.error(request, "Demande périmée ou chef destinataire invalide.")
+                return redirect("rh_transfer_approvals")
 
             # 1. Valider la demande
             req.approved          = True
@@ -8691,6 +8684,12 @@ def rh_transfer_approvals(request):
             req.decision_by       = user
             req.notification_seen = False
             req.save()
+
+            if old_line == new_line:
+                employee.manager = req.new_manager
+                employee.save(update_fields=["manager"])
+                messages.success(request, "Transfert approuvé : responsable mis à jour, ligne conservée.")
+                return redirect("rh_transfer_approvals")
 
             # 2. Mettre à jour ligne principale + manager
             employee.line    = new_line

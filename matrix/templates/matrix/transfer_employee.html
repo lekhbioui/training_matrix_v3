@@ -1575,6 +1575,7 @@ var EMPLOYEES = [
         name: "{{ emp.first_name|escapejs }} {{ emp.last_name|escapejs }}",
         line: "{{ emp.line.name|default:'Non assigné'|escapejs }}",
         lineId: {% if emp.line %}{{ emp.line.id }}{% else %}null{% endif %},
+        managerId: {{ emp.manager_id|default:'null' }},
         manager: "{{ emp.manager.get_full_name|default:'Aucun'|escapejs }}"
     }{% if not forloop.last %},{% endif %}
     {% endfor %}
@@ -2280,10 +2281,10 @@ var LINES_DATA = {{ lines_json|safe }};
                 return false;
             }
 
-            // Vérifier si même ligne
-            if (currentEmployee.lineId && currentEmployee.lineId == lineSelect.value) {
+            // Le destinataire doit être différent, même si la ligne est conservée.
+            if (currentEmployee.managerId && currentEmployee.managerId == selectedTeamLeaderId) {
                 e.preventDefault();
-                alert('⚠️ L\'employé est déjà affecté à cette ligne');
+                alert('⚠️ Ce chef est déjà responsable de cet opérateur');
                 return false;
             }
             

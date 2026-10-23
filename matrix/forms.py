@@ -9,7 +9,7 @@ import datetime
 from django.utils import timezone
 
 from matrix import models  
-from django.db.models import Q
+from django.db.models import Q, Prefetch
 from .models import Task, Employee, ProductionLine, MatrixEntry
 from django.core.mail import send_mail
 from django.core.exceptions import ValidationError
@@ -166,6 +166,7 @@ class EmployeeForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.user             = user
         self._found_pending   = None  # ← PendingEmployee trouvé
+        self._is_edit = bool(self.instance.pk)
 
         if user and not user.is_superuser:
             managed_lines = ProductionLine.objects.filter(
@@ -192,6 +193,22 @@ class EmployeeForm(forms.ModelForm):
                 "-- Sélectionnez une ligne --"
             )
 
+        if self.instance.pk:
+            for name in ('matricule', 'first_name', 'last_name', 'hire_date'):
+                self.fields[name].disabled = True
+            managed_lines = ProductionLine.objects.filter(team_leaders=user)
+            self.fields['visible_lines'].queryset = managed_lines
+            self.fields['visible_lines'].required = False
+            self.initial['visible_lines'] = self.instance.visible_lines.filter(
+                pk__in=managed_lines
+            )
+            # La ligne principale peut appartenir à un autre chef après un transfert.
+            self.fields['line'].queryset = ProductionLine.objects.filter(
+                pk=self.instance.line_id
+            )
+            self.fields['line'].disabled = True
+            self.fields['line'].required = False
+
     def validate_unique(self):
         """
         ✅ Ne pas vérifier l'unicité du matricule ici.
@@ -204,6 +221,11 @@ class EmployeeForm(forms.ModelForm):
         matricule = self.cleaned_data.get(
             'matricule', ''
         ).strip().upper()
+
+        if self.instance.pk:
+            if matricule != self.instance.matricule.strip().upper():
+                raise forms.ValidationError("Le matricule ne peut pas être modifié.")
+            return self.instance.matricule
 
         if not matricule:
             raise forms.ValidationError(
@@ -256,18 +278,33 @@ class EmployeeForm(forms.ModelForm):
         line          = cleaned_data.get('line')
         visible_lines = cleaned_data.get('visible_lines')
 
-        if not visible_lines:
+        if self.instance.pk and (
+            not self.user or self.instance.manager_id != self.user.pk
+        ):
+            raise forms.ValidationError("Vous ne gérez pas cet opérateur.")
+
+        if not visible_lines and not self.instance.pk:
             raise forms.ValidationError(
                 "Veuillez sélectionner au moins une ligne."
             )
 
         # ✅ S'assurer que la ligne principale est dans visible_lines
-        if line and line not in visible_lines:
+        if line and visible_lines is not None and line not in visible_lines:
             lines_list = list(visible_lines)
             lines_list.append(line)
             cleaned_data['visible_lines'] = lines_list
 
         return cleaned_data
+
+    def _save_m2m(self):
+        if not self._is_edit:
+            return super()._save_m2m()
+        # Conserver les visibilités hors du périmètre du chef connecté.
+        lines = set(self.instance.visible_lines.exclude(team_leaders=self.user))
+        lines.update(self.cleaned_data.get('visible_lines', []))
+        if self.instance.line_id:
+            lines.add(self.instance.line)
+        self.instance.visible_lines.set(lines)
 
     def save(self, commit=True):
         """
@@ -275,6 +312,12 @@ class EmployeeForm(forms.ModelForm):
         ✅ Supprime le PendingEmployee après conversion.
         ✅ Ne crée PAS de doublon.
         """
+        if self.instance.pk:
+            instance = super().save(commit=False)
+            if commit:
+                self._save_m2m()
+            return instance
+
         pending = self._found_pending
 
         if pending:
@@ -573,7 +616,7 @@ class TrainingRecordForm(forms.ModelForm):
 
     # Mettre False si tu souhaites autoriser un niveau I
     # même lorsqu'aucune question RH n'est configurée.
-    REQUIRE_QUESTIONNAIRE_FOR_LEVEL_I = True
+    REQUIRE_QUESTIONNAIRE_FOR_LEVEL_I = False
 
     line = forms.ModelChoiceField(
         queryset=ProductionLine.objects.none(),
@@ -621,6 +664,25 @@ class TrainingRecordForm(forms.ModelForm):
 
         super().__init__(*args, **kwargs)
 
+        self.is_date_edit = bool(self.instance.pk)
+        self.original_date = self.instance.date
+        if self.is_date_edit:
+            self.edit_lines = list(self.instance.lines.all())
+            self.fields['employee'].queryset = Employee.objects.filter(pk=self.instance.employee_id)
+            self.fields['task'].queryset = Task.objects.filter(pk=self.instance.task_id)
+            self.fields['trainer'].queryset = Employee.objects.filter(pk=self.instance.trainer_id)
+            self.fields['line'].queryset = self.instance.lines.all()
+            self.initial['line'] = self.edit_lines[0].pk if self.edit_lines else None
+            for name, field in self.fields.items():
+                field.disabled = name != 'date'
+            self.fields['line'].required = False
+            self.fields['date'].widget.format = '%Y-%m-%d'
+            self.fields['date'].widget.attrs['max'] = timezone.localdate().isoformat()
+            self.edit_questionnaire = TrainingQuestionnaire.objects.filter(
+                training_record=self.instance
+            ).prefetch_related('answers').first()
+            return
+
         today = timezone.now().date()
         self.fields["date"].widget.attrs["max"] = today.isoformat()
 
@@ -628,6 +690,13 @@ class TrainingRecordForm(forms.ModelForm):
             self.fields["date"].initial = today
 
         self._configure_user_fields()
+        self.fields['employee'].queryset = self.fields['employee'].queryset.prefetch_related(
+            Prefetch('visible_lines', queryset=self.fields['line'].queryset, to_attr='training_lines')
+        )
+        self.fields['line'].error_messages.update({
+            'required': "Sélectionnez une ligne de formation autorisée.",
+            'invalid_choice': "Cette ligne n'est pas autorisée pour le chef connecté.",
+        })
         self._load_questionnaire_fields()
 
     # ================================================================
@@ -936,8 +1005,63 @@ class TrainingRecordForm(forms.ModelForm):
                         f"Le niveau {level_label} ne peut pas être enregistré.",
                     )
 
+    def _clean_date_edit(self, cleaned_data):
+        record = self.instance
+        if (not self.user or record.employee.manager_id != self.user.pk
+                or not self.edit_lines
+                or any(not line.team_leaders.filter(pk=self.user.pk).exists()
+                       or not record.employee.visible_lines.filter(pk=line.pk).exists()
+                       for line in self.edit_lines)):
+            raise ValidationError("Vous ne pouvez pas modifier cette formation sur ces lignes.")
+        date = cleaned_data.get('date')
+        if not date:
+            return cleaned_data
+        if date > timezone.localdate():
+            self.add_error('date', "La date ne peut pas être dans le futur.")
+        if record.level == TrainingLevel.IN_TRAINING and record.employee.hire_date:
+            if (date - record.employee.hire_date).days < 3:
+                self.add_error('date', "Minimum requis : 3 jours après l'embauche.")
+
+        # Les règles de création prennent le premier niveau approuvé par date.
+        for line in self.edit_lines:
+            records = TrainingRecord.objects.filter(
+                employee_id=record.employee_id, task_id=record.task_id, lines=line,
+            ).exclude(pk=record.pk)
+            for lower, upper, delay in (
+                (TrainingLevel.IN_TRAINING, TrainingLevel.SUPERVISED, 7),
+                (TrainingLevel.SUPERVISED, TrainingLevel.TRAINER, 21),
+            ):
+                if record.level not in (lower, upper):
+                    continue
+                lower_dates = list(records.filter(
+                    level=lower, approval_status=TrainingRecord.ApprovalStatus.APPROVED,
+                    date__isnull=False,
+                ).values_list('date', flat=True))
+                if record.level == lower and record.approval_status == TrainingRecord.ApprovalStatus.APPROVED:
+                    lower_dates.append(date)
+                first_date = min(lower_dates) if lower_dates else None
+                if record.level == upper:
+                    upper_dates = [date]
+                elif record.approval_status == TrainingRecord.ApprovalStatus.APPROVED:
+                    upper_dates = list(records.filter(level=upper, date__isnull=False).exclude(
+                        approval_status=TrainingRecord.ApprovalStatus.REJECTED
+                    ).values_list('date', flat=True))
+                    upper_dates += list(TrainingApprovalRequest.objects.filter(
+                        employee_id=record.employee_id, task_id=record.task_id, line=line,
+                        requested_level=upper, approved__isnull=True, training_date__isnull=False,
+                    ).values_list('training_date', flat=True))
+                else:
+                    upper_dates = []
+                if upper_dates and (first_date is None or any(
+                    (upper_date - first_date).days < delay for upper_date in upper_dates
+                )):
+                    self.add_error('date', f"Chronologie invalide sur {line} : délai minimum de {delay} jours entre niveaux.")
+        return cleaned_data
+
     def clean(self):
         cleaned_data = super().clean()
+        if self.is_date_edit:
+            return self._clean_date_edit(cleaned_data)
 
         employee = cleaned_data.get("employee")
         task = cleaned_data.get("task")
@@ -1192,6 +1316,26 @@ class TrainingRecordForm(forms.ModelForm):
 
     def save(self, commit=True):
         instance = super().save(commit=False)
+        if self.is_date_edit:
+            if commit and instance.date != self.original_date:
+                with transaction.atomic():
+                    instance.save(update_fields=['date'])
+                    TrainingApprovalRequest.objects.filter(training_record=instance).update(
+                        training_date=instance.date
+                    )
+                    # Une correction de date ne doit ni créer ni changer un niveau.
+                    entry = MatrixEntry.objects.select_for_update().filter(
+                        employee=instance.employee, task=instance.task, level=instance.level,
+                    ).first()
+                    if (entry and instance.approval_status == TrainingRecord.ApprovalStatus.APPROVED
+                            and (entry.last_trained == self.original_date
+                                 or entry.last_trained is None or instance.date > entry.last_trained)):
+                        latest = TrainingRecord.objects.filter(
+                            employee=instance.employee, task=instance.task, level=entry.level,
+                            approval_status=TrainingRecord.ApprovalStatus.APPROVED, date__isnull=False,
+                        ).order_by('-date').values_list('date', flat=True).first()
+                        MatrixEntry.objects.filter(pk=entry.pk).update(last_trained=latest)
+            return instance
         if commit:
             instance.save()
             self.save_m2m()
